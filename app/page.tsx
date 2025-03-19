@@ -1,36 +1,48 @@
-import { ChartWithDropdown } from '@/components';
+"use client";
+
+import React, { useState } from 'react';
+import BarChartControls from '@/components/charts/BarChartControls';
+import LineChartControls from '@/components/charts/LineChartControls';
 
 export default function Home() {
-  // Sample data for our charts
-  const data = [
-    { x: 'Jan', y: 50, color: '#8884d8' },
-    { x: 'Feb', y: 35, color: '#83a6ed' },
-    { x: 'Mar', y: 90, color: '#8dd1e1' },
-    { x: 'Apr', y: 65, color: '#82ca9d' },
-    { x: 'May', y: 75, color: '#a4de6c' },
-    { x: 'Jun', y: 45, color: '#d0ed57' }
-  ];
+  const [activeChart, setActiveChart] = useState<'bar' | 'line'>('bar');
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <h1 className="text-4xl font-bold mb-8 text-center">Chart Outliner Demo</h1>
-        
-        <div className="space-y-16">
-          <section>
-            <h2 className="text-2xl font-semibold mb-6 text-center">Line Chart</h2>
-            <div className="flex flex-col items-center">
-              <ChartWithDropdown data={data} chartType="line" />
-            </div>
-          </section>
+    <main className="container mx-auto p-6">
+      <header className="text-center mb-8">
+        <h1 className="text-3xl font-bold mb-2">Chart Outliner</h1>
+        <p className="text-gray-600">Create, customize, and save beautiful charts</p>
+      </header>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-6 text-center">Bar Chart</h2>
-            <div className="flex flex-col items-center">
-              <ChartWithDropdown data={data} chartType="bar" />
-            </div>
-          </section>
-        </div>
+      <div className="chart-selector mb-6 flex justify-center space-x-4">
+        <button 
+          className={`px-6 py-2 rounded-lg transition-colors ${
+            activeChart === 'bar' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+          onClick={() => setActiveChart('bar')}
+        >
+          Bar Chart
+        </button>
+        <button 
+          className={`px-6 py-2 rounded-lg transition-colors ${
+            activeChart === 'line' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+          onClick={() => setActiveChart('line')}
+        >
+          Line Chart
+        </button>
+      </div>
+
+      <div className="chart-container">
+        {activeChart === 'bar' ? (
+          <BarChartControls />
+        ) : (
+          <LineChartControls />
+        )}
       </div>
     </main>
   );

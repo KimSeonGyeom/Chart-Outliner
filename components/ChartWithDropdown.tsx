@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 // import LineChart from './charts/LineChart';
 import LineChartControls from './charts/LineChartControls';   
-import BarChart from './charts/BarChart';
+// import BarChart from './charts/BarChart';
+import BarChartControls from './charts/BarChartControls';
 import TriangleTemplate from './templates/TriangleTemplate';
 import DiamondTemplate from './templates/DiamondTemplate';
 import { ChartData } from './templates/types';
@@ -34,12 +35,8 @@ const ChartWithDropdown: React.FC<ChartWithDropdownProps> = ({
   // Chart component mapping
   const ChartComponent = {
     'line': LineChartControls,
-    'bar': BarChart,
+    'bar': BarChartControls,
   }[chartType];
-
-  const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedTemplate(e.target.value);
-  };
 
   return (
     <div className="chart-container">
@@ -48,7 +45,7 @@ const ChartWithDropdown: React.FC<ChartWithDropdownProps> = ({
           data={data} 
           width={width} 
           height={height} 
-          template={templates[selectedTemplate]}
+          // template={templates[selectedTemplate]}
           // fill={supportsFill ? fillEnabled : false}
         />
       </div>

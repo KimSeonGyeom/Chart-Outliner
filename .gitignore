@@ -39,3 +39,23 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Node.js dependencies
+node_modules/
+package-lock.json
+yarn.lock
+yarn-error.log
+npm-debug.log*
+
+# Environment variables
+.env*.local
+.env*
+
+# Development tools
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db

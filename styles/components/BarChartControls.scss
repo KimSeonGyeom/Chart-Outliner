@@ -1,4 +1,4 @@
-.line-chart-controls {
+.bar-chart-controls {
   width: 100%;
   display: flex;
   flex-direction: row;
@@ -7,37 +7,19 @@
   .chart-container {
     width: 65%;
 
-    .bar-chart-placeholder {
-      height: 100%;
-      min-height: 400px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      border: 1px dashed #ccc;
-      border-radius: 0.5rem;
-      padding: 2rem;
-      background-color: #f9fafb;
-
-      h3 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        color: #4b5563;
-      }
-
-      p {
-        margin-bottom: 1rem;
-      }
-
-      ul {
-        list-style-type: disc;
-        padding-left: 1.5rem;
-
-        li {
-          margin-bottom: 0.5rem;
-        }
-      }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    p {
+      margin-bottom: 1rem;
+    }
+    
+    .chart-display {
+      margin-bottom: 1rem;
+      position: relative;
     }
     
     .resize-hint {
@@ -48,7 +30,7 @@
       margin-top: 0.5rem;
     }
   }
-
+  
   .controls-panel {
     width: 35%;
     height: 500px;
@@ -131,6 +113,23 @@
       .range-value {
         text-align: right;
         font-size: 0.875rem;
+      }
+      
+      .color-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        
+        input[type="color"] {
+          width: 2rem;
+          height: 2rem;
+          padding: 0;
+          border: 1px solid #d1d5db;
+        }
+        
+        input[type="text"] {
+          flex: 1;
+        }
       }
     }
   }

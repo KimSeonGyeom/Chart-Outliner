@@ -45,6 +45,9 @@ interface LineChartProps {
   showGrid?: boolean;
   gridColor?: string;
   gridOpacity?: number;
+  
+  // Optional callback for resize
+  onResize?: (width: number, height: number) => void;
 }
 
 const LineChart: React.FC<LineChartProps> = ({
@@ -87,18 +90,74 @@ const LineChart: React.FC<LineChartProps> = ({
   // Grid lines
   showGrid = false,
   gridColor = '#e0e0e0',
-  gridOpacity = 0.5
+  gridOpacity = 0.5,
+  
+  // Resize callback
+  onResize
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const chartRef = useRef<any>(null);
+  const resizeHandleRef = useRef<SVGRectElement>(null);
   const [dataPoints, setDataPoints] = useState<Array<{x: number, y: number, color: string}>>([]);
+  
+  // State for resize tracking
+  const [isResizing, setIsResizing] = useState(false);
+  const [startResizePos, setStartResizePos] = useState({ x: 0, y: 0 });
+  const [initialDimensions, setInitialDimensions] = useState({ width, height });
+
+  // Setup resize event handlers
+  useEffect(() => {
+    if (!resizeHandleRef.current) return;
+    
+    const handleMouseDown = (e: MouseEvent) => {
+      e.preventDefault();
+      setIsResizing(true);
+      setStartResizePos({ x: e.clientX, y: e.clientY });
+      setInitialDimensions({ width, height });
+    };
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const dx = e.clientX - startResizePos.x;
+      const dy = e.clientY - startResizePos.y;
+      
+      // Update dimensions with minimum constraints
+      const newWidth = Math.max(200, initialDimensions.width + dx);
+      const newHeight = Math.max(150, initialDimensions.height + dy);
+      
+      // Notify parent component of resize
+      if (onResize) {
+        onResize(newWidth, newHeight);
+      }
+    };
+    
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+    
+    const handle = resizeHandleRef.current;
+    handle.addEventListener('mousedown', handleMouseDown);
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      handle.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, startResizePos, initialDimensions, width, height, onResize]);
 
   useEffect(() => {
     if (!svgRef.current) return;
 
     const svg = d3.select(svgRef.current);
     
-    // Clear previous chart
-    svg.selectAll('*').remove();
+    // Clear the previous chart if it exists
+    if (chartRef.current) {
+      chartRef.current.remove();
+    }
     
     // Create inner chart area
     const innerWidth = width - marginLeft - marginRight;
@@ -121,6 +180,9 @@ const LineChart: React.FC<LineChartProps> = ({
     
     const g = svg.append('g')
       .attr('transform', `translate(${marginLeft},${marginTop})`);
+      
+    // Store the group for later cleanup
+    chartRef.current = g;
     
     // Add grid lines if enabled
     if (showGrid) {
@@ -165,6 +227,7 @@ const LineChart: React.FC<LineChartProps> = ({
       }
       
       g.append('g')
+        .attr('class', 'x-axis')
         .attr('transform', `translate(0,${innerHeight})`)
         .call(xAxis);
     }
@@ -177,6 +240,7 @@ const LineChart: React.FC<LineChartProps> = ({
       }
       
       g.append('g')
+        .attr('class', 'y-axis')
         .call(yAxis);
     }
     
@@ -242,7 +306,6 @@ const LineChart: React.FC<LineChartProps> = ({
     }
     
     // If no custom template and showPoints is true, add circles for each data point
-    // if (!Template && showPoints) {
     if (showPoints) {
       const points = g.selectAll('.dot')
         .data(data)
@@ -261,28 +324,60 @@ const LineChart: React.FC<LineChartProps> = ({
           .attr('stroke-width', pointStrokeWidth);
       }
     }
-    // } else if (Template) {
-    //   // If custom template, prepare data points for rendering with the template component
-    //   const points = data.map(d => ({
-    //     x: x(String(d.x)) || 0,
-    //     y: y(d.y),
-    //     color: d.color || lineColor
-    //   }));
-    //   setDataPoints(points);
-    // }
     
+    // Store data points for template rendering
+    setDataPoints(data.map(d => ({
+      x: x(String(d.x)) || 0,
+      y: y(d.y),
+      color: d.color || lineColor
+    })));
+    
+    // Cleanup function
+    return () => {
+      // No cleanup needed as we'll handle it in the effect
+    };
   }, [
-    data, width, height, marginTop, marginRight, marginBottom, marginLeft, 
-    fill, fillOpacity, curveType, curveTension, lineColor, lineWidth, 
-    lineDash, showPoints, pointRadius, pointStroke, pointStrokeWidth,
+    data, width, height, marginTop, marginRight, marginBottom, marginLeft,
+    fill, fillOpacity, curveType, curveTension, lineColor, lineWidth, lineDash,
+    showPoints, pointRadius, pointStroke, pointStrokeWidth,
     showXAxis, showYAxis, xAxisTickCount, yAxisTickCount,
     yDomainMin, yDomainMax, showGrid, gridColor, gridOpacity
   ]);
+  
+  // Effect to clean up when component unmounts
+  useEffect(() => {
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.remove();
+      }
+    };
+  }, []);
+  
+  // Resize handle styles
+  const resizeHandleStyle = {
+    cursor: 'nwse-resize',
+    fill: '#ccc',
+    fillOpacity: isResizing ? 0.6 : 0.2,
+    strokeWidth: 1,
+    stroke: '#999'
+  };
 
   return (
-    <svg ref={svgRef} width={width} height={height}>
-      {/* Chart will be rendered here by D3 */}
-    </svg>
+    <div className="chart-wrapper" style={{ position: 'relative', width: width, height: height }}>
+      <svg ref={svgRef} width={width} height={height}>
+        {/* Chart will be rendered here by D3 */}
+        
+        {/* Resize handle */}
+        <rect
+          ref={resizeHandleRef}
+          x={width - 10}
+          y={height - 10}
+          width={10}
+          height={10}
+          style={resizeHandleStyle}
+        />
+      </svg>
+    </div>
   );
 };
 

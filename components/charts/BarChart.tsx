@@ -30,6 +30,9 @@ interface BarChartProps {
   showGrid?: boolean;
   gridColor?: string;
   gridOpacity?: number;
+  
+  // Optional callback for resize
+  onResize?: (width: number, height: number) => void;
 }
 
 const BarChart: React.FC<BarChartProps> = ({
@@ -57,9 +60,14 @@ const BarChart: React.FC<BarChartProps> = ({
   // Grid lines
   showGrid = false,
   gridColor = '#e0e0e0',
-  gridOpacity = 0.5
+  gridOpacity = 0.5,
+  
+  // Resize callback
+  onResize
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
+  const chartRef = useRef<any>(null);
+  const resizeHandleRef = useRef<SVGRectElement>(null);
   const [barData, setBarData] = useState<Array<{
     x: number;
     y: number;
@@ -67,14 +75,74 @@ const BarChart: React.FC<BarChartProps> = ({
     height: number;
     color: string;
   }>>([]);
+  
+  // A key to force remounting templates when changed
+  const [templateKey, setTemplateKey] = useState(0);
+  
+  // State for resize tracking
+  const [isResizing, setIsResizing] = useState(false);
+  const [startResizePos, setStartResizePos] = useState({ x: 0, y: 0 });
+  const [initialDimensions, setInitialDimensions] = useState({ width, height });
+
+  // Effect to update template key when template changes
+  useEffect(() => {
+    setTemplateKey(prev => prev + 1);
+  }, [Template]);
+
+  // Setup resize event handlers
+  useEffect(() => {
+    if (!resizeHandleRef.current) return;
+    
+    const handleMouseDown = (e: MouseEvent) => {
+      e.preventDefault();
+      setIsResizing(true);
+      setStartResizePos({ x: e.clientX, y: e.clientY });
+      setInitialDimensions({ width, height });
+    };
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const dx = e.clientX - startResizePos.x;
+      const dy = e.clientY - startResizePos.y;
+      
+      // Update dimensions with minimum constraints
+      const newWidth = Math.max(200, initialDimensions.width + dx);
+      const newHeight = Math.max(150, initialDimensions.height + dy);
+      
+      // Notify parent component of resize
+      if (onResize) {
+        onResize(newWidth, newHeight);
+      }
+    };
+    
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+    
+    const handle = resizeHandleRef.current;
+    handle.addEventListener('mousedown', handleMouseDown);
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      handle.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, startResizePos, initialDimensions, width, height, onResize]);
 
   useEffect(() => {
     if (!svgRef.current) return;
 
     const svg = d3.select(svgRef.current);
     
-    // Clear previous chart
-    svg.selectAll('*').remove();
+    // Store the main group in the ref to be able to clean it up later
+    if (chartRef.current) {
+      // Clean up previous chart elements
+      chartRef.current.remove();
+    }
     
     // Create inner chart area
     const innerWidth = width - marginLeft - marginRight;
@@ -97,6 +165,9 @@ const BarChart: React.FC<BarChartProps> = ({
     
     const g = svg.append('g')
       .attr('transform', `translate(${marginLeft},${marginTop})`);
+    
+    // Store the main group element for cleanup
+    chartRef.current = g;
     
     // Add grid lines if enabled
     if (showGrid) {
@@ -141,6 +212,7 @@ const BarChart: React.FC<BarChartProps> = ({
       }
       
       g.append('g')
+        .attr('class', 'x-axis')
         .attr('transform', `translate(0,${innerHeight})`)
         .call(xAxis);
     }
@@ -153,12 +225,15 @@ const BarChart: React.FC<BarChartProps> = ({
       }
       
       g.append('g')
+        .attr('class', 'y-axis')
         .call(yAxis);
     }
     
     // If no custom template, render regular bars
     if (!Template) {
-      g.selectAll('.bar')
+      g.append('g')
+        .attr('class', 'bars')
+        .selectAll('.bar')
         .data(data)
         .enter()
         .append('rect')
@@ -177,8 +252,18 @@ const BarChart: React.FC<BarChartProps> = ({
         height: innerHeight - y(d.y),
         color: d.color || barColor
       }));
+      
       setBarData(bars);
     }
+    
+    // Cleanup function
+    return () => {
+      if (chartRef.current && !Template) {
+        // Only remove D3 elements if we're not using a React template
+        // to avoid the "Failed to execute 'removeChild' on 'Node'" error
+        chartRef.current.selectAll('*').remove();
+      }
+    };
     
   }, [
     data, width, height, marginTop, marginRight, marginBottom, marginLeft,
@@ -186,23 +271,57 @@ const BarChart: React.FC<BarChartProps> = ({
     yAxisTickCount, yDomainMin, yDomainMax, showGrid, gridColor, gridOpacity
   ]);
 
+  // Effect to clean up when component unmounts
+  useEffect(() => {
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.remove();
+      }
+    };
+  }, []);
+
+  // Resize handle styles
+  const resizeHandleStyle = {
+    cursor: 'nwse-resize',
+    fill: '#ccc',
+    fillOpacity: isResizing ? 0.6 : 0.2,
+    strokeWidth: 1,
+    stroke: '#999'
+  };
+
   return (
-    <svg ref={svgRef} width={width} height={height}>
-      {/* Chart will be rendered here by D3 */}
-      
-      {/* If we have a template, render it for each bar */}
-      {Template && barData.map((bar, i) => (
-        <g key={i} transform={`translate(${marginLeft}, ${marginTop})`}>
-          <Template
-            x={bar.x}
-            y={bar.y}
-            width={bar.width}
-            height={bar.height}
-            color={bar.color}
-          />
-        </g>
-      ))}
-    </svg>
+    <div className="chart-wrapper" style={{ position: 'relative', width: width, height: height }}>
+      <svg ref={svgRef} width={width} height={height}>
+        {/* Chart will be rendered here by D3 */}
+        
+        {/* If we have a template, render it for each bar */}
+        {Template && barData.map((bar, i) => (
+          <g 
+            key={`template-${templateKey}-bar-${i}`} 
+            transform={`translate(${marginLeft}, ${marginTop})`}
+            className="template-bar"
+          >
+            <Template
+              x={bar.x}
+              y={bar.y}
+              width={bar.width}
+              height={bar.height}
+              color={bar.color}
+            />
+          </g>
+        ))}
+        
+        {/* Resize handle */}
+        <rect
+          ref={resizeHandleRef}
+          x={width - 10}
+          y={height - 10}
+          width={10}
+          height={10}
+          style={resizeHandleStyle}
+        />
+      </svg>
+    </div>
   );
 };
 

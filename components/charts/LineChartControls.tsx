@@ -1,19 +1,21 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChartData } from '../templates/types';
 import LineChart from './LineChart';
+import ChartGallery from '../gallery/ChartGallery';
+import { SavedChartData, LineChartConfig } from '../gallery/types';
 import '../../styles/components/LineChartControls.scss';
 
 // Sample data for demonstration
 const sampleData: ChartData = [
-  { x: 'Jan', y: 30, color: '#3498db' },
-  { x: 'Feb', y: 50, color: '#2ecc71' },
-  { x: 'Mar', y: 20, color: '#e74c3c' },
-  { x: 'Apr', y: 40, color: '#f1c40f' },
-  { x: 'May', y: 70, color: '#9b59b6' },
-  { x: 'Jun', y: 60, color: '#1abc9c' },
-  { x: 'Jul', y: 80, color: '#34495e' },
+  { x: 'Jan', y: 30 },
+  { x: 'Feb', y: 50 },
+  { x: 'Mar', y: 20 },
+  { x: 'Apr', y: 40 },
+  { x: 'May', y: 70 },
+  { x: 'Jun', y: 60 },
+  { x: 'Jul', y: 80 },
 ];
 
 interface LineChartControlsProps {
@@ -39,12 +41,6 @@ const LineChartControls: React.FC<LineChartControlsProps> = ({
   const [curveType, setCurveType] = useState<'cardinal' | 'basis' | 'natural' | 'monotone' | 'catmullRom' | 'linear'>('cardinal');
   const [curveTension, setCurveTension] = useState(0.5);
   
-  // // Line appearance
-  // const [lineColor, setLineColor] = useState('#3498db');
-  // const [lineWidth, setLineWidth] = useState(1.5);
-  // const [lineDash, setLineDash] = useState<number[]>([]);
-  // const [lineDashInput, setLineDashInput] = useState('');
-  
   // Fill options
   const [fill, setFill] = useState(false);
   const [fillOpacity, setFillOpacity] = useState(0.4);
@@ -52,35 +48,21 @@ const LineChartControls: React.FC<LineChartControlsProps> = ({
   // Point appearance
   const [showPoints, setShowPoints] = useState(true);
   const [pointRadius, setPointRadius] = useState(5);
-  // const [pointStroke, setPointStroke] = useState('#ffffff');
-  // const [pointStrokeWidth, setPointStrokeWidth] = useState(1);
   
   // Axis appearance
   const [showXAxis, setShowXAxis] = useState(true);
   const [showYAxis, setShowYAxis] = useState(true);
-  // const [xAxisTickCount, setXAxisTickCount] = useState<number | undefined>(undefined);
-  // const [yAxisTickCount, setYAxisTickCount] = useState<number | undefined>(undefined);
   
   // Domain customization
   const [yDomainMin, setYDomainMin] = useState<number | undefined>(undefined);
   const [yDomainMax, setYDomainMax] = useState<number | undefined>(undefined);
+
+  // Chart ref for saving
+  const chartRef = useRef<HTMLDivElement>(null);
   
-  // // Grid lines
-  // const [showGrid, setShowGrid] = useState(false);
-  // const [gridColor, setGridColor] = useState('#e0e0e0');
-  // const [gridOpacity, setGridOpacity] = useState(0.5);
-  
-  // // Handle line dash input change and convert to array
-  // const handleLineDashChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setLineDashInput(e.target.value);
-  //   // Convert comma-separated string to array of numbers
-  //   const dashArray = e.target.value
-  //     .split(',')
-  //     .map(v => parseInt(v.trim()))
-  //     .filter(v => !isNaN(v));
-    
-  //   setLineDash(dashArray.length > 0 ? dashArray : []);
-  // };
+  // Saving state
+  const [isSaving, setIsSaving] = useState(false);
+  const [chartName, setChartName] = useState('');
   
   // Handle number input change with validation
   const handleNumberInput = (
@@ -103,40 +85,162 @@ const LineChartControls: React.FC<LineChartControlsProps> = ({
       setter(value);
     }
   };
+  
+  // Save chart as image
+  const saveChart = async () => {
+    if (!chartRef.current || !chartName.trim()) return;
+    
+    try {
+      // Convert chart to image
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(chartRef.current);
+      const imageUrl = canvas.toDataURL('image/png');
+      
+      // Create chart config
+      const chartConfig: LineChartConfig = {
+        width: chartWidth,
+        height: chartHeight,
+        marginTop,
+        marginRight,
+        marginBottom,
+        marginLeft,
+        curveType,
+        curveTension,
+        fill,
+        fillOpacity,
+        showPoints,
+        pointRadius,
+        showXAxis,
+        showYAxis,
+        yDomainMin,
+        yDomainMax
+      };
+      
+      // Create saved chart data
+      const savedChart: SavedChartData = {
+        id: Date.now().toString(),
+        name: chartName.trim(),
+        type: 'line',
+        timestamp: Date.now(),
+        imageUrl,
+        config: chartConfig
+      };
+      
+      // Get existing saved charts
+      const existingCharts = localStorage.getItem('savedCharts');
+      let savedCharts: SavedChartData[] = [];
+      if (existingCharts) {
+        savedCharts = JSON.parse(existingCharts);
+      }
+      
+      // Add new chart and save to localStorage
+      savedCharts.push(savedChart);
+      localStorage.setItem('savedCharts', JSON.stringify(savedCharts));
+      
+      // Reset saving state
+      setIsSaving(false);
+      setChartName('');
+      
+      alert('Chart saved successfully!');
+    } catch (error) {
+      console.error('Error saving chart:', error);
+      alert('Failed to save chart. Please try again.');
+      setIsSaving(false);
+    }
+  };
+  
+  // Load a saved chart
+  const loadSavedChart = (chart: SavedChartData) => {
+    if (chart.type !== 'line') return;
+    
+    const config = chart.config as LineChartConfig;
+    setChartWidth(config.width);
+    setChartHeight(config.height);
+    setMarginTop(config.marginTop);
+    setMarginRight(config.marginRight);
+    setMarginBottom(config.marginBottom);
+    setMarginLeft(config.marginLeft);
+    setCurveType(config.curveType);
+    setCurveTension(config.curveTension);
+    setFill(config.fill);
+    setFillOpacity(config.fillOpacity);
+    setShowPoints(config.showPoints);
+    setPointRadius(config.pointRadius);
+    setShowXAxis(config.showXAxis);
+    setShowYAxis(config.showYAxis);
+    setYDomainMin(config.yDomainMin);
+    setYDomainMax(config.yDomainMax);
+  };
 
   return (
     <div className="line-chart-controls">
       {/* Chart display */}
       <div className="chart-container">
-        <LineChart
-          data={data}
-          width={chartWidth}
-          height={chartHeight}
-          marginTop={marginTop}
-          marginRight={marginRight}
-          marginBottom={marginBottom}
-          marginLeft={marginLeft}
-          curveType={curveType}
-          curveTension={curveTension}
-          // lineColor={lineColor}
-          // lineWidth={lineWidth}
-          // lineDash={lineDash}
-          fill={fill}
-          fillOpacity={fillOpacity}
-          showPoints={showPoints}
-          pointRadius={pointRadius}
-          // pointStroke={pointStroke}
-          // pointStrokeWidth={pointStrokeWidth}
-          showXAxis={showXAxis}
-          showYAxis={showYAxis}
-          // xAxisTickCount={xAxisTickCount}
-          // yAxisTickCount={yAxisTickCount}
-          yDomainMin={yDomainMin}
-          yDomainMax={yDomainMax}
-          // showGrid={showGrid}
-          // gridColor={gridColor}
-          // gridOpacity={gridOpacity}
-        />
+        <div className="chart-header">
+          <h2>Line Chart</h2>
+          <div className="chart-actions">
+            <ChartGallery onLoadChart={loadSavedChart} />
+            <button 
+              className="save-button" 
+              onClick={() => setIsSaving(true)}
+            >
+              Save Chart
+            </button>
+          </div>
+        </div>
+        
+        <div ref={chartRef} className="chart-display">
+          <LineChart
+            data={data}
+            width={chartWidth}
+            height={chartHeight}
+            marginTop={marginTop}
+            marginRight={marginRight}
+            marginBottom={marginBottom}
+            marginLeft={marginLeft}
+            curveType={curveType}
+            curveTension={curveTension}
+            fill={fill}
+            fillOpacity={fillOpacity}
+            showPoints={showPoints}
+            pointRadius={pointRadius}
+            showXAxis={showXAxis}
+            showYAxis={showYAxis}
+            yDomainMin={yDomainMin}
+            yDomainMax={yDomainMax}
+            onResize={(newWidth, newHeight) => {
+              setChartWidth(newWidth);
+              setChartHeight(newHeight);
+            }}
+          />
+        </div>
+        <p className="resize-hint">Drag the bottom-right corner to resize the chart.</p>
+        
+        {isSaving && (
+          <div className="save-dialog">
+            <div className="save-dialog-content">
+              <h3>Save Chart</h3>
+              <label>
+                Chart Name:
+                <input
+                  type="text"
+                  value={chartName}
+                  onChange={(e) => setChartName(e.target.value)}
+                  placeholder="Enter a name for your chart"
+                />
+              </label>
+              <div className="save-buttons">
+                <button onClick={() => setIsSaving(false)}>Cancel</button>
+                <button 
+                  onClick={saveChart}
+                  disabled={!chartName.trim()}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Controls panel */}
@@ -178,7 +282,7 @@ const LineChartControls: React.FC<LineChartControlsProps> = ({
               <label>Type</label>
               <select
                 value={curveType}
-                onChange={(e) => setCurveType(e.target.value as any)}
+                onChange={(e) => setCurveType(e.target.value as 'cardinal' | 'basis' | 'natural' | 'monotone' | 'catmullRom' | 'linear')}
               >
                 <option value="cardinal">Cardinal</option>
                 <option value="basis">Basis</option>
@@ -207,43 +311,6 @@ const LineChartControls: React.FC<LineChartControlsProps> = ({
         <div className="section">
           <h3>Line</h3>
           <div className="control-group space-y">
-            {/* <div>
-              <label>Color</label>
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={lineColor}
-                  onChange={(e) => setLineColor(e.target.value)}
-                  className="w-10 h-8"
-                />
-                <input
-                  type="text"
-                  value={lineColor}
-                  onChange={(e) => setLineColor(e.target.value)}
-                />
-              </div>
-            </div> */}
-            {/* <div>
-              <label>Width</label>
-              <input
-                type="range"
-                min="0.5"
-                max="5"
-                step="0.5"
-                value={lineWidth}
-                onChange={(e) => setLineWidth(parseFloat(e.target.value))}
-              />
-              <div className="range-value">{lineWidth}px</div>
-            </div> */}
-            {/* <div>
-              <label>Dash Pattern (e.g. 5,5)</label>
-              <input
-                type="text"
-                value={lineDashInput}
-                onChange={handleLineDashChange}
-                placeholder="e.g. 5,5"
-              />
-            </div> */}
             <div className="checkbox-group">
               <input
                 type="checkbox"
@@ -296,34 +363,6 @@ const LineChartControls: React.FC<LineChartControlsProps> = ({
                   />
                   <div className="range-value">{pointRadius}px</div>
                 </div>
-                {/* <div>
-                  <label>Stroke Color</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={pointStroke}
-                      onChange={(e) => setPointStroke(e.target.value)}
-                      className="w-10 h-8"
-                    />
-                    <input
-                      type="text"
-                      value={pointStroke}
-                      onChange={(e) => setPointStroke(e.target.value)}
-                    />
-                  </div>
-                </div> */}
-                {/* <div>
-                  <label>Stroke Width</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="0.5"
-                    value={pointStrokeWidth}
-                    onChange={(e) => setPointStrokeWidth(parseFloat(e.target.value))}
-                  />
-                  <div className="range-value">{pointStrokeWidth}px</div>
-                </div> */}
               </>
             )}
           </div>
@@ -351,67 +390,6 @@ const LineChartControls: React.FC<LineChartControlsProps> = ({
               />
               <label htmlFor="y-axis-checkbox">Show Y Axis</label>
             </div>
-            {/* <div>
-              <label>X Axis Tick Count</label>
-              <input
-                type="number"
-                min="2"
-                value={xAxisTickCount === undefined ? '' : xAxisTickCount}
-                onChange={handleOptionalNumberInput(setXAxisTickCount)}
-                placeholder="Auto"
-              />
-            </div> */}
-            {/* <div>
-              <label>Y Axis Tick Count</label>
-              <input
-                type="number"
-                min="2"
-                value={yAxisTickCount === undefined ? '' : yAxisTickCount}
-                onChange={handleOptionalNumberInput(setYAxisTickCount)}
-                placeholder="Auto"
-              />
-            </div> */}
-            {/* <div className="checkbox-group">
-              <input
-                type="checkbox"
-                checked={showGrid}
-                onChange={(e) => setShowGrid(e.target.checked)}
-                id="grid-checkbox"
-              />
-              <label htmlFor="grid-checkbox">Show Grid Lines</label>
-            </div>
-            {showGrid && (
-              <>
-                <div>
-                  <label>Grid Color</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={gridColor}
-                      onChange={(e) => setGridColor(e.target.value)}
-                      className="w-10 h-8"
-                    />
-                    <input
-                      type="text"
-                      value={gridColor}
-                      onChange={(e) => setGridColor(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label>Grid Opacity</label>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="1"
-                    step="0.1"
-                    value={gridOpacity}
-                    onChange={(e) => setGridOpacity(parseFloat(e.target.value))}
-                  />
-                  <div className="range-value">{gridOpacity}</div>
-                </div>
-              </>
-            )} */}
           </div>
         </div>
         

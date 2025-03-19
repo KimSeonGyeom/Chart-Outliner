@@ -1,22 +1,25 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChartData } from '../templates/types';
 import BarChart from './BarChart';
 import DiamondTemplate from '../templates/DiamondTemplate';
 import TriangleTemplate from '../templates/TriangleTemplate';
 import RectangleTemplate from '../templates/RectangleTemplate';
 import CircleTemplate from '../templates/CircleTemplate';
+import ChartGallery from '../gallery/ChartGallery';
+import { SavedChartData, BarChartConfig } from '../gallery/types';
+import '../../styles/components/BarChartControls.scss';
 
 // Sample data for demonstration
 const sampleData: ChartData = [
-  { x: 'Jan', y: 30, color: '#3498db' },
-  { x: 'Feb', y: 50, color: '#2ecc71' },
-  { x: 'Mar', y: 20, color: '#e74c3c' },
-  { x: 'Apr', y: 40, color: '#f1c40f' },
-  { x: 'May', y: 70, color: '#9b59b6' },
-  { x: 'Jun', y: 60, color: '#1abc9c' },
-  { x: 'Jul', y: 80, color: '#34495e' },
+  { x: 'Jan', y: 30 },
+  { x: 'Feb', y: 50 },
+  { x: 'Mar', y: 20 },
+  { x: 'Apr', y: 40 },
+  { x: 'May', y: 70 },
+  { x: 'Jun', y: 60 },
+  { x: 'Jul', y: 80 },
 ];
 
 interface BarChartControlsProps {
@@ -34,7 +37,6 @@ const BarChartControls: React.FC<BarChartControlsProps> = ({
   
   // Bar appearance
   const [barPadding, setBarPadding] = useState(0.2);
-  const [barColor, setBarColor] = useState('#3498db');
   
   // Template selection
   const [selectedTemplate, setSelectedTemplate] = useState<string>('rectangle');
@@ -42,17 +44,17 @@ const BarChartControls: React.FC<BarChartControlsProps> = ({
   // Axis appearance
   const [showXAxis, setShowXAxis] = useState(true);
   const [showYAxis, setShowYAxis] = useState(true);
-  const [xAxisTickCount, setXAxisTickCount] = useState<number | undefined>(undefined);
-  const [yAxisTickCount, setYAxisTickCount] = useState<number | undefined>(undefined);
-  
-  // Grid lines
-  const [showGrid, setShowGrid] = useState(false);
-  const [gridColor, setGridColor] = useState('#e0e0e0');
-  const [gridOpacity, setGridOpacity] = useState(0.5);
   
   // Domain customization
   const [yDomainMin, setYDomainMin] = useState<number | undefined>(undefined);
   const [yDomainMax, setYDomainMax] = useState<number | undefined>(undefined);
+
+  // Chart ref for saving
+  const chartRef = useRef<HTMLDivElement>(null);
+  
+  // Saving state
+  const [isSaving, setIsSaving] = useState(false);
+  const [chartName, setChartName] = useState('');
 
   // Template mapping
   const templates: Record<string, React.ComponentType<any> | null> = {
@@ -72,68 +74,177 @@ const BarChartControls: React.FC<BarChartControlsProps> = ({
       setter(value);
     }
   };
+  
+  // Save chart as image
+  const saveChart = async () => {
+    if (!chartRef.current || !chartName.trim()) return;
+    
+    try {
+      // Convert chart to image
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(chartRef.current);
+      const imageUrl = canvas.toDataURL('image/png');
+      
+      // Create chart config
+      const chartConfig: BarChartConfig = {
+        width,
+        height,
+        barPadding,
+        showXAxis,
+        showYAxis,
+        yDomainMin,
+        yDomainMax,
+        selectedTemplate
+      };
+      
+      // Create saved chart data
+      const savedChart: SavedChartData = {
+        id: Date.now().toString(),
+        name: chartName.trim(),
+        type: 'bar',
+        timestamp: Date.now(),
+        imageUrl,
+        config: chartConfig
+      };
+      
+      // Get existing saved charts
+      const existingCharts = localStorage.getItem('savedCharts');
+      let savedCharts: SavedChartData[] = [];
+      if (existingCharts) {
+        savedCharts = JSON.parse(existingCharts);
+      }
+      
+      // Add new chart and save to localStorage
+      savedCharts.push(savedChart);
+      localStorage.setItem('savedCharts', JSON.stringify(savedCharts));
+      
+      // Reset saving state
+      setIsSaving(false);
+      setChartName('');
+      
+      alert('Chart saved successfully!');
+    } catch (error) {
+      console.error('Error saving chart:', error);
+      alert('Failed to save chart. Please try again.');
+      setIsSaving(false);
+    }
+  };
+  
+  // Load a saved chart
+  const loadSavedChart = (chart: SavedChartData) => {
+    if (chart.type !== 'bar') return;
+    
+    const config = chart.config as BarChartConfig;
+    setWidth(config.width);
+    setHeight(config.height);
+    setBarPadding(config.barPadding);
+    setShowXAxis(config.showXAxis);
+    setShowYAxis(config.showYAxis);
+    setYDomainMin(config.yDomainMin);
+    setYDomainMax(config.yDomainMax);
+    setSelectedTemplate(config.selectedTemplate);
+  };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">{title}</h1>
-      <p className="mb-4">Select different templates to customize the appearance of your bar chart</p>
-      
-      <div className="mb-2 flex items-center gap-2">
-        <label className="font-medium">Select Bar Template:</label>
-        <select 
-          className="border p-1 rounded"
-          value={selectedTemplate}
-          onChange={(e) => setSelectedTemplate(e.target.value)}
-        >
-          <option value="none">Default Bars</option>
-          <option value="rectangle">Rectangle</option>
-          <option value="circle">Circle</option>
-          <option value="triangle">Triangle</option>
-          <option value="diamond">Diamond</option>
-        </select>
+    <div className="bar-chart-controls">
+      <div className="chart-container">
+        <div className="chart-header">
+          <h1>{title}</h1>
+          <div className="chart-actions">
+            <ChartGallery onLoadChart={loadSavedChart} />
+            <button 
+              className="save-button" 
+              onClick={() => setIsSaving(true)}
+            >
+              Save Chart
+            </button>
+          </div>
+        </div>
+        <p>Select different templates to customize the appearance of your bar chart</p>
+        
+        <div ref={chartRef} className="chart-display">
+          <BarChart
+            data={data}
+            width={width}
+            height={height}
+            barPadding={barPadding}
+            template={templates[selectedTemplate]}
+            showXAxis={showXAxis}
+            showYAxis={showYAxis}
+            yDomainMin={yDomainMin}
+            yDomainMax={yDomainMax}
+            onResize={(newWidth, newHeight) => {
+              setWidth(newWidth);
+              setHeight(newHeight);
+            }}
+          />
+        </div>
+        <p className="resize-hint">Drag the bottom-right corner to resize the chart.</p>
+        
+        {isSaving && (
+          <div className="save-dialog">
+            <div className="save-dialog-content">
+              <h3>Save Chart</h3>
+              <label>
+                Chart Name:
+                <input
+                  type="text"
+                  value={chartName}
+                  onChange={(e) => setChartName(e.target.value)}
+                  placeholder="Enter a name for your chart"
+                />
+              </label>
+              <div className="save-buttons">
+                <button onClick={() => setIsSaving(false)}>Cancel</button>
+                <button 
+                  onClick={saveChart}
+                  disabled={!chartName.trim()}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
-      <div className="mb-6">
-        <BarChart
-          data={data}
-          width={width}
-          height={height}
-          barPadding={barPadding}
-          barColor={barColor}
-          template={templates[selectedTemplate]}
-          showXAxis={showXAxis}
-          showYAxis={showYAxis}
-          xAxisTickCount={xAxisTickCount}
-          yAxisTickCount={yAxisTickCount}
-          yDomainMin={yDomainMin}
-          yDomainMax={yDomainMax}
-          showGrid={showGrid}
-          gridColor={gridColor}
-          gridOpacity={gridOpacity}
-        />
-      </div>
-      
-      <div className="border-t pt-4">
-        <h2 className="text-2xl font-bold mb-4">Chart Controls</h2>
+      <div className="controls-panel">
+        <h2>Chart Controls</h2>
+        
+        {/* Template selection section */}
+        <div className="section">
+          <h3>Bar Template</h3>
+          <div className="control-group">
+            <label>Select Template</label>
+            <select 
+              value={selectedTemplate}
+              onChange={(e) => setSelectedTemplate(e.target.value)}
+            >
+              <option value="none">Default Bars</option>
+              <option value="rectangle">Rectangle</option>
+              <option value="circle">Circle</option>
+              <option value="triangle">Triangle</option>
+              <option value="diamond">Diamond</option>
+            </select>
+          </div>
+        </div>
         
         {/* Dimensions section */}
-        <div className="mb-6">
-          <h3 className="font-medium mb-2">Dimensions</h3>
-          <div className="grid grid-cols-2 gap-4 mb-2">
+        <div className="section">
+          <h3>Dimensions</h3>
+          <div className="dimensions-grid">
             <div>
-              <label className="block">Width</label>
+              <label>Width</label>
               <input
                 type="number"
-                className="border p-1 w-full"
                 value={width}
                 onChange={(e) => setWidth(parseInt(e.target.value) || 600)}
               />
             </div>
             <div>
-              <label className="block">Height</label>
+              <label>Height</label>
               <input
                 type="number"
-                className="border p-1 w-full"
                 value={height}
                 onChange={(e) => setHeight(parseInt(e.target.value) || 400)}
               />
@@ -142,45 +253,29 @@ const BarChartControls: React.FC<BarChartControlsProps> = ({
         </div>
         
         {/* Bar appearance section */}
-        <div className="mb-6">
-          <h3 className="font-medium mb-2">Bar Appearance</h3>
-          <div className="mb-2">
-            <label className="block">Bar Padding</label>
-            <input
-              type="range"
-              min="0"
-              max="0.9"
-              step="0.05"
-              className="w-64"
-              value={barPadding}
-              onChange={(e) => setBarPadding(parseFloat(e.target.value))}
-            />
-            <span className="ml-2">{barPadding}</span>
-          </div>
-          
-          <div className="mb-2">
-            <label className="block">Bar Color</label>
-            <div className="flex items-center gap-2">
+        <div className="section">
+          <h3>Bar Appearance</h3>
+          <div className="control-group space-y">
+            <div>
+              <label>Bar Padding</label>
               <input
-                type="color"
-                value={barColor}
-                onChange={(e) => setBarColor(e.target.value)}
+                type="range"
+                min="0"
+                max="0.9"
+                step="0.05"
+                value={barPadding}
+                onChange={(e) => setBarPadding(parseFloat(e.target.value))}
               />
-              <input
-                type="text"
-                className="border p-1 w-64"
-                value={barColor}
-                onChange={(e) => setBarColor(e.target.value)}
-              />
+              <div className="range-value">{barPadding}</div>
             </div>
           </div>
         </div>
         
         {/* Axes & Grid section */}
-        <div className="mb-6">
-          <h3 className="font-medium mb-2">Axes & Grid</h3>
-          <div className="flex items-center gap-6 mb-2">
-            <div className="flex items-center gap-2">
+        <div className="section">
+          <h3>Axes & Grid</h3>
+          <div className="control-group space-y">
+            <div className="checkbox-group">
               <input
                 type="checkbox"
                 id="x-axis-checkbox"
@@ -190,7 +285,7 @@ const BarChartControls: React.FC<BarChartControlsProps> = ({
               <label htmlFor="x-axis-checkbox">Show X Axis</label>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="checkbox-group">
               <input
                 type="checkbox"
                 id="y-axis-checkbox"
@@ -200,92 +295,16 @@ const BarChartControls: React.FC<BarChartControlsProps> = ({
               <label htmlFor="y-axis-checkbox">Show Y Axis</label>
             </div>
           </div>
-          
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block">X Axis Tick Count</label>
-              <input
-                type="text"
-                className="border p-1 w-full"
-                value={xAxisTickCount === undefined ? "Auto" : xAxisTickCount}
-                onChange={(e) => {
-                  const value = e.target.value === "Auto" ? undefined : parseInt(e.target.value);
-                  setXAxisTickCount(isNaN(value as number) ? undefined : value);
-                }}
-                placeholder="Auto"
-              />
-            </div>
-            
-            <div>
-              <label className="block">Y Axis Tick Count</label>
-              <input
-                type="text"
-                className="border p-1 w-full"
-                value={yAxisTickCount === undefined ? "Auto" : yAxisTickCount}
-                onChange={(e) => {
-                  const value = e.target.value === "Auto" ? undefined : parseInt(e.target.value);
-                  setYAxisTickCount(isNaN(value as number) ? undefined : value);
-                }}
-                placeholder="Auto"
-              />
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 mb-2">
-            <input
-              type="checkbox"
-              id="grid-checkbox"
-              checked={showGrid}
-              onChange={(e) => setShowGrid(e.target.checked)}
-            />
-            <label htmlFor="grid-checkbox">Show Grid Lines</label>
-          </div>
-          
-          {showGrid && (
-            <>
-              <div className="mb-2">
-                <label className="block">Grid Color</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={gridColor}
-                    onChange={(e) => setGridColor(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    className="border p-1 w-64"
-                    value={gridColor}
-                    onChange={(e) => setGridColor(e.target.value)}
-                  />
-                </div>
-              </div>
-              
-              <div className="mb-2">
-                <label className="block">Grid Opacity</label>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1"
-                  step="0.1"
-                  className="w-64"
-                  value={gridOpacity}
-                  onChange={(e) => setGridOpacity(parseFloat(e.target.value))}
-                />
-                <span className="ml-2">{gridOpacity}</span>
-              </div>
-            </>
-          )}
         </div>
         
         {/* Domain section */}
-        <div className="mb-6">
-          <h3 className="font-medium mb-2">Y Domain</h3>
-          <div className="grid grid-cols-2 gap-4">
+        <div className="section">
+          <h3>Y Domain</h3>
+          <div className="control-group space-y">
             <div>
-              <label className="block">Min Value</label>
+              <label>Min Value</label>
               <input
                 type="text"
-                className="border p-1 w-full"
                 value={yDomainMin === undefined ? "Auto" : yDomainMin}
                 onChange={handleOptionalNumberInput(setYDomainMin)}
                 placeholder="Auto"
@@ -293,10 +312,9 @@ const BarChartControls: React.FC<BarChartControlsProps> = ({
             </div>
             
             <div>
-              <label className="block">Max Value</label>
+              <label>Max Value</label>
               <input
                 type="text"
-                className="border p-1 w-full"
                 value={yDomainMax === undefined ? "Auto" : yDomainMax}
                 onChange={handleOptionalNumberInput(setYDomainMax)}
                 placeholder="Auto"
@@ -309,4 +327,4 @@ const BarChartControls: React.FC<BarChartControlsProps> = ({
   );
 };
 
-export default BarChartControls; 
+export default BarChartControls;
