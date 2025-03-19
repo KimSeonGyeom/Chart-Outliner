@@ -7,7 +7,7 @@ interface SavedChartProps {
   onLoad: (chart: SavedChartData) => void;
 }
 
-const SavedChart: React.FC<SavedChartProps> = ({ chart, onDelete, onLoad }) => {
+function SavedChart({ chart, onDelete, onLoad }: SavedChartProps) {
   return (
     <div className="saved-chart">
       <div className="chart-thumbnail">
@@ -36,6 +36,6 @@ const SavedChart: React.FC<SavedChartProps> = ({ chart, onDelete, onLoad }) => {
       </div>
     </div>
   );
-};
+}
 
 export default SavedChart; 

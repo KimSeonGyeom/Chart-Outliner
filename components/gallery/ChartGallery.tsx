@@ -8,7 +8,7 @@ interface ChartGalleryProps {
   onLoadChart: (chart: SavedChartData) => void;
 }
 
-const ChartGallery: React.FC<ChartGalleryProps> = ({ onLoadChart }) => {
+function ChartGallery({ onLoadChart }: ChartGalleryProps) {
   const [savedCharts, setSavedCharts] = useState<SavedChartData[]>([]);
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -86,6 +86,6 @@ const ChartGallery: React.FC<ChartGalleryProps> = ({ onLoadChart }) => {
       )}
     </div>
   );
-};
+}
 
 export default ChartGallery; 

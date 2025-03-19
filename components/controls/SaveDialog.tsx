@@ -1,13 +1,13 @@
 import React from 'react';
 import { SaveDialogProps } from './types';
 
-const SaveDialog: React.FC<SaveDialogProps> = ({
+function SaveDialog({
   isOpen,
   chartName,
   onClose,
   onSave,
   onChartNameChange
-}) => {
+}: SaveDialogProps) {
   if (!isOpen) return null;
   
   return (
@@ -35,6 +35,6 @@ const SaveDialog: React.FC<SaveDialogProps> = ({
       </div>
     </div>
   );
-};
+}
 
 export default SaveDialog; 

@@ -50,7 +50,7 @@ interface LineChartControlsProps {
   onChartLoaded?: () => void;
 }
 
-const LineChartControls: React.FC<LineChartControlsProps> = ({
+function LineChartControls({
   data = sampleData,
   width = 600,
   height = 400,
@@ -65,7 +65,7 @@ const LineChartControls: React.FC<LineChartControlsProps> = ({
   onLoadChart,
   loadedChart,
   onChartLoaded
-}) => {
+}: LineChartControlsProps) {
   // Chart dimensions
   const [dimensions, setDimensions] = useState<ChartDimensions>({
     width,
@@ -149,7 +149,6 @@ const LineChartControls: React.FC<LineChartControlsProps> = ({
       getChartConfig,
       onSaveSuccess: () => {
         onSaveClose();
-        alert('Chart saved successfully!');
       },
       onSaveError: (error) => {
         console.error('Error saving chart:', error);
@@ -159,38 +158,6 @@ const LineChartControls: React.FC<LineChartControlsProps> = ({
     });
   };
   
-  // Load a saved chart
-  const loadSavedChart = (chart: SavedChartData) => {
-    if (chart.type !== 'line') return;
-    if (onLoadChart) {
-      onLoadChart(chart);
-    }
-    
-    const config = chart.config as LineChartConfig;
-    setDimensions({
-      width: config.width,
-      height: config.height
-    });
-    setMarginTop(config.marginTop);
-    setMarginRight(config.marginRight);
-    setMarginBottom(config.marginBottom);
-    setMarginLeft(config.marginLeft);
-    setLineOptions({
-      curveType: config.curveType,
-      curveTension: config.curveTension,
-      fill: config.fill,
-      fillOpacity: config.fillOpacity,
-      showPoints: config.showPoints,
-      pointRadius: config.pointRadius
-    });
-    setAxisOptions({
-      showXAxis: config.showXAxis,
-      showYAxis: config.showYAxis,
-      yDomainMin: config.yDomainMin,
-      yDomainMax: config.yDomainMax
-    });
-  };
-
   // Load chart when loadedChart prop changes
   useEffect(() => {
     if (loadedChart && loadedChart.type === 'line') {

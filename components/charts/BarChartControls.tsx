@@ -37,7 +37,6 @@ const sampleData: ChartData = [
 
 interface BarChartControlsProps {
   data?: ChartData;
-  title?: string;
   chartRef: React.RefObject<HTMLDivElement>;
   activeChart: ChartType;
   onChartTypeChange: (type: ChartType) => void;
@@ -51,9 +50,8 @@ interface BarChartControlsProps {
   onChartLoaded?: () => void;
 }
 
-const BarChartControls: React.FC<BarChartControlsProps> = ({
+function BarChartControls({
   data = sampleData,
-  title = "Bar Chart Templates Demo",
   chartRef,
   activeChart,
   onChartTypeChange,
@@ -65,7 +63,7 @@ const BarChartControls: React.FC<BarChartControlsProps> = ({
   onLoadChart,
   loadedChart,
   onChartLoaded
-}) => {
+}: BarChartControlsProps) {
   // Chart dimensions
   const [dimensions, setDimensions] = useState<ChartDimensions>({
     width: 600,
@@ -133,7 +131,6 @@ const BarChartControls: React.FC<BarChartControlsProps> = ({
       getChartConfig,
       onSaveSuccess: () => {
         onSaveClose();
-        alert('Chart saved successfully!');
       },
       onSaveError: (error) => {
         console.error('Error saving chart:', error);
@@ -143,28 +140,6 @@ const BarChartControls: React.FC<BarChartControlsProps> = ({
     });
   };
   
-  // Load a saved chart
-  const loadSavedChart = (chart: SavedChartData) => {
-    if (chart.type !== 'bar') return;
-    if (onLoadChart) {
-      onLoadChart(chart);
-    }
-    
-    const config = chart.config as BarChartConfig;
-    setDimensions({
-      width: config.width,
-      height: config.height
-    });
-    setBarPadding(config.barPadding);
-    setAxisOptions({
-      showXAxis: config.showXAxis,
-      showYAxis: config.showYAxis,
-      yDomainMin: config.yDomainMin,
-      yDomainMax: config.yDomainMax
-    });
-    setSelectedTemplate(config.selectedTemplate);
-  };
-
   // Load chart when loadedChart prop changes
   useEffect(() => {
     if (loadedChart && loadedChart.type === 'bar') {
