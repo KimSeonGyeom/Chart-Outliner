@@ -41,11 +41,6 @@ interface LineChartProps {
   yDomainMin?: number; // Override automatic y domain minimum
   yDomainMax?: number; // Override automatic y domain maximum
   
-  // Grid lines
-  showGrid?: boolean;
-  gridColor?: string;
-  gridOpacity?: number;
-  
   // Optional callback for resize
   onResize?: (width: number, height: number) => void;
 }
@@ -60,21 +55,21 @@ const LineChart: React.FC<LineChartProps> = ({
   marginLeft = 40,
   // template: Template,
   fill = false,
-  fillOpacity = 0.4,
+  fillOpacity = 0.1,
   
   // Curve parameters
-  curveType = 'cardinal',
+  curveType = 'linear',
   curveTension = 0.5,
   
   // Line appearance
-  lineColor = 'steelblue',
-  lineWidth = 1.5,
+  lineColor = '#000',
+  lineWidth = 1,
   lineDash,
   
   // Point appearance
   showPoints = true,
-  pointRadius = 5,
-  pointStroke,
+  pointRadius = 3,
+  pointStroke = '#000',
   pointStrokeWidth = 1,
   
   // Axis appearance
@@ -86,11 +81,6 @@ const LineChart: React.FC<LineChartProps> = ({
   // Domain customization
   yDomainMin,
   yDomainMax,
-  
-  // Grid lines
-  showGrid = false,
-  gridColor = '#e0e0e0',
-  gridOpacity = 0.5,
   
   // Resize callback
   onResize
@@ -183,39 +173,6 @@ const LineChart: React.FC<LineChartProps> = ({
       
     // Store the group for later cleanup
     chartRef.current = g;
-    
-    // Add grid lines if enabled
-    if (showGrid) {
-      // Add horizontal grid lines
-      g.append('g')
-        .attr('class', 'grid horizontal-grid')
-        .selectAll('line')
-        .data(y.ticks(yAxisTickCount))
-        .enter()
-        .append('line')
-        .attr('x1', 0)
-        .attr('x2', innerWidth)
-        .attr('y1', d => y(d))
-        .attr('y2', d => y(d))
-        .attr('stroke', gridColor)
-        .attr('stroke-opacity', gridOpacity)
-        .attr('stroke-dasharray', '3,3');
-      
-      // Add vertical grid lines for each x tick
-      g.append('g')
-        .attr('class', 'grid vertical-grid')
-        .selectAll('line')
-        .data(data.map(d => String(d.x)))
-        .enter()
-        .append('line')
-        .attr('x1', d => x(d) || 0)
-        .attr('x2', d => x(d) || 0)
-        .attr('y1', 0)
-        .attr('y2', innerHeight)
-        .attr('stroke', gridColor)
-        .attr('stroke-opacity', gridOpacity)
-        .attr('stroke-dasharray', '3,3');
-    }
     
     // Add x axis if enabled
     if (showXAxis) {
@@ -341,7 +298,7 @@ const LineChart: React.FC<LineChartProps> = ({
     fill, fillOpacity, curveType, curveTension, lineColor, lineWidth, lineDash,
     showPoints, pointRadius, pointStroke, pointStrokeWidth,
     showXAxis, showYAxis, xAxisTickCount, yAxisTickCount,
-    yDomainMin, yDomainMax, showGrid, gridColor, gridOpacity
+    yDomainMin, yDomainMax
   ]);
   
   // Effect to clean up when component unmounts

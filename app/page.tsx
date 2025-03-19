@@ -38,6 +38,12 @@ export default function Home() {
         <h1 className="text-3xl font-bold mb-2">Chart Outliner</h1>
       </header>
 
+      {/* Shared chart gallery */}
+      <ChartGallery onLoadChart={handleLoadSavedChart} />
+
+      {/* Active chart controls */}
+      <br/>
+      <h2 className="text-2xl font-bold mb-4">Current Chart</h2>
       <div className="chart-container">
         {activeChart === 'bar' ? (
           <BarChartControls 
@@ -69,9 +75,6 @@ export default function Home() {
           />
         )}
       </div>
-      
-      {/* Shared chart gallery */}
-      <ChartGallery onLoadChart={handleLoadSavedChart} />
     </main>
   );
 }

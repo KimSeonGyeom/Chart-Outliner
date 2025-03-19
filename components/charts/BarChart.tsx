@@ -14,6 +14,8 @@ interface BarChartProps {
   marginLeft?: number;
   barPadding?: number;
   barColor?: string;
+  barStrokeColor?: string;
+  barStrokeWidth?: number;
   template?: React.ComponentType<TemplateProps> | null;
   
   // Axis appearance
@@ -25,11 +27,6 @@ interface BarChartProps {
   // Domain customization
   yDomainMin?: number;
   yDomainMax?: number;
-  
-  // Grid lines
-  showGrid?: boolean;
-  gridColor?: string;
-  gridOpacity?: number;
   
   // Optional callback for resize
   onResize?: (width: number, height: number) => void;
@@ -44,7 +41,9 @@ const BarChart: React.FC<BarChartProps> = ({
   marginBottom = 30,
   marginLeft = 40,
   barPadding = 0.2,
-  barColor = 'steelblue',
+  barColor = 'transparent',
+  barStrokeColor = '#000',
+  barStrokeWidth = 1,
   template: Template,
   
   // Axis appearance
@@ -56,11 +55,6 @@ const BarChart: React.FC<BarChartProps> = ({
   // Domain customization
   yDomainMin,
   yDomainMax,
-  
-  // Grid lines
-  showGrid = false,
-  gridColor = '#e0e0e0',
-  gridOpacity = 0.5,
   
   // Resize callback
   onResize
@@ -74,6 +68,8 @@ const BarChart: React.FC<BarChartProps> = ({
     width: number;
     height: number;
     color: string;
+    strokeColor: string;
+    strokeWidth: number;
   }>>([]);
   
   // A key to force remounting templates when changed
@@ -169,39 +165,6 @@ const BarChart: React.FC<BarChartProps> = ({
     // Store the main group element for cleanup
     chartRef.current = g;
     
-    // Add grid lines if enabled
-    if (showGrid) {
-      // Add horizontal grid lines
-      g.append('g')
-        .attr('class', 'grid horizontal-grid')
-        .selectAll('line')
-        .data(y.ticks(yAxisTickCount))
-        .enter()
-        .append('line')
-        .attr('x1', 0)
-        .attr('x2', innerWidth)
-        .attr('y1', d => y(d))
-        .attr('y2', d => y(d))
-        .attr('stroke', gridColor)
-        .attr('stroke-opacity', gridOpacity)
-        .attr('stroke-dasharray', '3,3');
-      
-      // Add vertical grid lines for each x tick
-      g.append('g')
-        .attr('class', 'grid vertical-grid')
-        .selectAll('line')
-        .data(data.map(d => String(d.x)))
-        .enter()
-        .append('line')
-        .attr('x1', d => (x(d) || 0) + x.bandwidth() / 2)
-        .attr('x2', d => (x(d) || 0) + x.bandwidth() / 2)
-        .attr('y1', 0)
-        .attr('y2', innerHeight)
-        .attr('stroke', gridColor)
-        .attr('stroke-opacity', gridOpacity)
-        .attr('stroke-dasharray', '3,3');
-    }
-    
     // Add x axis if enabled
     if (showXAxis) {
       const xAxis = d3.axisBottom(x);
@@ -242,7 +205,9 @@ const BarChart: React.FC<BarChartProps> = ({
         .attr('y', d => y(d.y))
         .attr('width', x.bandwidth())
         .attr('height', d => innerHeight - y(d.y))
-        .attr('fill', d => d.color || barColor);
+        .attr('fill', d => d.color || barColor)
+        .attr('stroke', barStrokeColor)
+        .attr('stroke-width', barStrokeWidth);
     } else {
       // If custom template, prepare data for the template component
       const bars = data.map(d => ({
@@ -250,7 +215,9 @@ const BarChart: React.FC<BarChartProps> = ({
         y: y(d.y),
         width: x.bandwidth(),
         height: innerHeight - y(d.y),
-        color: d.color || barColor
+        color: d.color || barColor,
+        strokeColor: barStrokeColor,
+        strokeWidth: barStrokeWidth
       }));
       
       setBarData(bars);
@@ -267,8 +234,8 @@ const BarChart: React.FC<BarChartProps> = ({
     
   }, [
     data, width, height, marginTop, marginRight, marginBottom, marginLeft,
-    barPadding, barColor, Template, showXAxis, showYAxis, xAxisTickCount,
-    yAxisTickCount, yDomainMin, yDomainMax, showGrid, gridColor, gridOpacity
+    barPadding, barColor, barStrokeColor, barStrokeWidth, Template, showXAxis, showYAxis, xAxisTickCount,
+    yAxisTickCount, yDomainMin, yDomainMax,
   ]);
 
   // Effect to clean up when component unmounts
@@ -311,6 +278,8 @@ const BarChart: React.FC<BarChartProps> = ({
                 width={bar.width}
                 height={bar.height}
                 color={bar.color}
+                strokeColor={bar.strokeColor}
+                strokeWidth={bar.strokeWidth}
               />
             </g>
           ))}

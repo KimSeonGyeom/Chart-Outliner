@@ -8,8 +8,10 @@ const TriangleTemplate: React.FC<TemplateProps> = ({
   y,
   width = 10,
   height = 10,
-  color = 'steelblue',
+  color = 'transparent',
   className = '',
+  strokeColor = '#000',
+  strokeWidth = 1,
 }) => {
   // Calculate triangle points
   const points = `
@@ -22,6 +24,8 @@ const TriangleTemplate: React.FC<TemplateProps> = ({
     <polygon
       points={points}
       fill={color}
+      stroke={strokeColor}
+      strokeWidth={strokeWidth}
       className={className}
     />
   );

@@ -8,8 +8,10 @@ const RectangleTemplate: React.FC<TemplateProps> = ({
   y,
   width = 10,
   height = 10,
-  color = 'steelblue',
+  color = 'transparent',
   className = '',
+  strokeColor = '#000',
+  strokeWidth = 1,
 }) => {
   return (
     <rect
@@ -18,6 +20,8 @@ const RectangleTemplate: React.FC<TemplateProps> = ({
       width={width}
       height={height}
       fill={color}
+      stroke={strokeColor}
+      strokeWidth={strokeWidth}
       className={className}
       rx={2}
       ry={2}

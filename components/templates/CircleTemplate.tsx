@@ -8,8 +8,10 @@ const CircleTemplate: React.FC<TemplateProps> = ({
   y,
   width = 10,
   height = 10,
-  color = 'steelblue',
+  color = 'transparent',
   className = '',
+  strokeColor = '#000',
+  strokeWidth = 1,
 }) => {
   // Calculate center and radius
   const centerX = x + width / 2;
@@ -22,6 +24,8 @@ const CircleTemplate: React.FC<TemplateProps> = ({
       cy={centerY}
       r={radius}
       fill={color}
+      stroke={strokeColor}
+      strokeWidth={strokeWidth}
       className={className}
     />
   );

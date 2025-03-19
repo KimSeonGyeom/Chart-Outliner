@@ -102,13 +102,10 @@ function LineChartControls({
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [exportFileName, setExportFileName] = useState('');
   const [exportFileType, setExportFileType] = useState<'png' | 'jpg' | 'svg'>('png');
-  const [exportWithBg, setExportWithBg] = useState(true);
   
   // Export options
   const [isExporting, setIsExporting] = useState(false);
   const [fileName, setFileName] = useState(chartName || 'chart');
-  const [asOutlines, setAsOutlines] = useState(false);
-  const [wireframeStyle, setWireframeStyle] = useState<boolean>(false);
   
   // Handle dimension change
   const handleDimensionChange = (dimension: keyof ChartDimensions, value: number) => {
@@ -217,7 +214,7 @@ function LineChartControls({
   const handleExport = () => {
     if (chartRef.current) {
       // Download the chart
-      downloadChart(chartRef, exportFileName, exportFileType, exportWithBg, wireframeStyle)
+      downloadChart(chartRef, exportFileName, exportFileType)
         .then(() => {
           // Close export options after successful export
           setShowExportOptions(false);
@@ -305,30 +302,6 @@ function LineChartControls({
             </div>
           ))}
         </div>
-      </div>
-      
-      <div className="form-group outline-option">
-        <label className="checkbox-container">
-          <input
-            type="checkbox"
-            checked={exportWithBg}
-            onChange={(e) => setExportWithBg(e.target.checked)}
-          />
-          <span className="checkmark"></span>
-          <span>Save with white background</span>
-        </label>
-      </div>
-      
-      <div className="form-group outline-option">
-        <label className="checkbox-container">
-          <input
-            type="checkbox"
-            checked={wireframeStyle}
-            onChange={(e) => setWireframeStyle(e.target.checked)}
-          />
-          <span className="checkmark"></span>
-          <span>Wireframe Style (black outline, white background)</span>
-        </label>
       </div>
       
       <div className="export-actions">

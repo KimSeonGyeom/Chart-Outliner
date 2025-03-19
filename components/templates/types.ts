@@ -5,6 +5,8 @@ export interface TemplateProps {
   height?: number;
   color?: string;
   className?: string;
+  strokeColor?: string;
+  strokeWidth?: number;
 }
 
 export interface ChartDataPoint {

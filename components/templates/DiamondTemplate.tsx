@@ -8,8 +8,10 @@ const DiamondTemplate: React.FC<TemplateProps> = ({
   y,
   width = 10,
   height = 10,
-  color = 'steelblue',
+  color = 'transparent',
   className = '',
+  strokeColor = '#000',
+  strokeWidth = 1,
 }) => {
   // Calculate diamond points
   const points = `
@@ -23,6 +25,8 @@ const DiamondTemplate: React.FC<TemplateProps> = ({
     <polygon
       points={points}
       fill={color}
+      stroke={strokeColor}
+      strokeWidth={strokeWidth}
       className={className}
     />
   );

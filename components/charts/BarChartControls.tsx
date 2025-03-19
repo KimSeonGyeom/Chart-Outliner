@@ -91,11 +91,8 @@ function BarChartControls({
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [exportFileName, setExportFileName] = useState('');
   const [exportFileType, setExportFileType] = useState<'png' | 'jpg' | 'svg'>('png');
-  const [exportWithBg, setExportWithBg] = useState(true);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string>(chartName || 'chart');
-  const [asOutlines, setAsOutlines] = useState<boolean>(false);
-  const [wireframeStyle, setWireframeStyle] = useState<boolean>(false);
 
   // Template mapping
   const templates: Record<string, React.ComponentType<any> | null> = {
@@ -187,7 +184,7 @@ function BarChartControls({
   const handleExport = () => {
     if (chartRef.current) {
       // Download the chart
-      downloadChart(chartRef, exportFileName, exportFileType, exportWithBg, wireframeStyle)
+      downloadChart(chartRef, exportFileName, exportFileType)
         .then(() => {
           // Close export options after successful export
           setShowExportOptions(false);
@@ -264,30 +261,6 @@ function BarChartControls({
             </div>
           ))}
         </div>
-      </div>
-      
-      <div className="form-group outline-option">
-        <label className="checkbox-container">
-          <input
-            type="checkbox"
-            checked={exportWithBg}
-            onChange={(e) => setExportWithBg(e.target.checked)}
-          />
-          <span className="checkmark"></span>
-          <span>Save with white background</span>
-        </label>
-      </div>
-      
-      <div className="form-group outline-option">
-        <label className="checkbox-container">
-          <input
-            type="checkbox"
-            checked={wireframeStyle}
-            onChange={(e) => setWireframeStyle(e.target.checked)}
-          />
-          <span className="checkmark"></span>
-          <span>Wireframe Style (black outline, white background)</span>
-        </label>
       </div>
       
       <div className="export-actions">
