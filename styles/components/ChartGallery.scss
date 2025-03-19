@@ -1,59 +1,61 @@
-.chart-gallery {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  padding: 2rem;
-  overflow-y: auto;
+.chart-gallery-container {
+  margin-top: 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 
   .gallery-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    padding: 1rem 1.5rem;
+    background-color: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
     
     h2 {
-      color: white;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 600;
+      color: #111827;
+      margin: 0;
     }
     
-    .close-button {
+    .toggle-button {
       background-color: transparent;
-      color: white;
-      border: 1px solid white;
-      padding: 0.5rem 1rem;
-      border-radius: 0.25rem;
+      color: #4b5563;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: color 0.2s;
       
       &:hover {
-        background-color: white;
-        color: black;
+        color: #1f2937;
       }
     }
   }
   
+  .gallery-content {
+    padding: 1.5rem;
+  }
+  
   .empty-gallery {
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 3rem;
+    background-color: #f9fafb;
+    padding: 2rem;
     border-radius: 0.5rem;
     text-align: center;
     
     p {
-      color: white;
-      font-size: 1.1rem;
+      color: #6b7280;
+      font-size: 1rem;
     }
   }
   
   .gallery-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1.5rem;
   }
 }
@@ -64,13 +66,14 @@
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
+  border: 1px solid #e5e7eb;
   
   &:hover {
     transform: translateY(-5px);
   }
   
   .chart-thumbnail {
-    height: 200px;
+    height: 180px;
     overflow: hidden;
     
     img {
@@ -85,7 +88,7 @@
     border-bottom: 1px solid #e5e7eb;
     
     h3 {
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 600;
       margin-bottom: 0.5rem;
     }
@@ -139,20 +142,6 @@
         }
       }
     }
-  }
-}
-
-.gallery-toggle-button {
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  
-  &:hover {
-    background-color: #2563eb;
   }
 }
 
@@ -238,5 +227,20 @@
         }
       }
     }
+  }
+}
+
+.save-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-left: 1rem;
+  
+  &:hover {
+    background-color: #2563eb;
   }
 } 
