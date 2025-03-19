@@ -67,7 +67,7 @@ const BarChart: React.FC<BarChartProps> = ({
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const chartRef = useRef<any>(null);
-  const resizeHandleRef = useRef<SVGRectElement>(null);
+  const resizeHandleRef = useRef<HTMLDivElement>(null);
   const [barData, setBarData] = useState<Array<{
     x: number;
     y: number;
@@ -281,46 +281,46 @@ const BarChart: React.FC<BarChartProps> = ({
   }, []);
 
   // Resize handle styles
-  const resizeHandleStyle = {
+  const resizeHandleStyle: React.CSSProperties = {
     cursor: 'nwse-resize',
-    fill: '#ccc',
-    fillOpacity: isResizing ? 0.6 : 0.2,
-    strokeWidth: 1,
-    stroke: '#999'
+    backgroundColor: '#ccc',
+    opacity: isResizing ? 0.6 : 0.0,
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 30,
+    height: 30
   };
 
   return (
-    <div className="chart-wrapper" style={{ position: 'relative', width: width, height: height }}>
-      <svg ref={svgRef} width={width} height={height}>
-        {/* Chart will be rendered here by D3 */}
-        
-        {/* If we have a template, render it for each bar */}
-        {Template && barData.map((bar, i) => (
-          <g 
-            key={`template-${templateKey}-bar-${i}`} 
-            transform={`translate(${marginLeft}, ${marginTop})`}
-            className="template-bar"
-          >
-            <Template
-              x={bar.x}
-              y={bar.y}
-              width={bar.width}
-              height={bar.height}
-              color={bar.color}
-            />
-          </g>
-        ))}
-        
-        {/* Resize handle */}
-        <rect
-          ref={resizeHandleRef}
-          x={width - 10}
-          y={height - 10}
-          width={10}
-          height={10}
-          style={resizeHandleStyle}
-        />
-      </svg>
+    <div style={{ position: 'relative' }}>
+      <div className="chart-wrapper" style={{ position: 'relative', width: width, height: height }}>
+        <svg ref={svgRef} width={width} height={height}>
+          {/* Chart will be rendered here by D3 */}
+          
+          {/* If we have a template, render it for each bar */}
+          {Template && barData.map((bar, i) => (
+            <g 
+              key={`template-${templateKey}-bar-${i}`} 
+              transform={`translate(${marginLeft}, ${marginTop})`}
+              className="template-bar"
+            >
+              <Template
+                x={bar.x}
+                y={bar.y}
+                width={bar.width}
+                height={bar.height}
+                color={bar.color}
+              />
+            </g>
+          ))}
+        </svg>
+      </div>
+      {/* Resize handle */}
+      <div
+        ref={resizeHandleRef}
+        style={resizeHandleStyle}
+      />
     </div>
   );
 };

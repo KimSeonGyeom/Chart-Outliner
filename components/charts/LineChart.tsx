@@ -97,7 +97,7 @@ const LineChart: React.FC<LineChartProps> = ({
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const chartRef = useRef<any>(null);
-  const resizeHandleRef = useRef<SVGRectElement>(null);
+  const resizeHandleRef = useRef<HTMLDivElement>(null);
   const [dataPoints, setDataPoints] = useState<Array<{x: number, y: number, color: string}>>([]);
   
   // State for resize tracking
@@ -354,29 +354,29 @@ const LineChart: React.FC<LineChartProps> = ({
   }, []);
   
   // Resize handle styles
-  const resizeHandleStyle = {
+  const resizeHandleStyle: React.CSSProperties = {
     cursor: 'nwse-resize',
-    fill: '#ccc',
-    fillOpacity: isResizing ? 0.6 : 0.2,
-    strokeWidth: 1,
-    stroke: '#999'
+    backgroundColor: '#ccc',
+    opacity: isResizing ? 0.6 : 0.0,
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 30,
+    height: 30
   };
 
   return (
-    <div className="chart-wrapper" style={{ position: 'relative', width: width, height: height }}>
-      <svg ref={svgRef} width={width} height={height}>
-        {/* Chart will be rendered here by D3 */}
-        
-        {/* Resize handle */}
-        <rect
-          ref={resizeHandleRef}
-          x={width - 10}
-          y={height - 10}
-          width={10}
-          height={10}
-          style={resizeHandleStyle}
-        />
-      </svg>
+    <div style={{ position: 'relative' }}>
+      <div className="chart-wrapper" style={{ position: 'relative', width: width, height: height }}>
+        <svg ref={svgRef} width={width} height={height}>
+          {/* Chart will be rendered here by D3 */}
+        </svg>
+      </div>
+      {/* Resize handle */}
+      <div
+        ref={resizeHandleRef}
+        style={resizeHandleStyle}
+      />
     </div>
   );
 };

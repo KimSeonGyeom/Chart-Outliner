@@ -121,8 +121,10 @@ export interface DownloadDialogProps {
   isOpen: boolean;
   chartName: string;
   onClose: () => void;
-  onDownload: (fileName: string, fileType: 'png' | 'jpg' | 'svg', asOutlines: boolean) => void;
+  onDownload: (fileName: string, fileType: 'png' | 'jpg' | 'svg', asOutlines: boolean, wireframeStyle?: boolean) => void;
   onFileNameChange: (name: string) => void;
+  wireframeStyle?: boolean;
+  onWireframeStyleChange?: (wireframe: boolean) => void;
 }
 
 // Save chart functionality

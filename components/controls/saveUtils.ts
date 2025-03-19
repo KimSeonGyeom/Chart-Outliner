@@ -13,6 +13,8 @@ export const saveChart = async (config: SaveChartConfig) => {
   try {
     // Convert chart to image using html2canvas
     const html2canvas = (await import('html2canvas')).default;
+    
+    // Capture the chart as image
     const canvas = await html2canvas(chartRef.current);
     const imageUrl = canvas.toDataURL('image/png');
     

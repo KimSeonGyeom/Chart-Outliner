@@ -23,6 +23,7 @@ function SaveDialog({
             placeholder="Enter a name for your chart"
           />
         </label>
+        
         <div className="save-buttons">
           <button onClick={onClose}>Cancel</button>
           <button 

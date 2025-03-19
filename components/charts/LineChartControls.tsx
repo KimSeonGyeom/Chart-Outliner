@@ -67,10 +67,12 @@ function LineChartControls({
   loadedChart,
   onChartLoaded
 }: LineChartControlsProps) {
+  const loadedConfig = loadedChart?.config as LineChartConfig;
+
   // Chart dimensions
   const [dimensions, setDimensions] = useState<ChartDimensions>({
-    width,
-    height
+    width: loadedConfig?.width || width,
+    height: loadedConfig?.height || height
   });
   
   const [marginTop, setMarginTop] = useState(20);
@@ -80,20 +82,20 @@ function LineChartControls({
   
   // Line chart specific options
   const [lineOptions, setLineOptions] = useState<LineChartOptions>({
-    curveType: 'cardinal',
-    curveTension: 0.5,
-    fill: false,
-    fillOpacity: 0.4,
-    showPoints: true,
-    pointRadius: 5
+    curveType: loadedConfig?.curveType || 'cardinal',
+    curveTension: loadedConfig?.curveTension || 0.5,
+    fill: loadedConfig?.fill || true,
+    fillOpacity: loadedConfig?.fillOpacity || 0.3,
+    showPoints: loadedConfig?.showPoints || true,
+    pointRadius: loadedConfig?.pointRadius || 4
   });
   
   // Axis appearance
   const [axisOptions, setAxisOptions] = useState<AxisOptions>({
-    showXAxis: true,
-    showYAxis: true,
-    yDomainMin: undefined,
-    yDomainMax: undefined
+    showXAxis: loadedConfig?.showXAxis || true,
+    showYAxis: loadedConfig?.showYAxis || true,
+    yDomainMin: loadedConfig?.yDomainMin,
+    yDomainMax: loadedConfig?.yDomainMax
   });
   
   // Replace isExporting dialog state with showExportOptions
@@ -101,6 +103,12 @@ function LineChartControls({
   const [exportFileName, setExportFileName] = useState('');
   const [exportFileType, setExportFileType] = useState<'png' | 'jpg' | 'svg'>('png');
   const [exportWithBg, setExportWithBg] = useState(true);
+  
+  // Export options
+  const [isExporting, setIsExporting] = useState(false);
+  const [fileName, setFileName] = useState(chartName || 'chart');
+  const [asOutlines, setAsOutlines] = useState(false);
+  const [wireframeStyle, setWireframeStyle] = useState<boolean>(false);
   
   // Handle dimension change
   const handleDimensionChange = (dimension: keyof ChartDimensions, value: number) => {
@@ -208,29 +216,14 @@ function LineChartControls({
   // Handle export
   const handleExport = () => {
     if (chartRef.current) {
-      // Apply white background temporarily for outline mode
-      const originalBg = chartRef.current.style.backgroundColor;
-      if (exportWithBg) {
-        // Set white background
-        chartRef.current.style.backgroundColor = 'white';
-      }
-      
       // Download the chart
-      downloadChart(chartRef, exportFileName, exportFileType, exportWithBg)
+      downloadChart(chartRef, exportFileName, exportFileType, exportWithBg, wireframeStyle)
         .then(() => {
-          // Restore original background
-          if (exportWithBg && originalBg) {
-            chartRef.current!.style.backgroundColor = originalBg;
-          }
           // Close export options after successful export
           setShowExportOptions(false);
         })
         .catch(error => {
           console.error('Error exporting chart:', error);
-          // Restore original background
-          if (exportWithBg && originalBg) {
-            chartRef.current!.style.backgroundColor = originalBg;
-          }
         });
     }
   };
@@ -323,6 +316,18 @@ function LineChartControls({
           />
           <span className="checkmark"></span>
           <span>Save with white background</span>
+        </label>
+      </div>
+      
+      <div className="form-group outline-option">
+        <label className="checkbox-container">
+          <input
+            type="checkbox"
+            checked={wireframeStyle}
+            onChange={(e) => setWireframeStyle(e.target.checked)}
+          />
+          <span className="checkmark"></span>
+          <span>Wireframe Style (black outline, white background)</span>
         </label>
       </div>
       

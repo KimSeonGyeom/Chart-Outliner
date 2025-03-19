@@ -65,24 +65,26 @@ function BarChartControls({
   loadedChart,
   onChartLoaded
 }: BarChartControlsProps) {
+  const loadedConfig = loadedChart?.config as BarChartConfig;
+  
   // Chart dimensions
   const [dimensions, setDimensions] = useState<ChartDimensions>({
-    width: 600,
-    height: 400
+    width: loadedConfig?.width || 600,
+    height: loadedConfig?.height || 400
   });
   
   // Bar appearance
-  const [barPadding, setBarPadding] = useState(0.2);
+  const [barPadding, setBarPadding] = useState(loadedConfig?.barPadding || 0.2);
   
   // Template selection
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('rectangle');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>(loadedConfig?.selectedTemplate || 'rectangle');
   
   // Axis appearance
   const [axisOptions, setAxisOptions] = useState<AxisOptions>({
-    showXAxis: true,
-    showYAxis: true,
-    yDomainMin: undefined,
-    yDomainMax: undefined
+    showXAxis: loadedConfig?.showXAxis || true,
+    showYAxis: loadedConfig?.showYAxis || true,
+    yDomainMin: loadedConfig?.yDomainMin,
+    yDomainMax: loadedConfig?.yDomainMax
   });
 
   // Replace isExporting dialog state with showExportOptions
@@ -90,6 +92,10 @@ function BarChartControls({
   const [exportFileName, setExportFileName] = useState('');
   const [exportFileType, setExportFileType] = useState<'png' | 'jpg' | 'svg'>('png');
   const [exportWithBg, setExportWithBg] = useState(true);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [fileName, setFileName] = useState<string>(chartName || 'chart');
+  const [asOutlines, setAsOutlines] = useState<boolean>(false);
+  const [wireframeStyle, setWireframeStyle] = useState<boolean>(false);
 
   // Template mapping
   const templates: Record<string, React.ComponentType<any> | null> = {
@@ -180,29 +186,14 @@ function BarChartControls({
   // Handle export
   const handleExport = () => {
     if (chartRef.current) {
-      // Apply white background temporarily for outline mode
-      const originalBg = chartRef.current.style.backgroundColor;
-      if (exportWithBg) {
-        // Set white background
-        chartRef.current.style.backgroundColor = 'white';
-      }
-      
       // Download the chart
-      downloadChart(chartRef, exportFileName, exportFileType, exportWithBg)
+      downloadChart(chartRef, exportFileName, exportFileType, exportWithBg, wireframeStyle)
         .then(() => {
-          // Restore original background
-          if (exportWithBg && originalBg) {
-            chartRef.current!.style.backgroundColor = originalBg;
-          }
           // Close export options after successful export
           setShowExportOptions(false);
         })
         .catch(error => {
           console.error('Error exporting chart:', error);
-          // Restore original background
-          if (exportWithBg && originalBg) {
-            chartRef.current!.style.backgroundColor = originalBg;
-          }
         });
     }
   };
@@ -284,6 +275,18 @@ function BarChartControls({
           />
           <span className="checkmark"></span>
           <span>Save with white background</span>
+        </label>
+      </div>
+      
+      <div className="form-group outline-option">
+        <label className="checkbox-container">
+          <input
+            type="checkbox"
+            checked={wireframeStyle}
+            onChange={(e) => setWireframeStyle(e.target.checked)}
+          />
+          <span className="checkmark"></span>
+          <span>Wireframe Style (black outline, white background)</span>
         </label>
       </div>
       
