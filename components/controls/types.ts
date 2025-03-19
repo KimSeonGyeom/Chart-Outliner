@@ -94,9 +94,7 @@ export interface LineAppearanceSectionProps {
 // Props for line fill section
 export interface LineFillSectionProps {
   fill: boolean;
-  fillOpacity: number;
   onFillChange: (fill: boolean) => void;
-  onFillOpacityChange: (opacity: number) => void;
 }
 
 // Props for point options section

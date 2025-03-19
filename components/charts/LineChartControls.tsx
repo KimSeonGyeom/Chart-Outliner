@@ -82,12 +82,12 @@ function LineChartControls({
   
   // Line chart specific options
   const [lineOptions, setLineOptions] = useState<LineChartOptions>({
-    curveType: loadedConfig?.curveType || 'cardinal',
+    curveType: loadedConfig?.curveType || 'linear',
     curveTension: loadedConfig?.curveTension || 0.5,
-    fill: loadedConfig?.fill || true,
-    fillOpacity: loadedConfig?.fillOpacity || 0.3,
+    fill: loadedConfig?.fill || false,
+    fillOpacity: loadedConfig?.fillOpacity || 0.0,
     showPoints: loadedConfig?.showPoints || true,
-    pointRadius: loadedConfig?.pointRadius || 4
+    pointRadius: loadedConfig?.pointRadius || 3
   });
   
   // Axis appearance
@@ -102,10 +102,6 @@ function LineChartControls({
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [exportFileName, setExportFileName] = useState('');
   const [exportFileType, setExportFileType] = useState<'png' | 'jpg' | 'svg'>('png');
-  
-  // Export options
-  const [isExporting, setIsExporting] = useState(false);
-  const [fileName, setFileName] = useState(chartName || 'chart');
   
   // Handle dimension change
   const handleDimensionChange = (dimension: keyof ChartDimensions, value: number) => {
@@ -258,9 +254,7 @@ function LineChartControls({
       
       <LineFillSection
         fill={lineOptions.fill}
-        fillOpacity={lineOptions.fillOpacity}
         onFillChange={(fill) => handleLineOptionChange('fill', fill)}
-        onFillOpacityChange={(opacity) => handleLineOptionChange('fillOpacity', opacity)}
       />
       
       <PointsSection

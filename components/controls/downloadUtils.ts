@@ -164,10 +164,20 @@ export const downloadChartAsSVG = async (
     // Apply white background and black outlines if needed
     if (asOutlines) {
       svgClone.setAttribute('style', 'background-color: white;');
-      const paths = svgClone.querySelectorAll('path, line, rect, circle');
+      const paths = svgClone.querySelectorAll('path, line, rect, circle, polygon');
       paths.forEach(path => {
-        path.setAttribute('stroke', 'black');
-        path.setAttribute('fill', 'none');
+        // Preserve existing stroke if it has one, otherwise use black
+        if (!path.hasAttribute('stroke') || path.getAttribute('stroke') === 'none') {
+          path.setAttribute('stroke', 'black');
+        }
+        path.setAttribute('stroke-width', path.hasAttribute('stroke-width') ? path.getAttribute('stroke-width')! : '1');
+        
+        // For fill, keep existing fill with proper opacity if it's not 'none'
+        if (path.hasAttribute('fill') && path.getAttribute('fill') !== 'none') {
+          path.setAttribute('fill-opacity', path.hasAttribute('fill-opacity') ? path.getAttribute('fill-opacity')! : '0.1');
+        } else {
+          path.setAttribute('fill', 'none');
+        }
       });
     }
     

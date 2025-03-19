@@ -55,7 +55,7 @@ const LineChart: React.FC<LineChartProps> = ({
   marginLeft = 40,
   // template: Template,
   fill = false,
-  fillOpacity = 0.1,
+  fillOpacity = 0.0,
   
   // Curve parameters
   curveType = 'linear',
@@ -239,7 +239,8 @@ const LineChart: React.FC<LineChartProps> = ({
         .datum(data)
         .attr('fill', lineColor)
         .attr('fill-opacity', fillOpacity)
-        .attr('stroke', 'none')
+        .attr('stroke', lineColor)
+        .attr('stroke-width', 1)
         .attr('d', area);
     }
     

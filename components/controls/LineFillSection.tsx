@@ -3,9 +3,7 @@ import { LineFillSectionProps } from './types';
 
 const LineFillSection: React.FC<LineFillSectionProps> = ({
   fill,
-  fillOpacity,
   onFillChange,
-  onFillOpacityChange
 }) => {
   return (
     <div className="section">
@@ -20,20 +18,6 @@ const LineFillSection: React.FC<LineFillSectionProps> = ({
           />
           <label htmlFor="fill-checkbox">Fill area under line</label>
         </div>
-        {fill && (
-          <div>
-            <label>Fill Opacity</label>
-            <input
-              type="range"
-              min="0.1"
-              max="1"
-              step="0.1"
-              value={fillOpacity}
-              onChange={(e) => onFillOpacityChange(parseFloat(e.target.value))}
-            />
-            <div className="range-value">{fillOpacity}</div>
-          </div>
-        )}
       </div>
     </div>
   );
