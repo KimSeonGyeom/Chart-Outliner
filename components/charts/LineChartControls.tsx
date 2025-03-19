@@ -20,19 +20,9 @@ import {
   saveChart,
   downloadChart
 } from '../controls';
+import { sampleDataSets, generateRandomLineData } from '../data';
 import '../../styles/components/ControlPanel.scss';
 import '../../styles/components/LineChartControls.scss';
-
-// Sample data for demonstration
-const sampleData: ChartData = [
-  { x: 'Jan', y: 30 },
-  { x: 'Feb', y: 50 },
-  { x: 'Mar', y: 20 },
-  { x: 'Apr', y: 40 },
-  { x: 'May', y: 70 },
-  { x: 'Jun', y: 60 },
-  { x: 'Jul', y: 80 },
-];
 
 interface LineChartControlsProps {
   data?: ChartData;
@@ -52,7 +42,7 @@ interface LineChartControlsProps {
 }
 
 function LineChartControls({
-  data = sampleData,
+  data = sampleDataSets.basic,
   width = 600,
   height = 400,
   chartRef,
@@ -102,6 +92,10 @@ function LineChartControls({
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [exportFileName, setExportFileName] = useState('');
   const [exportFileType, setExportFileType] = useState<'png' | 'jpg' | 'svg'>('png');
+  
+  // Add state for current data
+  const [chartData, setChartData] = useState<ChartData>(data);
+  const [selectedPreset, setSelectedPreset] = useState<string>("basic");
   
   // Handle dimension change
   const handleDimensionChange = (dimension: keyof ChartDimensions, value: number) => {
@@ -221,6 +215,54 @@ function LineChartControls({
     }
   };
   
+  // Function to generate random data
+  const generateRandomData = () => {
+    setChartData(generateRandomLineData());
+    setSelectedPreset("custom");
+  };
+  
+  // Function to handle preset selection
+  const handlePresetChange = (preset: string) => {
+    if (preset === "random") {
+      generateRandomData();
+    } else if (preset in sampleDataSets) {
+      setChartData(sampleDataSets[preset as keyof typeof sampleDataSets]);
+      setSelectedPreset(preset);
+    }
+  };
+
+  // Add data controls section
+  const dataControls = (
+    <div className="section">
+      <h3>Data Options</h3>
+      <div className="control-group">
+        <label>Preset Data</label>
+        <div className="data-presets">
+          <select 
+            value={selectedPreset}
+            onChange={(e) => handlePresetChange(e.target.value)}
+          >
+            <option value="basic">Basic Trend</option>
+            <option value="rising">Rising Trend</option>
+            <option value="falling">Falling Trend</option>
+            <option value="wave">Wave Pattern</option>
+            <option value="exponential">Exponential Growth</option>
+            <option value="logarithmic">Logarithmic Growth</option>
+            <option value="sinusoidal">Sine Wave</option>
+            <option value="custom" disabled={selectedPreset !== "custom"}>Custom</option>
+          </select>
+          <button 
+            className="randomize-button"
+            onClick={generateRandomData}
+            title="Generate random data"
+          >
+            Randomize
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   // Shared controls
   const sharedControls = (
     <>
@@ -245,6 +287,8 @@ function LineChartControls({
   // Chart-specific controls
   const chartSpecificControls = (
     <>
+      {dataControls}
+      
       <LineAppearanceSection
         curveType={lineOptions.curveType}
         curveTension={lineOptions.curveTension}
@@ -323,7 +367,7 @@ function LineChartControls({
         <div className="chart-container">
           <div ref={chartRef} className="chart-display">
             <LineChart
-              data={data}
+              data={chartData}
               width={dimensions.width}
               height={dimensions.height}
               marginTop={marginTop}

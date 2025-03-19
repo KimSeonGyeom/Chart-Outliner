@@ -22,19 +22,9 @@ import {
   saveChart,
   downloadChart
 } from '../controls';
+import { sampleDataSets, generateRandomBarData } from '../data';
 import '../../styles/components/ControlPanel.scss';
 import '../../styles/components/BarChartControls.scss';
-
-// Sample data for demonstration
-const sampleData: ChartData = [
-  { x: 'Jan', y: 30 },
-  { x: 'Feb', y: 50 },
-  { x: 'Mar', y: 20 },
-  { x: 'Apr', y: 40 },
-  { x: 'May', y: 70 },
-  { x: 'Jun', y: 60 },
-  { x: 'Jul', y: 80 },
-];
 
 interface BarChartControlsProps {
   data?: ChartData;
@@ -52,7 +42,7 @@ interface BarChartControlsProps {
 }
 
 function BarChartControls({
-  data = sampleData,
+  data = sampleDataSets.basic,
   chartRef,
   activeChart,
   onChartTypeChange,
@@ -78,6 +68,10 @@ function BarChartControls({
   
   // Template selection
   const [selectedTemplate, setSelectedTemplate] = useState<string>(loadedConfig?.selectedTemplate || 'rectangle');
+  
+  // Data state
+  const [chartData, setChartData] = useState<ChartData>(data);
+  const [selectedPreset, setSelectedPreset] = useState<string>("basic");
   
   // Axis appearance
   const [axisOptions, setAxisOptions] = useState<AxisOptions>({
@@ -116,6 +110,22 @@ function BarChartControls({
   // Handle domain change
   const handleDomainChange = (min: number | undefined, max: number | undefined) => {
     setAxisOptions(prev => ({ ...prev, yDomainMin: min, yDomainMax: max }));
+  };
+  
+  // Function to generate random data
+  const generateRandomData = () => {
+    setChartData(generateRandomBarData());
+    setSelectedPreset("custom");
+  };
+  
+  // Function to handle preset selection
+  const handlePresetChange = (preset: string) => {
+    if (preset === "random") {
+      generateRandomData();
+    } else if (preset in sampleDataSets) {
+      setChartData(sampleDataSets[preset as keyof typeof sampleDataSets]);
+      setSelectedPreset(preset);
+    }
   };
   
   // Get chart config for saving
@@ -216,9 +226,43 @@ function BarChartControls({
     </>
   );
   
+  // Add data controls section
+  const dataControls = (
+    <div className="section">
+      <h3>Data Options</h3>
+      <div className="control-group">
+        <label>Preset Data</label>
+        <div className="data-presets">
+          <select 
+            value={selectedPreset}
+            onChange={(e) => handlePresetChange(e.target.value)}
+          >
+            <option value="basic">Basic Trend</option>
+            <option value="rising">Rising Trend</option>
+            <option value="falling">Falling Trend</option>
+            <option value="grouped">Grouped Categories</option>
+            <option value="exponential">Exponential Growth</option>
+            <option value="logarithmic">Logarithmic Growth</option>
+            <option value="sinusoidal">Sine Wave</option>
+            <option value="custom" disabled={selectedPreset !== "custom"}>Custom</option>
+          </select>
+          <button 
+            className="randomize-button"
+            onClick={generateRandomData}
+            title="Generate random data"
+          >
+            Randomize
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+  
   // Chart-specific controls
   const chartSpecificControls = (
     <>
+      {dataControls}
+      
       <BarTemplateSection
         selectedTemplate={selectedTemplate}
         onTemplateChange={setSelectedTemplate}
@@ -287,7 +331,7 @@ function BarChartControls({
         <div className="chart-container">
           <div ref={chartRef} className="chart-display">
             <BarChart
-              data={data}
+              data={chartData}
               width={dimensions.width}
               height={dimensions.height}
               barPadding={barPadding}

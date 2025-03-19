@@ -540,4 +540,34 @@
       }
     }
   }
+}
+
+// Add styling for data-presets and randomize button
+.data-presets {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  select {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .randomize-button {
+    padding: 6px 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+    
+    &:hover {
+      background-color: #e0e0e0;
+    }
+    
+    &:active {
+      background-color: #d0d0d0;
+    }
+  }
 } 
