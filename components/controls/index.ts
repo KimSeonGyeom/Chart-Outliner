@@ -1,8 +1,11 @@
+"use client";
+
 // Export types
 export * from './types';
 
 // Export utility functions
 export { saveChart } from './saveUtils';
+export { downloadChart } from './downloadUtils';
 
 // Export main control panel
 export { default as ControlPanel } from './ControlPanel';

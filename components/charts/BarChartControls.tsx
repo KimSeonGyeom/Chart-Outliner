@@ -19,7 +19,8 @@ import {
   AxisOptions,
   ChartType,
   SaveDialog,
-  saveChart
+  saveChart,
+  downloadChart
 } from '../controls';
 import '../../styles/components/ControlPanel.scss';
 import '../../styles/components/BarChartControls.scss';
@@ -83,6 +84,12 @@ function BarChartControls({
     yDomainMin: undefined,
     yDomainMax: undefined
   });
+
+  // Replace isExporting dialog state with showExportOptions
+  const [showExportOptions, setShowExportOptions] = useState(false);
+  const [exportFileName, setExportFileName] = useState('');
+  const [exportFileType, setExportFileType] = useState<'png' | 'jpg' | 'svg'>('png');
+  const [exportWithBg, setExportWithBg] = useState(true);
 
   // Template mapping
   const templates: Record<string, React.ComponentType<any> | null> = {
@@ -164,6 +171,42 @@ function BarChartControls({
     }
   }, [loadedChart, onChartLoaded]);
 
+  // Handle export click
+  const handleExportClick = () => {
+    setExportFileName(chartName || 'chart');
+    setShowExportOptions(!showExportOptions);
+  };
+  
+  // Handle export
+  const handleExport = () => {
+    if (chartRef.current) {
+      // Apply white background temporarily for outline mode
+      const originalBg = chartRef.current.style.backgroundColor;
+      if (exportWithBg) {
+        // Set white background
+        chartRef.current.style.backgroundColor = 'white';
+      }
+      
+      // Download the chart
+      downloadChart(chartRef, exportFileName, exportFileType, exportWithBg)
+        .then(() => {
+          // Restore original background
+          if (exportWithBg && originalBg) {
+            chartRef.current!.style.backgroundColor = originalBg;
+          }
+          // Close export options after successful export
+          setShowExportOptions(false);
+        })
+        .catch(error => {
+          console.error('Error exporting chart:', error);
+          // Restore original background
+          if (exportWithBg && originalBg) {
+            chartRef.current!.style.backgroundColor = originalBg;
+          }
+        });
+    }
+  };
+
   // Shared controls
   const sharedControls = (
     <>
@@ -200,6 +243,68 @@ function BarChartControls({
     </>
   );
 
+  // Export options component
+  const exportOptions = (
+    <div className="export-options">
+      <div className="form-group">
+        <label htmlFor="fileName">File Name</label>
+        <input
+          id="fileName"
+          type="text"
+          value={exportFileName}
+          onChange={(e) => setExportFileName(e.target.value)}
+          placeholder="Enter a name for your file"
+        />
+      </div>
+      
+      <div className="form-group">
+        <label>File Format</label>
+        <div className="format-options">
+          {['png', 'jpg', 'svg'].map((format) => (
+            <div 
+              key={format}
+              className={`format-option ${exportFileType === format ? 'selected' : ''}`}
+              onClick={() => setExportFileType(format as 'png' | 'jpg' | 'svg')}
+            >
+              <div className="format-radio">
+                <div className="radio-inner"></div>
+              </div>
+              <span className="format-label">{format.toUpperCase()}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <div className="form-group outline-option">
+        <label className="checkbox-container">
+          <input
+            type="checkbox"
+            checked={exportWithBg}
+            onChange={(e) => setExportWithBg(e.target.checked)}
+          />
+          <span className="checkmark"></span>
+          <span>Save with white background</span>
+        </label>
+      </div>
+      
+      <div className="export-actions">
+        <button 
+          className="cancel-button"
+          onClick={() => setShowExportOptions(false)}
+        >
+          Cancel
+        </button>
+        <button 
+          className="export-button"
+          onClick={handleExport}
+          disabled={!exportFileName.trim()}
+        >
+          Export
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="bar-chart-wrapper">
       <div className="bar-chart-controls">
@@ -227,8 +332,11 @@ function BarChartControls({
           chartType={activeChart}
           onChartTypeChange={onChartTypeChange}
           onSaveClick={onSaveClick}
+          onExportClick={handleExportClick}
           sharedControls={sharedControls}
           chartSpecificControls={chartSpecificControls}
+          showExportOptions={showExportOptions}
+          exportOptions={exportOptions}
         />
       </div>
       

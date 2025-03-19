@@ -5,26 +5,49 @@ import ChartTypeSelector from './ChartTypeSelector';
 interface ControlPanelProps extends BaseControlPanelProps {
   sharedControls: ReactNode;
   chartSpecificControls: ReactNode;
+  onExportClick?: () => void;
+  showExportOptions?: boolean;
+  exportOptions?: ReactNode;
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
   chartType,
   onChartTypeChange,
   onSaveClick,
+  onExportClick,
   sharedControls,
-  chartSpecificControls
+  chartSpecificControls,
+  showExportOptions,
+  exportOptions
 }) => {
   return (
     <div className="controls-panel">
       <div className="controls-header">
         <h2>Chart Controls</h2>
-        <button 
-          className="save-button" 
-          onClick={onSaveClick}
-        >
-          Save Chart
-        </button>
+        <div className="button-group">
+          <button 
+            className="save-button" 
+            onClick={onSaveClick}
+          >
+            Save Chart
+          </button>
+          {onExportClick && (
+            <button 
+              className="export-button" 
+              onClick={onExportClick}
+            >
+              Export
+            </button>
+          )}
+        </div>
       </div>
+      
+      {/* Export options section */}
+      {showExportOptions && exportOptions && (
+        <div className="export-options-container">
+          {exportOptions}
+        </div>
+      )}
       
       <ChartTypeSelector 
         activeChart={chartType}
