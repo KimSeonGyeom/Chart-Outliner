@@ -19,7 +19,6 @@ export default function Home() {
         <div className="space-y-16">
           <section>
             <h2 className="text-2xl font-semibold mb-6 text-center">Line Chart</h2>
-            <p className="text-center text-gray-600 mb-4">Use the "Fill Area" checkbox to toggle between line and area style</p>
             <div className="flex flex-col items-center">
               <ChartWithDropdown data={data} chartType="line" />
             </div>

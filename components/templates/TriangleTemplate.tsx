@@ -11,12 +11,15 @@ const TriangleTemplate: React.FC<TemplateProps> = ({
   color = 'steelblue',
   className = '',
 }) => {
-  // Create a triangle pointing upward
-  // Using absolute positioning since we'll place this within a transformed group
-  const points = `0,${height} ${width/2},0 ${width},${height}`;
-
+  // Calculate triangle points
+  const points = `
+    ${x + width / 2},${y}
+    ${x},${y + height}
+    ${x + width},${y + height}
+  `;
+  
   return (
-    <polygon 
+    <polygon
       points={points}
       fill={color}
       className={className}
