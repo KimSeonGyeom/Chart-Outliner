@@ -1,9 +1,16 @@
 import React from 'react';
 import { BarAppearanceSectionProps } from './types';
+import FillPatternSection from './FillPatternSection';
 
 const BarAppearanceSection: React.FC<BarAppearanceSectionProps> = ({
   barPadding,
-  onBarPaddingChange
+  barFill = false,
+  barFillOpacity = 0.5,
+  barFillPattern = 'solid',
+  onBarPaddingChange,
+  onBarFillChange,
+  onBarFillOpacityChange,
+  onBarFillPatternChange
 }) => {
   return (
     <div className="section">
@@ -21,6 +28,37 @@ const BarAppearanceSection: React.FC<BarAppearanceSectionProps> = ({
           />
           <div className="range-value">{barPadding}</div>
         </div>
+
+        <div className="checkbox-group">
+          <input
+            type="checkbox"
+            id="bar-fill-checkbox"
+            checked={barFill}
+            onChange={(e) => onBarFillChange(e.target.checked)}
+          />
+          <label htmlFor="bar-fill-checkbox">Fill bars</label>
+        </div>
+
+        {barFill && (
+          <>
+            <div>
+              <label>Fill Opacity</label>
+              <input
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.1"
+                value={barFillOpacity}
+                onChange={(e) => onBarFillOpacityChange(parseFloat(e.target.value))}
+              />
+              <div className="range-value">{barFillOpacity}</div>
+            </div>
+            <FillPatternSection 
+              fillPattern={barFillPattern}
+              onFillPatternChange={onBarFillPatternChange}
+            />
+          </>
+        )}
       </div>
     </div>
   );

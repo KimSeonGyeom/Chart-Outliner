@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { ChartData, TemplateProps } from '../templates/types';
+import ReactDOMServer from 'react-dom/server';
 
 interface BarChartProps {
   data: ChartData;
@@ -16,6 +17,10 @@ interface BarChartProps {
   barColor?: string;
   barStrokeColor?: string;
   barStrokeWidth?: number;
+  barFill?: boolean;
+  barFillOpacity?: number;
+  barFillPattern?: string;
+  barStrokePattern?: string;
   template?: React.ComponentType<TemplateProps> | null;
   
   // Axis appearance
@@ -34,8 +39,8 @@ interface BarChartProps {
 
 const BarChart: React.FC<BarChartProps> = ({
   data,
-  width = 600,
-  height = 400,
+  width = 512,
+  height = 512,
   marginTop = 20,
   marginRight = 20,
   marginBottom = 30,
@@ -44,6 +49,10 @@ const BarChart: React.FC<BarChartProps> = ({
   barColor = 'transparent',
   barStrokeColor = '#000',
   barStrokeWidth = 1,
+  barFill = false,
+  barFillOpacity = 0.5,
+  barFillPattern = 'solid',
+  barStrokePattern = 'solid',
   template: Template,
   
   // Axis appearance
@@ -129,120 +138,163 @@ const BarChart: React.FC<BarChartProps> = ({
     };
   }, [isResizing, startResizePos, initialDimensions, width, height, onResize]);
 
-  useEffect(() => {
-    if (!svgRef.current) return;
+  // Calculate the stroke-dasharray value based on the pattern
+  const getStrokeDashArray = (pattern: string): string => {
+    switch (pattern) {
+      case 'dashed':
+        return '6,4';
+      case 'dotted':
+        return '2,2';
+      case 'dash-dot':
+        return '8,3,2,3';
+      case 'long-dash':
+        return '12,6';
+      default:
+        return 'none';
+    }
+  };
 
-    const svg = d3.select(svgRef.current);
+  // Create pattern definitions for fill patterns
+  const createFillPattern = (pattern: string, color: string) => {
+    switch (pattern) {
+      case 'diagonal':
+        return (
+          <pattern id="diagonalPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+            <path d="M-1,1 l2,-2 M0,8 l8,-8 M7,9 l1,-1" stroke={color} strokeWidth="1" />
+          </pattern>
+        );
+      case 'crosshatch':
+        return (
+          <pattern id="crosshatchPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+            <path d="M0,0 l8,8 M8,0 l-8,8" stroke={color} strokeWidth="1" />
+          </pattern>
+        );
+      case 'dots':
+        return (
+          <pattern id="dotsPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+            <circle cx="4" cy="4" r="1.5" fill={color} />
+          </pattern>
+        );
+      case 'grid':
+        return (
+          <pattern id="gridPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+            <path d="M0,0 h8 M0,8 h8 M0,0 v8 M8,0 v8" stroke={color} strokeWidth="1" />
+          </pattern>
+        );
+      case 'zigzag':
+        return (
+          <pattern id="zigzagPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+            <path d="M0,4 l4,-4 l4,4" stroke={color} strokeWidth="1" fill="none" />
+          </pattern>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Helper function to get fill value based on pattern
+  const getFillValue = (pattern: string, color: string) => {
+    if (!barFill) return 'transparent';
+    if (pattern === 'solid') return color;
+    return `url(#${pattern}Pattern)`;
+  };
+
+  // Update chart function to incorporate new features
+  useEffect(() => {
+    if (!svgRef.current || !data || data.length === 0) return;
     
-    // Store the main group in the ref to be able to clean it up later
-    if (chartRef.current) {
-      // Clean up previous chart elements
-      chartRef.current.remove();
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove();
+    
+    // Add pattern definitions
+    const defs = svg.append('defs');
+    if (barFill && barFillPattern !== 'solid') {
+      const pattern = createFillPattern(barFillPattern, barColor !== 'transparent' ? barColor : '#333');
+      if (pattern) {
+        defs.html(ReactDOMServer.renderToString(pattern));
+      }
     }
     
-    // Create inner chart area
     const innerWidth = width - marginLeft - marginRight;
     const innerHeight = height - marginTop - marginBottom;
     
-    // Create scales
+    // X scale
     const x = d3.scaleBand()
       .domain(data.map(d => String(d.x)))
       .range([0, innerWidth])
       .padding(barPadding);
     
-    // Set y domain with optional min/max values
-    const yMin = yDomainMin !== undefined ? yDomainMin : 0;
-    const yMax = yDomainMax !== undefined ? yDomainMax : d3.max(data, d => d.y) || 0;
-    
+    // Y scale
     const y = d3.scaleLinear()
-      .domain([yMin, yMax])
+      .domain([
+        yDomainMin !== undefined ? yDomainMin : 0,
+        yDomainMax !== undefined ? yDomainMax : d3.max(data, d => d.y) as number * 1.1
+      ])
       .nice()
       .range([innerHeight, 0]);
     
+    // Create the chart group
     const g = svg.append('g')
       .attr('transform', `translate(${marginLeft},${marginTop})`);
     
-    // Store the main group element for cleanup
-    chartRef.current = g;
-    
-    // Add x axis if enabled
+    // Add axes if enabled
     if (showXAxis) {
-      const xAxis = d3.axisBottom(x);
-      if (xAxisTickCount) {
-        xAxis.tickValues(
-          x.domain().filter((_, i, arr) => i % Math.ceil(arr.length / xAxisTickCount) === 0)
-        );
-      }
-      
       g.append('g')
-        .attr('class', 'x-axis')
         .attr('transform', `translate(0,${innerHeight})`)
-        .call(xAxis);
+        .call(d3.axisBottom(x))
+        .selectAll('text')
+        .style('text-anchor', 'middle');
     }
     
-    // Add y axis if enabled
     if (showYAxis) {
-      const yAxis = d3.axisLeft(y);
-      if (yAxisTickCount) {
-        yAxis.ticks(yAxisTickCount);
-      }
-      
       g.append('g')
-        .attr('class', 'y-axis')
-        .call(yAxis);
+        .call(d3.axisLeft(y));
     }
     
-    // If no custom template, render regular bars
-    if (!Template) {
-      g.append('g')
-        .attr('class', 'bars')
-        .selectAll('.bar')
-        .data(data)
-        .enter()
-        .append('rect')
-        .attr('class', 'bar')
-        .attr('x', d => x(String(d.x)) || 0)
-        .attr('y', d => y(d.y))
-        .attr('width', x.bandwidth())
-        .attr('height', d => innerHeight - y(d.y))
-        .attr('fill', d => d.color || barColor)
-        .attr('stroke', barStrokeColor)
-        .attr('stroke-width', barStrokeWidth);
-    } else {
-      // If custom template, prepare data for the template component
-      const bars = data.map(d => ({
-        x: x(String(d.x)) || 0,
+    // Calculate bar data for reuse in templates
+    const calcBarData = data.map((d, i) => {
+      return {
+        x: x(String(d.x)) ?? 0,
         y: y(d.y),
         width: x.bandwidth(),
         height: innerHeight - y(d.y),
         color: d.color || barColor,
         strokeColor: barStrokeColor,
         strokeWidth: barStrokeWidth
-      }));
-      
-      setBarData(bars);
-    }
+      };
+    });
     
-    // Cleanup function
-    return () => {
-      if (chartRef.current && !Template) {
-        // Only remove D3 elements if we're not using a React template
-        // to avoid the "Failed to execute 'removeChild' on 'Node'" error
-        chartRef.current.selectAll('*').remove();
-      }
-    };
+    setBarData(calcBarData);
     
-  }, [
-    data, width, height, marginTop, marginRight, marginBottom, marginLeft,
-    barPadding, barColor, barStrokeColor, barStrokeWidth, Template, showXAxis, showYAxis, xAxisTickCount,
-    yAxisTickCount, yDomainMin, yDomainMax,
-  ]);
+    // Add bars
+    const bars = g.selectAll('.bar')
+      .data(data)
+      .enter()
+      .append('rect')
+      .attr('class', 'bar')
+      .attr('x', d => x(String(d.x)) ?? 0)
+      .attr('y', d => y(d.y))
+      .attr('width', x.bandwidth())
+      .attr('height', d => innerHeight - y(d.y))
+      .attr('fill', d => getFillValue(barFillPattern, d.color || barColor))
+      .attr('fill-opacity', barFillOpacity)
+      .attr('stroke', barStrokeColor)
+      .attr('stroke-width', barStrokeWidth)
+      .attr('stroke-dasharray', getStrokeDashArray(barStrokePattern));
+    
+    chartRef.current = { g, x, y };
+    
+  }, [data, width, height, marginTop, marginRight, marginBottom, marginLeft, 
+      barPadding, barColor, barStrokeColor, barStrokeWidth, 
+      barFill, barFillOpacity, barFillPattern, barStrokePattern,
+      showXAxis, showYAxis, yDomainMin, yDomainMax]);
 
   // Effect to clean up when component unmounts
   useEffect(() => {
     return () => {
-      if (chartRef.current) {
-        chartRef.current.remove();
+      if (chartRef.current && chartRef.current.g) {
+        // Clean up D3 elements but preserve the SVG container
+        chartRef.current.g.selectAll('*').remove();
       }
     };
   }, []);

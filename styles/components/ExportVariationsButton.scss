@@ -1,0 +1,56 @@
+.export-variations-button-container {
+  margin: 15px 0;
+  
+  .export-variations-button {
+    background-color: #4a86e8;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+    
+    &:hover {
+      background-color: #3a76d8;
+    }
+    
+    &:disabled {
+      background-color: #6c9cee;
+      cursor: not-allowed;
+    }
+    
+    &.exporting {
+      background-color: #f39c12;
+      animation: pulse 1.5s infinite;
+    }
+  }
+  
+  .export-progress {
+    margin-top: 10px;
+    height: 6px;
+    background-color: #eee;
+    border-radius: 3px;
+    overflow: hidden;
+    
+    .progress-bar {
+      height: 100%;
+      background-color: #4a86e8;
+      transition: width 0.3s ease;
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+} 

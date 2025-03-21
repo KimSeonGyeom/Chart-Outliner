@@ -19,8 +19,8 @@ interface ChartWithDropdownProps {
 const ChartWithDropdown: React.FC<ChartWithDropdownProps> = ({
   data,
   chartType = 'line',
-  width = 600,
-  height = 400,
+  width = 512,
+  height = 512,
 }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
   const [fillEnabled, setFillEnabled] = useState<boolean>(false);

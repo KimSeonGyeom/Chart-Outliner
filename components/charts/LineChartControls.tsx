@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChartData } from '../templates/types';
 import LineChart from './LineChart';
 import { SavedChartData, LineChartConfig } from '../gallery/types';
@@ -12,13 +12,15 @@ import {
   LineAppearanceSection, 
   LineFillSection,
   PointsSection,
+  StrokePatternSection,
   ChartDimensions,
   AxisOptions,
   LineChartOptions,
   ChartType,
   SaveDialog,
   saveChart,
-  downloadChart
+  downloadChart,
+  ExportVariationsButton
 } from '../controls';
 import { sampleDataSets, generateRandomLineData } from '../data';
 import '../../styles/components/ControlPanel.scss';
@@ -43,8 +45,8 @@ interface LineChartControlsProps {
 
 function LineChartControls({
   data = sampleDataSets.basic,
-  width = 600,
-  height = 400,
+  width = 512,
+  height = 512,
   chartRef,
   activeChart,
   onChartTypeChange,
@@ -76,8 +78,10 @@ function LineChartControls({
     curveTension: loadedConfig?.curveTension || 0.5,
     fill: loadedConfig?.fill || false,
     fillOpacity: loadedConfig?.fillOpacity || 0.0,
+    fillPattern: loadedConfig?.fillPattern || 'solid',
     showPoints: loadedConfig?.showPoints || true,
-    pointRadius: loadedConfig?.pointRadius || 3
+    pointRadius: loadedConfig?.pointRadius || 3,
+    lineStrokePattern: loadedConfig?.lineStrokePattern || 'solid'
   });
   
   // Axis appearance
@@ -133,8 +137,10 @@ function LineChartControls({
       curveTension: lineOptions.curveTension,
       fill: lineOptions.fill,
       fillOpacity: lineOptions.fillOpacity,
+      fillPattern: lineOptions.fillPattern,
       showPoints: lineOptions.showPoints,
       pointRadius: lineOptions.pointRadius,
+      lineStrokePattern: lineOptions.lineStrokePattern,
       showXAxis: axisOptions.showXAxis,
       showYAxis: axisOptions.showYAxis,
       yDomainMin: axisOptions.yDomainMin,
@@ -177,8 +183,10 @@ function LineChartControls({
         curveTension: config.curveTension,
         fill: config.fill,
         fillOpacity: config.fillOpacity,
+        fillPattern: config.fillPattern || 'solid',
         showPoints: config.showPoints,
-        pointRadius: config.pointRadius
+        pointRadius: config.pointRadius,
+        lineStrokePattern: config.lineStrokePattern || 'solid'
       });
       setAxisOptions({
         showXAxis: config.showXAxis,
@@ -298,7 +306,16 @@ function LineChartControls({
       
       <LineFillSection
         fill={lineOptions.fill}
+        fillOpacity={lineOptions.fillOpacity}
+        fillPattern={lineOptions.fillPattern}
         onFillChange={(fill) => handleLineOptionChange('fill', fill)}
+        onFillOpacityChange={(opacity) => handleLineOptionChange('fillOpacity', opacity)}
+        onFillPatternChange={(pattern) => handleLineOptionChange('fillPattern', pattern)}
+      />
+      
+      <StrokePatternSection
+        strokePattern={lineOptions.lineStrokePattern}
+        onStrokePatternChange={(pattern) => handleLineOptionChange('lineStrokePattern', pattern)}
       />
       
       <PointsSection
@@ -307,55 +324,76 @@ function LineChartControls({
         onShowPointsChange={(show) => handleLineOptionChange('showPoints', show)}
         onPointRadiusChange={(radius) => handleLineOptionChange('pointRadius', radius)}
       />
+
+      <div className="section">
+        <h3>Export Variations</h3>
+        <p>Generate and download multiple variations of this chart</p>
+        <ExportVariationsButton
+          chartType="line"
+          chartRef={chartRef}
+          setChartSettings={(settings: any) => {
+            if ('curveType' in settings) {
+              handleLineOptionChange('curveType', settings.curveType);
+            }
+            if ('fill' in settings) {
+              handleLineOptionChange('fill', settings.fill);
+            }
+            if ('data' in settings) {
+              setChartData(settings.data);
+            }
+          }}
+        />
+      </div>
     </>
   );
 
   // Export options component
   const exportOptions = (
-    <div className="export-options">
-      <div className="form-group">
-        <label htmlFor="fileName">File Name</label>
+    <div className="export-options-dialog">
+      <h3>Export Options</h3>
+      <label>
+        Filename:
         <input
-          id="fileName"
           type="text"
           value={exportFileName}
           onChange={(e) => setExportFileName(e.target.value)}
-          placeholder="Enter a name for your file"
         />
+      </label>
+      <div className="file-type-options">
+        <label>
+          <input
+            type="radio"
+            name="fileType"
+            value="png"
+            checked={exportFileType === 'png'}
+            onChange={() => setExportFileType('png')}
+          />
+          PNG
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="fileType"
+            value="jpg"
+            checked={exportFileType === 'jpg'}
+            onChange={() => setExportFileType('jpg')}
+          />
+          JPG
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="fileType"
+            value="svg"
+            checked={exportFileType === 'svg'}
+            onChange={() => setExportFileType('svg')}
+          />
+          SVG
+        </label>
       </div>
-      
-      <div className="form-group">
-        <label>File Format</label>
-        <div className="format-options">
-          {['png', 'jpg', 'svg'].map((format) => (
-            <div 
-              key={format}
-              className={`format-option ${exportFileType === format ? 'selected' : ''}`}
-              onClick={() => setExportFileType(format as 'png' | 'jpg' | 'svg')}
-            >
-              <div className="format-radio">
-                <div className="radio-inner"></div>
-              </div>
-              <span className="format-label">{format.toUpperCase()}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      
       <div className="export-actions">
-        <button 
-          className="cancel-button"
-          onClick={() => setShowExportOptions(false)}
-        >
-          Cancel
-        </button>
-        <button 
-          className="export-button"
-          onClick={handleExport}
-          disabled={!exportFileName.trim()}
-        >
-          Export
-        </button>
+        <button onClick={handleExport}>Export</button>
+        <button onClick={() => setShowExportOptions(false)}>Cancel</button>
       </div>
     </div>
   );
@@ -378,6 +416,8 @@ function LineChartControls({
               curveTension={lineOptions.curveTension}
               fill={lineOptions.fill}
               fillOpacity={lineOptions.fillOpacity}
+              fillPattern={lineOptions.fillPattern}
+              lineStrokePattern={lineOptions.lineStrokePattern}
               showPoints={lineOptions.showPoints}
               pointRadius={lineOptions.pointRadius}
               showXAxis={axisOptions.showXAxis}

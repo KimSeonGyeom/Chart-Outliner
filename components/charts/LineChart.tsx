@@ -2,7 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import { ChartData, TemplateProps } from '../templates/types';
+import { ChartData, ChartDataPoint } from '../templates/types';
+import ReactDOMServer from 'react-dom/server';
 
 interface LineChartProps {
   data: ChartData;
@@ -12,9 +13,9 @@ interface LineChartProps {
   marginRight?: number;
   marginBottom?: number;
   marginLeft?: number;
-  template?: React.ComponentType<TemplateProps> | null;
   fill?: boolean; // Whether to fill the area under the line
   fillOpacity?: number; // Opacity of the fill color
+  fillPattern?: string; // Pattern to fill the area with
   
   // Curve parameters
   curveType?: 'cardinal' | 'basis' | 'natural' | 'monotone' | 'catmullRom' | 'linear';
@@ -24,6 +25,7 @@ interface LineChartProps {
   lineColor?: string;
   lineWidth?: number;
   lineDash?: number[]; // For dashed lines [dashLength, gapLength]
+  lineStrokePattern?: string; // Added stroke pattern option
   
   // Point appearance
   showPoints?: boolean; // Whether to show data points
@@ -47,15 +49,15 @@ interface LineChartProps {
 
 const LineChart: React.FC<LineChartProps> = ({
   data,
-  width = 600,
-  height = 400,
+  width = 512,
+  height = 512,
   marginTop = 20,
   marginRight = 20,
   marginBottom = 30,
   marginLeft = 40,
-  // template: Template,
   fill = false,
   fillOpacity = 0.0,
+  fillPattern = 'solid',
   
   // Curve parameters
   curveType = 'linear',
@@ -65,6 +67,7 @@ const LineChart: React.FC<LineChartProps> = ({
   lineColor = '#000',
   lineWidth = 1,
   lineDash,
+  lineStrokePattern = 'solid',
   
   // Point appearance
   showPoints = true,
@@ -139,174 +142,205 @@ const LineChart: React.FC<LineChartProps> = ({
     };
   }, [isResizing, startResizePos, initialDimensions, width, height, onResize]);
 
-  useEffect(() => {
-    if (!svgRef.current) return;
-
-    const svg = d3.select(svgRef.current);
-    
-    // Clear the previous chart if it exists
-    if (chartRef.current) {
-      chartRef.current.remove();
+  // Calculate the stroke-dasharray value based on the pattern
+  const getStrokeDashArray = (pattern: string): string => {
+    switch (pattern) {
+      case 'dashed':
+        return '6,4';
+      case 'dotted':
+        return '2,2';
+      case 'dash-dot':
+        return '8,3,2,3';
+      case 'long-dash':
+        return '12,6';
+      default:
+        return 'none';
     }
-    
-    // Create inner chart area
+  };
+
+  // Create pattern definitions for fill patterns
+  const createFillPattern = (pattern: string, color: string) => {
+    switch (pattern) {
+      case 'diagonal':
+        return (
+          <pattern id="diagonalPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+            <path d="M-1,1 l2,-2 M0,8 l8,-8 M7,9 l1,-1" stroke={color} strokeWidth="1" />
+          </pattern>
+        );
+      case 'crosshatch':
+        return (
+          <pattern id="crosshatchPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+            <path d="M0,0 l8,8 M8,0 l-8,8" stroke={color} strokeWidth="1" />
+          </pattern>
+        );
+      case 'dots':
+        return (
+          <pattern id="dotsPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+            <circle cx="4" cy="4" r="1.5" fill={color} />
+          </pattern>
+        );
+      case 'grid':
+        return (
+          <pattern id="gridPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+            <path d="M0,0 h8 M0,8 h8 M0,0 v8 M8,0 v8" stroke={color} strokeWidth="1" />
+          </pattern>
+        );
+      case 'zigzag':
+        return (
+          <pattern id="zigzagPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+            <path d="M0,4 l4,-4 l4,4" stroke={color} strokeWidth="1" fill="none" />
+          </pattern>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Helper function to get fill value based on pattern
+  const getFillValue = (pattern: string, color: string) => {
+    if (!fill) return 'transparent';
+    if (pattern === 'solid') return color;
+    return `url(#${pattern}Pattern)`;
+  };
+
+  // Update chart with new data
+  useEffect(() => {
+    if (!svgRef.current || !data || data.length === 0) return;
+
+    // Get the SVG element and clear it
+    const svg = d3.select(svgRef.current);
+    svg.selectAll('*').remove();
+
+    // Add pattern definitions
+    const defs = svg.append('defs');
+    if (fill && fillPattern !== 'solid') {
+      const pattern = createFillPattern(fillPattern, lineColor);
+      if (pattern) {
+        defs.html(ReactDOMServer.renderToString(pattern));
+      }
+    }
+
+    // Calculate inner dimensions
     const innerWidth = width - marginLeft - marginRight;
     const innerHeight = height - marginTop - marginBottom;
-    
+
     // Create scales
     const x = d3.scalePoint()
       .domain(data.map(d => String(d.x)))
       .range([0, innerWidth])
       .padding(0.5);
-    
-    // Set y domain with optional min/max values
-    const yMin = yDomainMin !== undefined ? yDomainMin : 0;
+
+    const yMin = yDomainMin !== undefined ? yDomainMin : d3.min(data, d => d.y) || 0;
     const yMax = yDomainMax !== undefined ? yDomainMax : d3.max(data, d => d.y) || 0;
     
     const y = d3.scaleLinear()
-      .domain([yMin, yMax])
+      .domain([Math.min(0, yMin), yMax * 1.1])
       .nice()
       .range([innerHeight, 0]);
-    
+
+    // Create main chart group
     const g = svg.append('g')
       .attr('transform', `translate(${marginLeft},${marginTop})`);
-      
-    // Store the group for later cleanup
-    chartRef.current = g;
-    
-    // Add x axis if enabled
-    if (showXAxis) {
-      const xAxis = d3.axisBottom(x);
-      if (xAxisTickCount) {
-        xAxis.tickValues(
-          x.domain().filter((_, i, arr) => i % Math.ceil(arr.length / xAxisTickCount) === 0)
-        );
+
+    // Create line generator with specified curve
+    const getCurveFunction = (type: string) => {
+      switch (type) {
+        case 'cardinal':
+          return d3.curveCardinal.tension(curveTension);
+        case 'basis':
+          return d3.curveBasis;
+        case 'natural':
+          return d3.curveNatural;
+        case 'monotone':
+          return d3.curveMonotoneX;
+        case 'catmullRom':
+          return d3.curveCatmullRom.alpha(curveTension);
+        case 'linear':
+        default:
+          return d3.curveLinear;
       }
-      
-      g.append('g')
-        .attr('class', 'x-axis')
-        .attr('transform', `translate(0,${innerHeight})`)
-        .call(xAxis);
-    }
-    
-    // Add y axis if enabled
-    if (showYAxis) {
-      const yAxis = d3.axisLeft(y);
-      if (yAxisTickCount) {
-        yAxis.ticks(yAxisTickCount);
-      }
-      
-      g.append('g')
-        .attr('class', 'y-axis')
-        .call(yAxis);
-    }
-    
-    // Select curve function based on curveType
-    let curveFunction;
-    switch (curveType) {
-      case 'basis':
-        curveFunction = d3.curveBasis;
-        break;
-      case 'natural':
-        curveFunction = d3.curveNatural;
-        break;
-      case 'monotone':
-        curveFunction = d3.curveMonotoneX;
-        break;
-      case 'catmullRom':
-        curveFunction = d3.curveCatmullRom.alpha(curveTension);
-        break;
-      case 'linear':
-        curveFunction = d3.curveLinear;
-        break;
-      case 'cardinal':
-      default:
-        curveFunction = d3.curveCardinal.tension(curveTension);
-        break;
-    }
-    
-    // If fill is true, create and add area
+    };
+
+    const line = d3.line<ChartDataPoint>()
+      .x(d => x(String(d.x)) || 0)
+      .y(d => y(d.y))
+      .curve(getCurveFunction(curveType));
+
+    // Add area if fill is enabled
     if (fill) {
-      // Create area generator
-      const area = d3.area<any>()
+      const area = d3.area<ChartDataPoint>()
         .x(d => x(String(d.x)) || 0)
         .y0(innerHeight)
         .y1(d => y(d.y))
-        .curve(curveFunction); // Use selected curve type
-      
-      // Add the area path
+        .curve(getCurveFunction(curveType));
+
       g.append('path')
         .datum(data)
-        .attr('fill', lineColor)
-        .attr('fill-opacity', fillOpacity)
-        .attr('stroke', lineColor)
-        .attr('stroke-width', 1)
-        .attr('d', area);
+        .attr('class', 'area')
+        .attr('d', area)
+        .attr('fill', getFillValue(fillPattern, lineColor))
+        .attr('fill-opacity', fillOpacity);
     }
-    
-    // Create line for both filled and unfilled versions
-    const line = d3.line<any>()
-      .x(d => x(String(d.x)) || 0)
-      .y(d => y(d.y))
-      .curve(curveFunction); // Use selected curve type
-    
-    // Add the line path
-    const path = g.append('path')
+
+    // Add line
+    g.append('path')
       .datum(data)
+      .attr('class', 'line')
+      .attr('d', line)
       .attr('fill', 'none')
       .attr('stroke', lineColor)
       .attr('stroke-width', lineWidth)
-      .attr('d', line);
-    
-    // Add line dash if specified
-    if (lineDash && lineDash.length > 0) {
-      path.attr('stroke-dasharray', lineDash.join(','));
-    }
-    
-    // If no custom template and showPoints is true, add circles for each data point
+      .attr('stroke-dasharray', getStrokeDashArray(lineStrokePattern));
+
+    // Add points if enabled
     if (showPoints) {
-      const points = g.selectAll('.dot')
+      // Store the data points for external use
+      const pointsData = data.map(d => ({
+        x: x(String(d.x)) || 0,
+        y: y(d.y),
+        color: d.color || lineColor
+      }));
+      setDataPoints(pointsData);
+
+      g.selectAll('.point')
         .data(data)
         .enter()
         .append('circle')
-        .attr('class', 'dot')
+        .attr('class', 'point')
         .attr('cx', d => x(String(d.x)) || 0)
         .attr('cy', d => y(d.y))
         .attr('r', pointRadius)
-        .attr('fill', d => d.color || lineColor);
-        
-      // Add stroke to points if specified
-      if (pointStroke) {
-        points
-          .attr('stroke', pointStroke)
-          .attr('stroke-width', pointStrokeWidth);
-      }
+        .attr('fill', d => d.color || lineColor)
+        .attr('stroke', pointStroke)
+        .attr('stroke-width', pointStrokeWidth);
     }
-    
-    // Store data points for template rendering
-    setDataPoints(data.map(d => ({
-      x: x(String(d.x)) || 0,
-      y: y(d.y),
-      color: d.color || lineColor
-    })));
-    
-    // Cleanup function
-    return () => {
-      // No cleanup needed as we'll handle it in the effect
-    };
-  }, [
-    data, width, height, marginTop, marginRight, marginBottom, marginLeft,
-    fill, fillOpacity, curveType, curveTension, lineColor, lineWidth, lineDash,
-    showPoints, pointRadius, pointStroke, pointStrokeWidth,
-    showXAxis, showYAxis, xAxisTickCount, yAxisTickCount,
-    yDomainMin, yDomainMax
-  ]);
+
+    // Add axes if enabled
+    if (showXAxis) {
+      g.append('g')
+        .attr('transform', `translate(0,${innerHeight})`)
+        .call(d3.axisBottom(x));
+    }
+
+    if (showYAxis) {
+      g.append('g')
+        .call(d3.axisLeft(y));
+    }
+
+    // Store chart references
+    chartRef.current = { g, x, y };
+
+  }, [data, width, height, marginTop, marginRight, marginBottom, marginLeft, 
+      curveType, curveTension, lineColor, lineWidth, fill, fillOpacity, fillPattern,
+      showPoints, pointRadius, pointStroke, pointStrokeWidth, lineStrokePattern,
+      showXAxis, showYAxis, yDomainMin, yDomainMax]);
   
   // Effect to clean up when component unmounts
   useEffect(() => {
     return () => {
-      if (chartRef.current) {
-        chartRef.current.remove();
+      if (chartRef.current && chartRef.current.g) {
+        // Clean up D3 elements but preserve the SVG container
+        chartRef.current.g.selectAll('*').remove();
       }
     };
   }, []);

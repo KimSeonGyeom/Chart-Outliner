@@ -59,6 +59,10 @@ export interface ChartTypeSelectorProps {
 export interface BarChartOptions {
   barPadding: number;
   selectedTemplate: string;
+  barFill: boolean;
+  barFillOpacity: number;
+  barStrokePattern: string;
+  barFillPattern: string;
 }
 
 // Line chart specific options
@@ -67,8 +71,10 @@ export interface LineChartOptions {
   curveTension: number;
   fill: boolean;
   fillOpacity: number;
+  fillPattern: string;
   showPoints: boolean;
   pointRadius: number;
+  lineStrokePattern: string;
 }
 
 // Props for bar chart template section
@@ -80,7 +86,13 @@ export interface BarTemplateSectionProps {
 // Props for bar appearance section
 export interface BarAppearanceSectionProps {
   barPadding: number;
+  barFill: boolean;
+  barFillOpacity: number;
+  barFillPattern: string;
   onBarPaddingChange: (padding: number) => void;
+  onBarFillChange: (fill: boolean) => void;
+  onBarFillOpacityChange: (opacity: number) => void;
+  onBarFillPatternChange: (pattern: string) => void;
 }
 
 // Props for line appearance section
@@ -94,7 +106,11 @@ export interface LineAppearanceSectionProps {
 // Props for line fill section
 export interface LineFillSectionProps {
   fill: boolean;
+  fillOpacity: number;
+  fillPattern: string;
   onFillChange: (fill: boolean) => void;
+  onFillOpacityChange: (opacity: number) => void;
+  onFillPatternChange: (pattern: string) => void;
 }
 
 // Props for point options section
@@ -133,4 +149,16 @@ export interface SaveChartConfig {
   getChartConfig: () => BarChartConfig | LineChartConfig;
   onSaveSuccess: () => void;
   onSaveError: (error: any) => void;
+}
+
+// Props for stroke pattern section
+export interface StrokePatternSectionProps {
+  strokePattern: string;
+  onStrokePatternChange: (pattern: string) => void;
+}
+
+// Props for fill pattern section
+export interface FillPatternSectionProps {
+  fillPattern: string;
+  onFillPatternChange: (pattern: string) => void;
 } 

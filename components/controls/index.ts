@@ -11,11 +11,14 @@ export { downloadChart } from './downloadUtils';
 export { default as ControlPanel } from './ControlPanel';
 export { default as ChartTypeSelector } from './ChartTypeSelector';
 export { default as SaveDialog } from './SaveDialog';
+export { default as ExportVariationsButton } from './ExportVariationsButton';
 
 // Export shared sections
 export { default as DimensionsSection } from './DimensionsSection';
 export { default as AxisSection } from './AxisSection';
 export { default as DomainSection } from './DomainSection';
+export { default as StrokePatternSection } from './StrokePatternSection';
+export { default as FillPatternSection } from './FillPatternSection';
 
 // Export bar chart sections
 export { default as BarTemplateSection } from './BarTemplateSection';

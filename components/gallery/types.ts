@@ -13,6 +13,10 @@ export interface BarChartConfig {
   width: number;
   height: number;
   barPadding: number;
+  barFill?: boolean;
+  barFillOpacity?: number;
+  barFillPattern?: string;
+  barStrokePattern?: string;
   showXAxis: boolean;
   showYAxis: boolean;
   yDomainMin?: number;
@@ -31,8 +35,10 @@ export interface LineChartConfig {
   curveTension: number;
   fill: boolean;
   fillOpacity: number;
+  fillPattern?: string;
   showPoints: boolean;
   pointRadius: number;
+  lineStrokePattern?: string;
   showXAxis: boolean;
   showYAxis: boolean;
   yDomainMin?: number;

@@ -62,7 +62,7 @@ export const downloadChartAsImage = async (
     // Capture the chart as canvas
     const canvas = await html2canvas(chartRef, {
       backgroundColor: asOutlines ? '#FFFFFF' : 'transparent',
-      scale: 2, // Higher quality
+      scale: 1, // Original size (was 2)
       useCORS: true,
       allowTaint: true,
     });

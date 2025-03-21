@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChartData } from '../templates/types';
 import BarChart from './BarChart';
 import DiamondTemplate from '../templates/DiamondTemplate';
@@ -15,12 +15,14 @@ import {
   DomainSection, 
   BarTemplateSection, 
   BarAppearanceSection,
+  StrokePatternSection,
   ChartDimensions,
   AxisOptions,
   ChartType,
   SaveDialog,
   saveChart,
-  downloadChart
+  downloadChart,
+  ExportVariationsButton
 } from '../controls';
 import { sampleDataSets, generateRandomBarData } from '../data';
 import '../../styles/components/ControlPanel.scss';
@@ -59,12 +61,16 @@ function BarChartControls({
   
   // Chart dimensions
   const [dimensions, setDimensions] = useState<ChartDimensions>({
-    width: loadedConfig?.width || 600,
-    height: loadedConfig?.height || 400
+    width: loadedConfig?.width || 512,
+    height: loadedConfig?.height || 512
   });
   
   // Bar appearance
   const [barPadding, setBarPadding] = useState(loadedConfig?.barPadding || 0.2);
+  const [barFill, setBarFill] = useState(loadedConfig?.barFill || false);
+  const [barFillOpacity, setBarFillOpacity] = useState(loadedConfig?.barFillOpacity || 0.5);
+  const [barStrokePattern, setBarStrokePattern] = useState(loadedConfig?.barStrokePattern || 'solid');
+  const [barFillPattern, setBarFillPattern] = useState(loadedConfig?.barFillPattern || 'solid');
   
   // Template selection
   const [selectedTemplate, setSelectedTemplate] = useState<string>(loadedConfig?.selectedTemplate || 'rectangle');
@@ -85,8 +91,6 @@ function BarChartControls({
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [exportFileName, setExportFileName] = useState('');
   const [exportFileType, setExportFileType] = useState<'png' | 'jpg' | 'svg'>('png');
-  const [isExporting, setIsExporting] = useState<boolean>(false);
-  const [fileName, setFileName] = useState<string>(chartName || 'chart');
 
   // Template mapping
   const templates: Record<string, React.ComponentType<any> | null> = {
@@ -134,6 +138,10 @@ function BarChartControls({
       width: dimensions.width,
       height: dimensions.height,
       barPadding,
+      barFill,
+      barFillOpacity,
+      barStrokePattern,
+      barFillPattern,
       showXAxis: axisOptions.showXAxis,
       showYAxis: axisOptions.showYAxis,
       yDomainMin: axisOptions.yDomainMin,
@@ -169,6 +177,10 @@ function BarChartControls({
         height: config.height
       });
       setBarPadding(config.barPadding);
+      setBarFill(config.barFill ?? false);
+      setBarFillOpacity(config.barFillOpacity ?? 0.5);
+      setBarStrokePattern(config.barStrokePattern ?? 'solid');
+      setBarFillPattern(config.barFillPattern ?? 'solid');
       setAxisOptions({
         showXAxis: config.showXAxis,
         showYAxis: config.showYAxis,
@@ -205,141 +217,26 @@ function BarChartControls({
     }
   };
 
-  // Shared controls
-  const sharedControls = (
-    <>
-      <DimensionsSection
-        dimensions={dimensions}
-        onDimensionChange={handleDimensionChange}
-      />
-      
-      <AxisSection
-        axisOptions={axisOptions}
-        onAxisOptionChange={handleAxisOptionChange}
-      />
-      
-      <DomainSection
-        yDomainMin={axisOptions.yDomainMin}
-        yDomainMax={axisOptions.yDomainMax}
-        onDomainChange={handleDomainChange}
-      />
-    </>
-  );
-  
-  // Add data controls section
-  const dataControls = (
-    <div className="section">
-      <h3>Data Options</h3>
-      <div className="control-group">
-        <label>Preset Data</label>
-        <div className="data-presets">
-          <select 
-            value={selectedPreset}
-            onChange={(e) => handlePresetChange(e.target.value)}
-          >
-            <option value="basic">Basic Trend</option>
-            <option value="rising">Rising Trend</option>
-            <option value="falling">Falling Trend</option>
-            <option value="grouped">Grouped Categories</option>
-            <option value="exponential">Exponential Growth</option>
-            <option value="logarithmic">Logarithmic Growth</option>
-            <option value="sinusoidal">Sine Wave</option>
-            <option value="custom" disabled={selectedPreset !== "custom"}>Custom</option>
-          </select>
-          <button 
-            className="randomize-button"
-            onClick={generateRandomData}
-            title="Generate random data"
-          >
-            Randomize
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-  
-  // Chart-specific controls
-  const chartSpecificControls = (
-    <>
-      {dataControls}
-      
-      <BarTemplateSection
-        selectedTemplate={selectedTemplate}
-        onTemplateChange={setSelectedTemplate}
-      />
-      
-      <BarAppearanceSection
-        barPadding={barPadding}
-        onBarPaddingChange={setBarPadding}
-      />
-    </>
-  );
-
-  // Export options component
-  const exportOptions = (
-    <div className="export-options">
-      <div className="form-group">
-        <label htmlFor="fileName">File Name</label>
-        <input
-          id="fileName"
-          type="text"
-          value={exportFileName}
-          onChange={(e) => setExportFileName(e.target.value)}
-          placeholder="Enter a name for your file"
-        />
-      </div>
-      
-      <div className="form-group">
-        <label>File Format</label>
-        <div className="format-options">
-          {['png', 'jpg', 'svg'].map((format) => (
-            <div 
-              key={format}
-              className={`format-option ${exportFileType === format ? 'selected' : ''}`}
-              onClick={() => setExportFileType(format as 'png' | 'jpg' | 'svg')}
-            >
-              <div className="format-radio">
-                <div className="radio-inner"></div>
-              </div>
-              <span className="format-label">{format.toUpperCase()}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <div className="export-actions">
-        <button 
-          className="cancel-button"
-          onClick={() => setShowExportOptions(false)}
-        >
-          Cancel
-        </button>
-        <button 
-          className="export-button"
-          onClick={handleExport}
-          disabled={!exportFileName.trim()}
-        >
-          Export
-        </button>
-      </div>
-    </div>
-  );
-
   return (
     <div className="bar-chart-wrapper">
       <div className="bar-chart-controls">
+        {/* Chart display */}
         <div className="chart-container">
           <div ref={chartRef} className="chart-display">
-            <BarChart
+            <BarChart 
               data={chartData}
-              width={dimensions.width}
+              width={dimensions.width} 
               height={dimensions.height}
               barPadding={barPadding}
-              template={templates[selectedTemplate]}
+              barFill={barFill}
+              barFillOpacity={barFillOpacity}
+              barStrokePattern={barStrokePattern}
+              barFillPattern={barFillPattern}
               showXAxis={axisOptions.showXAxis}
               showYAxis={axisOptions.showYAxis}
               yDomainMin={axisOptions.yDomainMin}
               yDomainMax={axisOptions.yDomainMax}
+              template={templates[selectedTemplate]}
               onResize={(newWidth, newHeight) => {
                 handleDimensionChange('width', newWidth);
                 handleDimensionChange('height', newHeight);
@@ -348,26 +245,134 @@ function BarChartControls({
           </div>
         </div>
         
-        <ControlPanel
+        {/* Controls panel */}
+        <ControlPanel 
           chartType={activeChart}
           onChartTypeChange={onChartTypeChange}
           onSaveClick={onSaveClick}
           onExportClick={handleExportClick}
-          sharedControls={sharedControls}
-          chartSpecificControls={chartSpecificControls}
+          sharedControls={
+            <>
+              <DimensionsSection 
+                dimensions={dimensions}
+                onDimensionChange={handleDimensionChange}
+              />
+              
+              <AxisSection 
+                axisOptions={axisOptions}
+                onAxisOptionChange={handleAxisOptionChange}
+              />
+              
+              <DomainSection 
+                yDomainMin={axisOptions.yDomainMin}
+                yDomainMax={axisOptions.yDomainMax}
+                onDomainChange={handleDomainChange}
+              />
+            </>
+          }
+          chartSpecificControls={
+            <>
+              <BarTemplateSection 
+                selectedTemplate={selectedTemplate}
+                onTemplateChange={setSelectedTemplate}
+              />
+              
+              <BarAppearanceSection 
+                barPadding={barPadding}
+                barFill={barFill}
+                barFillOpacity={barFillOpacity}
+                barFillPattern={barFillPattern}
+                onBarPaddingChange={setBarPadding}
+                onBarFillChange={setBarFill}
+                onBarFillOpacityChange={setBarFillOpacity}
+                onBarFillPatternChange={setBarFillPattern}
+              />
+              
+              <StrokePatternSection
+                strokePattern={barStrokePattern}
+                onStrokePatternChange={setBarStrokePattern}
+              />
+
+              <div className="section">
+                <h3>Export Variations</h3>
+                <p>Generate and download multiple variations of this chart</p>
+                <ExportVariationsButton
+                  chartType="bar"
+                  chartRef={chartRef}
+                  setChartSettings={(settings: any) => {
+                    if ('templateName' in settings) {
+                      setSelectedTemplate(settings.templateName);
+                    }
+                    if ('data' in settings) {
+                      setChartData(settings.data);
+                    }
+                  }}
+                />
+              </div>
+            </>
+          }
           showExportOptions={showExportOptions}
-          exportOptions={exportOptions}
+          exportOptions={
+            <div className="export-options">
+              <div className="form-group">
+                <label htmlFor="fileName">File Name</label>
+                <input
+                  id="fileName"
+                  type="text"
+                  value={exportFileName}
+                  onChange={(e) => setExportFileName(e.target.value)}
+                  placeholder="Enter a name for your file"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>File Format</label>
+                <div className="format-options">
+                  {['png', 'jpg', 'svg'].map((format) => (
+                    <div 
+                      key={format}
+                      className={`format-option ${exportFileType === format ? 'selected' : ''}`}
+                      onClick={() => setExportFileType(format as 'png' | 'jpg' | 'svg')}
+                    >
+                      <div className="format-radio">
+                        <div className="radio-inner"></div>
+                      </div>
+                      <span className="format-label">{format.toUpperCase()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="export-actions">
+                <button 
+                  className="cancel-button"
+                  onClick={() => setShowExportOptions(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="export-button"
+                  onClick={handleExport}
+                  disabled={!exportFileName.trim()}
+                >
+                  Export
+                </button>
+              </div>
+            </div>
+          }
         />
       </div>
       
       {/* Save dialog */}
-      <SaveDialog
-        isOpen={isSaving}
-        chartName={chartName}
-        onClose={onSaveClose}
-        onSave={handleSaveChart}
-        onChartNameChange={onChartNameChange}
-      />
+      {isSaving && (
+        <SaveDialog
+          isOpen={isSaving}
+          chartName={chartName}
+          onClose={onSaveClose}
+          onSave={handleSaveChart}
+          onChartNameChange={onChartNameChange}
+        />
+      )}
     </div>
   );
 };
