@@ -20,7 +20,8 @@ import {
   SaveDialog,
   saveChart,
   downloadChart,
-  ExportVariationsButton
+  ExportVariationsButton,
+  DataSection
 } from '../controls';
 import { sampleDataSets, generateRandomLineData } from '../data';
 import '../../styles/components/ControlPanel.scss';
@@ -79,9 +80,15 @@ function LineChartControls({
     fill: loadedConfig?.fill || false,
     fillOpacity: loadedConfig?.fillOpacity || 0.0,
     fillPattern: loadedConfig?.fillPattern || 'solid',
-    showPoints: loadedConfig?.showPoints || true,
-    pointRadius: loadedConfig?.pointRadius || 3,
-    lineStrokePattern: loadedConfig?.lineStrokePattern || 'solid'
+    fillZoomLevel: loadedConfig?.fillZoomLevel || 8,
+    showPoints: loadedConfig?.showPoints ?? true,
+    pointRadius: loadedConfig?.pointRadius ?? 3,
+    pointShape: loadedConfig?.pointShape ?? 'circle',
+    pointStrokeWidth: loadedConfig?.pointStrokeWidth ?? 1,
+    lineStrokePattern: loadedConfig?.lineStrokePattern || 'solid',
+    lineStrokeWidth: loadedConfig?.lineStrokeWidth || 1,
+    lineStrokeStyle: loadedConfig?.lineStrokeStyle || 'normal',
+    lineDashArray: loadedConfig?.lineDashArray || '6,4'
   });
   
   // Axis appearance
@@ -138,9 +145,15 @@ function LineChartControls({
       fill: lineOptions.fill,
       fillOpacity: lineOptions.fillOpacity,
       fillPattern: lineOptions.fillPattern,
+      fillZoomLevel: lineOptions.fillZoomLevel,
       showPoints: lineOptions.showPoints,
       pointRadius: lineOptions.pointRadius,
+      pointShape: lineOptions.pointShape,
+      pointStrokeWidth: lineOptions.pointStrokeWidth,
       lineStrokePattern: lineOptions.lineStrokePattern,
+      lineStrokeWidth: lineOptions.lineStrokeWidth,
+      lineStrokeStyle: lineOptions.lineStrokeStyle,
+      lineDashArray: lineOptions.lineDashArray,
       showXAxis: axisOptions.showXAxis,
       showYAxis: axisOptions.showYAxis,
       yDomainMin: axisOptions.yDomainMin,
@@ -184,9 +197,15 @@ function LineChartControls({
         fill: config.fill,
         fillOpacity: config.fillOpacity,
         fillPattern: config.fillPattern || 'solid',
+        fillZoomLevel: config.fillZoomLevel || 8,
         showPoints: config.showPoints,
         pointRadius: config.pointRadius,
-        lineStrokePattern: config.lineStrokePattern || 'solid'
+        pointShape: config.pointShape ?? 'circle',
+        pointStrokeWidth: config.pointStrokeWidth ?? 1,
+        lineStrokePattern: config.lineStrokePattern || 'solid',
+        lineStrokeWidth: config.lineStrokeWidth || 1,
+        lineStrokeStyle: config.lineStrokeStyle || 'normal',
+        lineDashArray: config.lineDashArray || '6,4'
       });
       setAxisOptions({
         showXAxis: config.showXAxis,
@@ -201,6 +220,24 @@ function LineChartControls({
       }
     }
   }, [loadedChart, onChartLoaded]);
+
+  // Use a useEffect to set the selectedPreset based on the data
+  useEffect(() => {
+    // Check if the current data matches a preset
+    for (const [key, value] of Object.entries(sampleDataSets)) {
+      if (key !== 'grouped' && JSON.stringify(chartData) === JSON.stringify(value)) {
+        setSelectedPreset(key);
+        return;
+      }
+    }
+    // If no match or matches 'grouped', set to custom or basic
+    if (JSON.stringify(chartData) === JSON.stringify(sampleDataSets.grouped)) {
+      setChartData(sampleDataSets.basic);
+      setSelectedPreset('basic');
+    } else {
+      setSelectedPreset('custom');
+    }
+  }, [chartData]);
 
   // Handle export click
   const handleExportClick = () => {
@@ -233,43 +270,11 @@ function LineChartControls({
   const handlePresetChange = (preset: string) => {
     if (preset === "random") {
       generateRandomData();
-    } else if (preset in sampleDataSets) {
+    } else if (preset in sampleDataSets && preset !== 'grouped') {
       setChartData(sampleDataSets[preset as keyof typeof sampleDataSets]);
       setSelectedPreset(preset);
     }
   };
-
-  // Add data controls section
-  const dataControls = (
-    <div className="section">
-      <h3>Data Options</h3>
-      <div className="control-group">
-        <label>Preset Data</label>
-        <div className="data-presets">
-          <select 
-            value={selectedPreset}
-            onChange={(e) => handlePresetChange(e.target.value)}
-          >
-            <option value="basic">Basic Trend</option>
-            <option value="rising">Rising Trend</option>
-            <option value="falling">Falling Trend</option>
-            <option value="wave">Wave Pattern</option>
-            <option value="exponential">Exponential Growth</option>
-            <option value="logarithmic">Logarithmic Growth</option>
-            <option value="sinusoidal">Sine Wave</option>
-            <option value="custom" disabled={selectedPreset !== "custom"}>Custom</option>
-          </select>
-          <button 
-            className="randomize-button"
-            onClick={generateRandomData}
-            title="Generate random data"
-          >
-            Randomize
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 
   // Shared controls
   const sharedControls = (
@@ -277,6 +282,13 @@ function LineChartControls({
       <DimensionsSection
         dimensions={dimensions}
         onDimensionChange={handleDimensionChange}
+      />
+      
+      <DataSection
+        selectedPreset={selectedPreset}
+        onPresetChange={handlePresetChange}
+        onRandomize={generateRandomData}
+        chartType="line"
       />
       
       <AxisSection
@@ -289,14 +301,23 @@ function LineChartControls({
         yDomainMax={axisOptions.yDomainMax}
         onDomainChange={handleDomainChange}
       />
+      
+      <StrokePatternSection
+        strokePattern={lineOptions.lineStrokePattern}
+        strokeWidth={lineOptions.lineStrokeWidth}
+        strokeStyle={lineOptions.lineStrokeStyle}
+        dashArray={lineOptions.lineDashArray}
+        onStrokePatternChange={(pattern) => handleLineOptionChange('lineStrokePattern', pattern)}
+        onStrokeWidthChange={(width) => handleLineOptionChange('lineStrokeWidth', width)}
+        onStrokeStyleChange={(style) => handleLineOptionChange('lineStrokeStyle', style)}
+        onDashArrayChange={(dashArray) => handleLineOptionChange('lineDashArray', dashArray)}
+      />
     </>
   );
   
   // Chart-specific controls
   const chartSpecificControls = (
     <>
-      {dataControls}
-      
       <LineAppearanceSection
         curveType={lineOptions.curveType}
         curveTension={lineOptions.curveTension}
@@ -308,21 +329,22 @@ function LineChartControls({
         fill={lineOptions.fill}
         fillOpacity={lineOptions.fillOpacity}
         fillPattern={lineOptions.fillPattern}
+        fillZoomLevel={lineOptions.fillZoomLevel}
         onFillChange={(fill) => handleLineOptionChange('fill', fill)}
         onFillOpacityChange={(opacity) => handleLineOptionChange('fillOpacity', opacity)}
         onFillPatternChange={(pattern) => handleLineOptionChange('fillPattern', pattern)}
-      />
-      
-      <StrokePatternSection
-        strokePattern={lineOptions.lineStrokePattern}
-        onStrokePatternChange={(pattern) => handleLineOptionChange('lineStrokePattern', pattern)}
+        onFillZoomLevelChange={(zoomLevel) => handleLineOptionChange('fillZoomLevel', zoomLevel)}
       />
       
       <PointsSection
         showPoints={lineOptions.showPoints}
         pointRadius={lineOptions.pointRadius}
+        pointShape={lineOptions.pointShape}
+        pointStrokeWidth={lineOptions.pointStrokeWidth}
         onShowPointsChange={(show) => handleLineOptionChange('showPoints', show)}
         onPointRadiusChange={(radius) => handleLineOptionChange('pointRadius', radius)}
+        onPointShapeChange={(shape) => handleLineOptionChange('pointShape', shape)}
+        onPointStrokeWidthChange={(width) => handleLineOptionChange('pointStrokeWidth', width)}
       />
 
       <div className="section">
@@ -417,9 +439,15 @@ function LineChartControls({
               fill={lineOptions.fill}
               fillOpacity={lineOptions.fillOpacity}
               fillPattern={lineOptions.fillPattern}
+              fillZoomLevel={lineOptions.fillZoomLevel}
               lineStrokePattern={lineOptions.lineStrokePattern}
+              lineStrokeWidth={lineOptions.lineStrokeWidth}
+              lineStrokeStyle={lineOptions.lineStrokeStyle}
+              lineDashArray={lineOptions.lineDashArray}
               showPoints={lineOptions.showPoints}
               pointRadius={lineOptions.pointRadius}
+              pointShape={lineOptions.pointShape}
+              pointStrokeWidth={lineOptions.pointStrokeWidth}
               showXAxis={axisOptions.showXAxis}
               showYAxis={axisOptions.showYAxis}
               yDomainMin={axisOptions.yDomainMin}

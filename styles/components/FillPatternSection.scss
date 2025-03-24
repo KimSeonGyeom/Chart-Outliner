@@ -41,6 +41,7 @@
           transparent 2px,
           transparent 8px
         );
+        background-size: 8px 8px;
       }
       
       &.crosshatch {
@@ -59,6 +60,7 @@
             transparent 2px,
             transparent 8px
           );
+        background-size: 8px 8px;
       }
       
       &.dots {
@@ -90,5 +92,23 @@
       font-size: 12px;
       color: #666;
     }
+  }
+}
+
+.range-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
+  
+  .range-value {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .range-label {
+    font-size: 12px;
+    color: #666;
   }
 } 

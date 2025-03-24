@@ -22,9 +22,10 @@ import {
   SaveDialog,
   saveChart,
   downloadChart,
-  ExportVariationsButton
+  ExportVariationsButton,
+  DataSection
 } from '../controls';
-import { sampleDataSets, generateRandomBarData } from '../data';
+import { sampleDataSets, generateRandomBarData, generateTrendData } from '../data';
 import '../../styles/components/ControlPanel.scss';
 import '../../styles/components/BarChartControls.scss';
 
@@ -41,6 +42,21 @@ interface BarChartControlsProps {
   onLoadChart?: (chart: SavedChartData) => void;
   loadedChart?: SavedChartData | null;
   onChartLoaded?: () => void;
+}
+
+// Define a BarOptions type that includes all bar-related options
+interface BarOptions {
+  barPadding?: number;
+  barColor?: string;
+  barStrokeColor?: string;
+  barStrokeWidth?: number;
+  barFill?: boolean;
+  barFillOpacity?: number;
+  barFillPattern?: string;
+  barFillZoomLevel?: number;
+  barStrokePattern?: string;
+  barStrokeStyle?: string;
+  barDashArray?: string;
 }
 
 function BarChartControls({
@@ -71,11 +87,15 @@ function BarChartControls({
   const [barFillOpacity, setBarFillOpacity] = useState(loadedConfig?.barFillOpacity || 0.5);
   const [barStrokePattern, setBarStrokePattern] = useState(loadedConfig?.barStrokePattern || 'solid');
   const [barFillPattern, setBarFillPattern] = useState(loadedConfig?.barFillPattern || 'solid');
+  const [barFillZoomLevel, setBarFillZoomLevel] = useState(loadedConfig?.barFillZoomLevel || 8);
+  const [barStrokeWidth, setBarStrokeWidth] = useState(loadedConfig?.barStrokeWidth || 1);
+  const [barStrokeStyle, setBarStrokeStyle] = useState(loadedConfig?.barStrokeStyle || 'normal');
+  const [barDashArray, setBarDashArray] = useState(loadedConfig?.barDashArray || '6,4');
   
   // Template selection
   const [selectedTemplate, setSelectedTemplate] = useState<string>(loadedConfig?.selectedTemplate || 'rectangle');
   
-  // Data state
+  // Chart data state
   const [chartData, setChartData] = useState<ChartData>(data);
   const [selectedPreset, setSelectedPreset] = useState<string>("basic");
   
@@ -106,7 +126,29 @@ function BarChartControls({
     setDimensions(prev => ({ ...prev, [dimension]: value }));
   };
   
-  // Handle axis option change
+  // Update the handleBarOptionChange function to use the correct type
+  const handleBarOptionChange = (option: keyof BarOptions, value: any) => {
+    // Update the appropriate state variable based on the option
+    switch(option) {
+      case 'barStrokePattern':
+        setBarStrokePattern(value);
+        break;
+      case 'barStrokeWidth':
+        setBarStrokeWidth(value);
+        break;
+      case 'barStrokeStyle':
+        setBarStrokeStyle(value);
+        break;
+      case 'barDashArray':
+        setBarDashArray(value);
+        break;
+      // Add other options as needed
+      default:
+        break;
+    }
+  };
+  
+  // Keep the original handleAxisOptionChange function
   const handleAxisOptionChange = (option: keyof AxisOptions, value: boolean | number | undefined) => {
     setAxisOptions(prev => ({ ...prev, [option]: value }));
   };
@@ -118,16 +160,26 @@ function BarChartControls({
   
   // Function to generate random data
   const generateRandomData = () => {
-    setChartData(generateRandomBarData());
+    const newData = generateRandomBarData();
+    setChartData(newData);
     setSelectedPreset("custom");
   };
   
-  // Function to handle preset selection
+  // Add function to handle preset selection
   const handlePresetChange = (preset: string) => {
     if (preset === "random") {
       generateRandomData();
-    } else if (preset in sampleDataSets) {
+    } else if (preset in sampleDataSets && preset !== 'grouped') {
       setChartData(sampleDataSets[preset as keyof typeof sampleDataSets]);
+      setSelectedPreset(preset);
+    } else if (['exponential', 'logarithmic', 'sinusoidal'].includes(preset)) {
+      // Generate special trends for bar chart with category labels
+      const trendData = generateTrendData(
+        preset as 'exponential' | 'logarithmic' | 'sinusoidal',
+        5, // Fewer data points for bar charts
+        true // Use categories instead of months
+      );
+      setChartData(trendData);
       setSelectedPreset(preset);
     }
   };
@@ -142,6 +194,10 @@ function BarChartControls({
       barFillOpacity,
       barStrokePattern,
       barFillPattern,
+      barFillZoomLevel,
+      barStrokeWidth,
+      barStrokeStyle,
+      barDashArray,
       showXAxis: axisOptions.showXAxis,
       showYAxis: axisOptions.showYAxis,
       yDomainMin: axisOptions.yDomainMin,
@@ -181,6 +237,10 @@ function BarChartControls({
       setBarFillOpacity(config.barFillOpacity ?? 0.5);
       setBarStrokePattern(config.barStrokePattern ?? 'solid');
       setBarFillPattern(config.barFillPattern ?? 'solid');
+      setBarFillZoomLevel(config.barFillZoomLevel ?? 8);
+      setBarStrokeWidth(config.barStrokeWidth ?? 1);
+      setBarStrokeStyle(config.barStrokeStyle ?? 'normal');
+      setBarDashArray(config.barDashArray ?? '6,4');
       setAxisOptions({
         showXAxis: config.showXAxis,
         showYAxis: config.showYAxis,
@@ -195,6 +255,24 @@ function BarChartControls({
       }
     }
   }, [loadedChart, onChartLoaded]);
+
+  // Use a useEffect to set the selectedPreset based on the data
+  useEffect(() => {
+    // Check if the current data matches a preset
+    for (const [key, value] of Object.entries(sampleDataSets)) {
+      if (key !== 'grouped' && JSON.stringify(chartData) === JSON.stringify(value)) {
+        setSelectedPreset(key);
+        return;
+      }
+    }
+    // If no match or matches 'grouped', set to custom or basic
+    if (JSON.stringify(chartData) === JSON.stringify(sampleDataSets.grouped)) {
+      setChartData(sampleDataSets.basic);
+      setSelectedPreset('basic');
+    } else {
+      setSelectedPreset('custom');
+    }
+  }, [chartData]);
 
   // Handle export click
   const handleExportClick = () => {
@@ -232,6 +310,10 @@ function BarChartControls({
               barFillOpacity={barFillOpacity}
               barStrokePattern={barStrokePattern}
               barFillPattern={barFillPattern}
+              barFillZoomLevel={barFillZoomLevel}
+              barStrokeWidth={barStrokeWidth}
+              barStrokeStyle={barStrokeStyle}
+              barDashArray={barDashArray}
               showXAxis={axisOptions.showXAxis}
               showYAxis={axisOptions.showYAxis}
               yDomainMin={axisOptions.yDomainMin}
@@ -258,6 +340,13 @@ function BarChartControls({
                 onDimensionChange={handleDimensionChange}
               />
               
+              <DataSection
+                selectedPreset={selectedPreset}
+                onPresetChange={handlePresetChange}
+                onRandomize={generateRandomData}
+                chartType="bar"
+              />
+              
               <AxisSection 
                 axisOptions={axisOptions}
                 onAxisOptionChange={handleAxisOptionChange}
@@ -267,6 +356,17 @@ function BarChartControls({
                 yDomainMin={axisOptions.yDomainMin}
                 yDomainMax={axisOptions.yDomainMax}
                 onDomainChange={handleDomainChange}
+              />
+              
+              <StrokePatternSection
+                strokePattern={barStrokePattern}
+                strokeWidth={barStrokeWidth}
+                strokeStyle={barStrokeStyle}
+                dashArray={barDashArray}
+                onStrokePatternChange={(pattern) => handleBarOptionChange('barStrokePattern', pattern)}
+                onStrokeWidthChange={(width) => handleBarOptionChange('barStrokeWidth', width)}
+                onStrokeStyleChange={(style) => handleBarOptionChange('barStrokeStyle', style)}
+                onDashArrayChange={(dash) => handleBarOptionChange('barDashArray', dash)}
               />
             </>
           }
@@ -282,15 +382,12 @@ function BarChartControls({
                 barFill={barFill}
                 barFillOpacity={barFillOpacity}
                 barFillPattern={barFillPattern}
+                barFillZoomLevel={barFillZoomLevel}
                 onBarPaddingChange={setBarPadding}
                 onBarFillChange={setBarFill}
                 onBarFillOpacityChange={setBarFillOpacity}
                 onBarFillPatternChange={setBarFillPattern}
-              />
-              
-              <StrokePatternSection
-                strokePattern={barStrokePattern}
-                onStrokePatternChange={setBarStrokePattern}
+                onBarFillZoomLevelChange={setBarFillZoomLevel}
               />
 
               <div className="section">

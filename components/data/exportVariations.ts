@@ -22,11 +22,15 @@ interface BarChartVariation extends ChartExportOptions {
 
 // Line chart specific variations
 interface LineChartVariation extends ChartExportOptions {
-  curveType: string;
-  dataOption: string;
-  fill: boolean;
-  strokePattern: string;
+  curveType?: string;
+  dataOption?: string;
+  fill?: boolean;
+  strokePattern?: string;
+  strokeStyle?: string;
+  strokeWidth?: number;
   fillPattern?: string;
+  fillZoomLevel?: number;
+  pointShape?: string;
   data: ChartData;
 }
 
@@ -93,8 +97,14 @@ export function generateLineChartVariations(): LineChartVariation[] {
   // Stroke pattern options
   const strokePatterns = ['solid', 'dashed', 'dotted'];
   
+  // Stroke style options (only use a subset for variations to avoid too many combinations)
+  const strokeStyles = ['normal', 'brush'];
+  
   // Fill pattern options (only used when fill is true)
   const fillPatterns = ['solid', 'diagonal', 'dots', 'crosshatch'];
+  
+  // Point shape options
+  const pointShapes = ['circle', 'square', 'triangle', 'diamond', 'cross', 'star'];
   
   // Pick three random data options from sample data sets
   const allDataOptions = Object.keys(sampleDataSets);
@@ -106,32 +116,47 @@ export function generateLineChartVariations(): LineChartVariation[] {
     allDataOptions.forEach(dataOption => {
       fillOptions.forEach(fill => {
         strokePatterns.forEach(strokePattern => {
-          if (fill) {
-            // When fill is true, try different fill patterns
-            fillPatterns.forEach(fillPattern => {
+          strokeStyles.forEach(strokeStyle => {
+            if (fill) {
+              // When fill is true, try different fill patterns
+              fillPatterns.forEach(fillPattern => {
+                // Add variations with different zoom levels for each pattern
+                [4, 20].forEach(zoomLevel => {
+                  // Skip zoom level variations for solid fills
+                  if (fillPattern === 'solid' && zoomLevel !== 10) return;
+                  
+                  variations.push({
+                    curveType,
+                    dataOption,
+                    fill,
+                    strokePattern,
+                    strokeStyle,
+                    strokeWidth: 1,
+                    fillPattern,
+                    fillZoomLevel: zoomLevel,
+                    pointShape: pointShapes[Math.floor(Math.random() * pointShapes.length)],
+                    data: sampleDataSets[dataOption as keyof typeof sampleDataSets],
+                    fileName: `line-${curveType}-${dataOption}-${strokePattern}-${strokeStyle}${fill ? `-fill-${fillPattern}${fillPattern !== 'solid' ? `-zoom-${zoomLevel}` : ''}` : ''}`,
+                    fileType: 'png'
+                  });
+                });
+              });
+            } else {
+              // When fill is false, no fill pattern needed
               variations.push({
                 curveType,
                 dataOption,
                 fill,
                 strokePattern,
-                fillPattern,
+                strokeStyle,
+                strokeWidth: 1,
+                pointShape: pointShapes[Math.floor(Math.random() * pointShapes.length)],
                 data: sampleDataSets[dataOption as keyof typeof sampleDataSets],
-                fileName: `line-${curveType}-${dataOption}-${strokePattern}${fill ? `-fill-${fillPattern}` : ''}`,
+                fileName: `line-${curveType}-${dataOption}-${strokePattern}-${strokeStyle}`,
                 fileType: 'png'
               });
-            });
-          } else {
-            // When fill is false, no fill pattern needed
-            variations.push({
-              curveType,
-              dataOption,
-              fill,
-              strokePattern,
-              data: sampleDataSets[dataOption as keyof typeof sampleDataSets],
-              fileName: `line-${curveType}-${dataOption}-${strokePattern}`,
-              fileType: 'png'
-            });
-          }
+            }
+          });
         });
       });
     });
@@ -205,7 +230,11 @@ export async function exportAllChartVariations(
         curveType: variation.curveType,
         fill: variation.fill,
         strokePattern: variation.strokePattern,
+        strokeStyle: variation.strokeStyle || 'normal',
+        strokeWidth: variation.strokeWidth || 1,
         fillPattern: variation.fillPattern || 'solid',
+        fillZoomLevel: variation.fillZoomLevel || 8,
+        pointShape: variation.pointShape,
         data: variation.data
       });
       
@@ -277,7 +306,11 @@ export async function exportChartVariations(
           curveType: lineVariation.curveType,
           fill: lineVariation.fill,
           strokePattern: lineVariation.strokePattern,
+          strokeStyle: lineVariation.strokeStyle || 'normal',
+          strokeWidth: lineVariation.strokeWidth || 1,
           fillPattern: lineVariation.fillPattern || 'solid',
+          fillZoomLevel: lineVariation.fillZoomLevel || 8,
+          pointShape: lineVariation.pointShape,
           data: lineVariation.data
         });
       }

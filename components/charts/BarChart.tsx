@@ -20,7 +20,10 @@ interface BarChartProps {
   barFill?: boolean;
   barFillOpacity?: number;
   barFillPattern?: string;
+  barFillZoomLevel?: number;
   barStrokePattern?: string;
+  barStrokeStyle?: string;
+  barDashArray?: string;
   template?: React.ComponentType<TemplateProps> | null;
   
   // Axis appearance
@@ -52,7 +55,10 @@ const BarChart: React.FC<BarChartProps> = ({
   barFill = false,
   barFillOpacity = 0.5,
   barFillPattern = 'solid',
+  barFillZoomLevel = 8,
   barStrokePattern = 'solid',
+  barStrokeStyle = 'normal',
+  barDashArray = '6,4',
   template: Template,
   
   // Axis appearance
@@ -140,6 +146,10 @@ const BarChart: React.FC<BarChartProps> = ({
 
   // Calculate the stroke-dasharray value based on the pattern
   const getStrokeDashArray = (pattern: string): string => {
+    if (pattern === 'custom') {
+      return barDashArray;
+    }
+    
     switch (pattern) {
       case 'dashed':
         return '6,4';
@@ -156,35 +166,39 @@ const BarChart: React.FC<BarChartProps> = ({
 
   // Create pattern definitions for fill patterns
   const createFillPattern = (pattern: string, color: string) => {
+    // Size based on the zoom level (ensure it's at least 1px)
+    const size = Math.max(1, barFillZoomLevel);
+
     switch (pattern) {
       case 'diagonal':
         return (
-          <pattern id="diagonalPattern" patternUnits="userSpaceOnUse" width="8" height="8">
-            <path d="M-1,1 l2,-2 M0,8 l8,-8 M7,9 l1,-1" stroke={color} strokeWidth="1" />
+          <pattern id="diagonalPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
+            <path d={`M-1,1 l2,-2 M0,${size} l${size},-${size} M${size-1},${size+1} l1,-1`} stroke={color} strokeWidth={Math.max(0.5, size/8)} />
           </pattern>
         );
       case 'crosshatch':
         return (
-          <pattern id="crosshatchPattern" patternUnits="userSpaceOnUse" width="8" height="8">
-            <path d="M0,0 l8,8 M8,0 l-8,8" stroke={color} strokeWidth="1" />
+          <pattern id="crosshatchPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
+            <path d={`M0,0 l${size},${size} M${size},0 l-${size},${size}`} stroke={color} strokeWidth={Math.max(0.5, size/8)} />
           </pattern>
         );
       case 'dots':
+        const radius = Math.max(0.5, size/5);
         return (
-          <pattern id="dotsPattern" patternUnits="userSpaceOnUse" width="8" height="8">
-            <circle cx="4" cy="4" r="1.5" fill={color} />
+          <pattern id="dotsPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
+            <circle cx={size/2} cy={size/2} r={radius} fill={color} />
           </pattern>
         );
       case 'grid':
         return (
-          <pattern id="gridPattern" patternUnits="userSpaceOnUse" width="8" height="8">
-            <path d="M0,0 h8 M0,8 h8 M0,0 v8 M8,0 v8" stroke={color} strokeWidth="1" />
+          <pattern id="gridPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
+            <path d={`M0,0 h${size} M0,${size} h${size} M0,0 v${size} M${size},0 v${size}`} stroke={color} strokeWidth={Math.max(0.5, size/12)} />
           </pattern>
         );
       case 'zigzag':
         return (
-          <pattern id="zigzagPattern" patternUnits="userSpaceOnUse" width="8" height="8">
-            <path d="M0,4 l4,-4 l4,4" stroke={color} strokeWidth="1" fill="none" />
+          <pattern id="zigzagPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
+            <path d={`M0,${size/2} l${size/2},-${size/2} l${size/2},${size/2}`} stroke={color} strokeWidth={Math.max(0.5, size/8)} fill="none" />
           </pattern>
         );
       default:
@@ -199,6 +213,36 @@ const BarChart: React.FC<BarChartProps> = ({
     return `url(#${pattern}Pattern)`;
   };
 
+  // Create a filter for the brush stroke effect
+  const createBrushStrokeEffect = (id: string) => {
+    return (
+      <filter id={id} x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence baseFrequency="0.05" numOctaves="2" seed="1" />
+        <feDisplacementMap in="SourceGraphic" scale="1.5" />
+      </filter>
+    );
+  };
+  
+  // Create a filter for the sketch stroke effect
+  const createSketchStrokeEffect = (id: string) => {
+    return (
+      <filter id={id} x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence baseFrequency="0.01" numOctaves="3" seed="2" />
+        <feDisplacementMap in="SourceGraphic" scale="2" />
+      </filter>
+    );
+  };
+  
+  // Create a filter for the rough stroke effect
+  const createRoughStrokeEffect = (id: string) => {
+    return (
+      <filter id={id} x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence baseFrequency="0.08" numOctaves="2" seed="3" />
+        <feDisplacementMap in="SourceGraphic" scale="3" />
+      </filter>
+    );
+  };
+
   // Update chart function to incorporate new features
   useEffect(() => {
     if (!svgRef.current || !data || data.length === 0) return;
@@ -208,10 +252,21 @@ const BarChart: React.FC<BarChartProps> = ({
     
     // Add pattern definitions
     const defs = svg.append('defs');
+    
+    // Add SVG filters for stroke styles
+    if (barStrokeStyle === 'brush') {
+      defs.html(ReactDOMServer.renderToString(createBrushStrokeEffect('brushEffect')));
+    } else if (barStrokeStyle === 'sketch') {
+      defs.html(ReactDOMServer.renderToString(createSketchStrokeEffect('sketchEffect')));
+    } else if (barStrokeStyle === 'rough') {
+      defs.html(ReactDOMServer.renderToString(createRoughStrokeEffect('roughEffect')));
+    }
+    
+    // Add pattern for fill
     if (barFill && barFillPattern !== 'solid') {
       const pattern = createFillPattern(barFillPattern, barColor !== 'transparent' ? barColor : '#333');
       if (pattern) {
-        defs.html(ReactDOMServer.renderToString(pattern));
+        defs.html(defs.html() + ReactDOMServer.renderToString(pattern));
       }
     }
     
@@ -266,7 +321,7 @@ const BarChart: React.FC<BarChartProps> = ({
     
     setBarData(calcBarData);
     
-    // Add bars
+    // Add bars with updated stroke style
     const bars = g.selectAll('.bar')
       .data(data)
       .enter()
@@ -280,14 +335,15 @@ const BarChart: React.FC<BarChartProps> = ({
       .attr('fill-opacity', barFillOpacity)
       .attr('stroke', barStrokeColor)
       .attr('stroke-width', barStrokeWidth)
-      .attr('stroke-dasharray', getStrokeDashArray(barStrokePattern));
+      .attr('stroke-dasharray', getStrokeDashArray(barStrokePattern))
+      .call(applyStrokeAttributes);
     
     chartRef.current = { g, x, y };
     
   }, [data, width, height, marginTop, marginRight, marginBottom, marginLeft, 
       barPadding, barColor, barStrokeColor, barStrokeWidth, 
       barFill, barFillOpacity, barFillPattern, barStrokePattern,
-      showXAxis, showYAxis, yDomainMin, yDomainMax]);
+      showXAxis, showYAxis, yDomainMin, yDomainMax, barStrokeStyle, barDashArray]);
 
   // Effect to clean up when component unmounts
   useEffect(() => {
@@ -309,6 +365,27 @@ const BarChart: React.FC<BarChartProps> = ({
     bottom: 0,
     width: 30,
     height: 30
+  };
+
+  // Apply stroke based on pattern and style settings
+  const applyStrokeAttributes = (selection: d3.Selection<SVGRectElement, any, SVGGElement, unknown>) => {
+    if (barStrokeWidth <= 0) {
+      selection
+        .attr('stroke', 'none')
+        .attr('stroke-width', 0);
+      return;
+    }
+    
+    // Apply stroke attributes
+    selection
+      .attr('stroke', '#000')
+      .attr('stroke-width', barStrokeWidth)
+      .attr('stroke-dasharray', getStrokeDashArray(barStrokePattern));
+      
+    // Apply stroke style filter if not normal
+    if (barStrokeStyle !== 'normal') {
+      selection.attr('filter', `url(#${barStrokeStyle}Effect)`);
+    }
   };
 
   return (

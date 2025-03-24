@@ -63,6 +63,10 @@ export interface BarChartOptions {
   barFillOpacity: number;
   barStrokePattern: string;
   barFillPattern: string;
+  barFillZoomLevel: number;
+  barStrokeWidth: number;
+  barStrokeStyle: string;
+  barDashArray: string;
 }
 
 // Line chart specific options
@@ -72,9 +76,15 @@ export interface LineChartOptions {
   fill: boolean;
   fillOpacity: number;
   fillPattern: string;
+  fillZoomLevel: number;
   showPoints: boolean;
   pointRadius: number;
+  pointShape: string;
+  pointStrokeWidth: number;
   lineStrokePattern: string;
+  lineStrokeWidth: number;
+  lineStrokeStyle: string;
+  lineDashArray: string;
 }
 
 // Props for bar chart template section
@@ -89,10 +99,12 @@ export interface BarAppearanceSectionProps {
   barFill: boolean;
   barFillOpacity: number;
   barFillPattern: string;
+  barFillZoomLevel: number;
   onBarPaddingChange: (padding: number) => void;
   onBarFillChange: (fill: boolean) => void;
   onBarFillOpacityChange: (opacity: number) => void;
   onBarFillPatternChange: (pattern: string) => void;
+  onBarFillZoomLevelChange: (zoomLevel: number) => void;
 }
 
 // Props for line appearance section
@@ -108,17 +120,23 @@ export interface LineFillSectionProps {
   fill: boolean;
   fillOpacity: number;
   fillPattern: string;
+  fillZoomLevel: number;
   onFillChange: (fill: boolean) => void;
   onFillOpacityChange: (opacity: number) => void;
   onFillPatternChange: (pattern: string) => void;
+  onFillZoomLevelChange: (zoomLevel: number) => void;
 }
 
 // Props for point options section
 export interface PointsSectionProps {
   showPoints: boolean;
   pointRadius: number;
+  pointShape: string;
+  pointStrokeWidth?: number;
   onShowPointsChange: (show: boolean) => void;
   onPointRadiusChange: (radius: number) => void;
+  onPointShapeChange: (shape: string) => void;
+  onPointStrokeWidthChange?: (width: number) => void;
 }
 
 // Props for save dialog
@@ -154,11 +172,27 @@ export interface SaveChartConfig {
 // Props for stroke pattern section
 export interface StrokePatternSectionProps {
   strokePattern: string;
+  strokeWidth: number;
+  strokeStyle: string;
+  dashArray: string;
   onStrokePatternChange: (pattern: string) => void;
+  onStrokeWidthChange: (width: number) => void;
+  onStrokeStyleChange: (style: string) => void;
+  onDashArrayChange: (dashArray: string) => void;
 }
 
 // Props for fill pattern section
 export interface FillPatternSectionProps {
   fillPattern: string;
+  fillZoomLevel: number;
   onFillPatternChange: (pattern: string) => void;
+  onFillZoomLevelChange: (zoomLevel: number) => void;
+}
+
+// DataSection props
+export interface DataSectionProps {
+  selectedPreset: string;
+  onPresetChange: (preset: string) => void;
+  onRandomize: () => void;
+  chartType: 'line' | 'bar';
 } 

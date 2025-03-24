@@ -8,7 +8,7 @@ const AxisSection: React.FC<AxisSectionProps> = ({
   return (
     <div className="section">
       <h3>Axes & Grid</h3>
-      <div className="control-group space-y">
+      <div className="checkbox-grid">
         <div className="checkbox-group">
           <input
             type="checkbox"

@@ -6,9 +6,11 @@ const LineFillSection: React.FC<LineFillSectionProps> = ({
   fill,
   fillOpacity = 0.5,
   fillPattern = 'solid',
+  fillZoomLevel = 8,
   onFillChange,
   onFillOpacityChange,
-  onFillPatternChange
+  onFillPatternChange,
+  onFillZoomLevelChange
 }) => {
   return (
     <div className="section">
@@ -40,7 +42,9 @@ const LineFillSection: React.FC<LineFillSectionProps> = ({
             </div>
             <FillPatternSection 
               fillPattern={fillPattern}
+              fillZoomLevel={fillZoomLevel}
               onFillPatternChange={onFillPatternChange}
+              onFillZoomLevelChange={onFillZoomLevelChange}
             />
           </>
         )}

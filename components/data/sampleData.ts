@@ -7,14 +7,19 @@ export const dataLabels = {
 };
 
 // Generate a new dataset with a specific trend
-export const generateTrendData = (trend: 'linear' | 'exponential' | 'logarithmic' | 'sinusoidal', numPoints: number = 7): ChartData => {
+export const generateTrendData = (
+  trend: 'linear' | 'exponential' | 'logarithmic' | 'sinusoidal', 
+  numPoints: number = 7,
+  useCategories: boolean = false
+): ChartData => {
   const data: ChartData = [];
+  const labels = useCategories ? dataLabels.categories : dataLabels.months;
   
   switch (trend) {
     case 'linear':
       for (let i = 0; i < numPoints; i++) {
         data.push({
-          x: dataLabels.months[i % 12],
+          x: labels[i % labels.length],
           y: Math.floor(10 + (i * 90) / (numPoints - 1))
         });
       }
@@ -26,7 +31,7 @@ export const generateTrendData = (trend: 'linear' | 'exponential' | 'logarithmic
         // Using a = 10, b = 0.4
         const x = i / (numPoints - 1);
         data.push({
-          x: dataLabels.months[i % 12],
+          x: labels[i % labels.length],
           y: Math.floor(10 * Math.exp(3 * x))
         });
       }
@@ -38,7 +43,7 @@ export const generateTrendData = (trend: 'linear' | 'exponential' | 'logarithmic
         // Using a = 30, b = 10
         const x = (i + 1) / numPoints;
         data.push({
-          x: dataLabels.months[i % 12],
+          x: labels[i % labels.length],
           y: Math.floor(30 * Math.log(10 * x + 1))
         });
       }
@@ -50,7 +55,7 @@ export const generateTrendData = (trend: 'linear' | 'exponential' | 'logarithmic
         // Using a = 40, b = 2*π, c = 50
         const x = i / (numPoints - 1);
         data.push({
-          x: dataLabels.months[i % 12],
+          x: labels[i % labels.length],
           y: Math.floor(40 * Math.sin(2 * Math.PI * x) + 50)
         });
       }

@@ -27,4 +27,7 @@ export { default as BarAppearanceSection } from './BarAppearanceSection';
 // Export line chart sections
 export { default as LineAppearanceSection } from './LineAppearanceSection';
 export { default as LineFillSection } from './LineFillSection';
-export { default as PointsSection } from './PointsSection'; 
+export { default as PointsSection } from './PointsSection';
+
+// Export the DataSection component
+export { default as DataSection } from './DataSection'; 

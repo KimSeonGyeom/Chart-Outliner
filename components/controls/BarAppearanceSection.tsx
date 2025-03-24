@@ -7,10 +7,12 @@ const BarAppearanceSection: React.FC<BarAppearanceSectionProps> = ({
   barFill = false,
   barFillOpacity = 0.5,
   barFillPattern = 'solid',
+  barFillZoomLevel = 8,
   onBarPaddingChange,
   onBarFillChange,
   onBarFillOpacityChange,
-  onBarFillPatternChange
+  onBarFillPatternChange,
+  onBarFillZoomLevelChange
 }) => {
   return (
     <div className="section">
@@ -55,7 +57,9 @@ const BarAppearanceSection: React.FC<BarAppearanceSectionProps> = ({
             </div>
             <FillPatternSection 
               fillPattern={barFillPattern}
+              fillZoomLevel={barFillZoomLevel}
               onFillPatternChange={onBarFillPatternChange}
+              onFillZoomLevelChange={onBarFillZoomLevelChange}
             />
           </>
         )}

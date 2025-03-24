@@ -16,7 +16,11 @@ export interface BarChartConfig {
   barFill?: boolean;
   barFillOpacity?: number;
   barFillPattern?: string;
+  barFillZoomLevel?: number;
   barStrokePattern?: string;
+  barStrokeWidth?: number;
+  barStrokeStyle?: string;
+  barDashArray?: string;
   showXAxis: boolean;
   showYAxis: boolean;
   yDomainMin?: number;
@@ -36,9 +40,15 @@ export interface LineChartConfig {
   fill: boolean;
   fillOpacity: number;
   fillPattern?: string;
+  fillZoomLevel?: number;
   showPoints: boolean;
   pointRadius: number;
+  pointShape?: string;
+  pointStrokeWidth?: number;
   lineStrokePattern?: string;
+  lineStrokeWidth?: number;
+  lineStrokeStyle?: string;
+  lineDashArray?: string;
   showXAxis: boolean;
   showYAxis: boolean;
   yDomainMin?: number;

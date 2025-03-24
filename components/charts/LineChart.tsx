@@ -16,6 +16,7 @@ interface LineChartProps {
   fill?: boolean; // Whether to fill the area under the line
   fillOpacity?: number; // Opacity of the fill color
   fillPattern?: string; // Pattern to fill the area with
+  fillZoomLevel?: number; // Zoom level for the fill pattern
   
   // Curve parameters
   curveType?: 'cardinal' | 'basis' | 'natural' | 'monotone' | 'catmullRom' | 'linear';
@@ -25,11 +26,15 @@ interface LineChartProps {
   lineColor?: string;
   lineWidth?: number;
   lineDash?: number[]; // For dashed lines [dashLength, gapLength]
-  lineStrokePattern?: string; // Added stroke pattern option
+  lineStrokePattern?: string; // Stroke pattern option
+  lineStrokeWidth?: number; // Custom stroke width
+  lineStrokeStyle?: string; // Stroke style (normal, brush, sketch, etc.)
+  lineDashArray?: string; // Custom dash array (comma-separated values)
   
   // Point appearance
   showPoints?: boolean; // Whether to show data points
   pointRadius?: number;
+  pointShape?: string; // Shape of the data points (circle, square, triangle, etc.)
   pointStroke?: string;
   pointStrokeWidth?: number;
   
@@ -58,6 +63,7 @@ const LineChart: React.FC<LineChartProps> = ({
   fill = false,
   fillOpacity = 0.0,
   fillPattern = 'solid',
+  fillZoomLevel = 8,
   
   // Curve parameters
   curveType = 'linear',
@@ -68,10 +74,14 @@ const LineChart: React.FC<LineChartProps> = ({
   lineWidth = 1,
   lineDash,
   lineStrokePattern = 'solid',
+  lineStrokeWidth = 1,
+  lineStrokeStyle = 'normal',
+  lineDashArray = '6,4',
   
   // Point appearance
   showPoints = true,
   pointRadius = 3,
+  pointShape = 'circle',
   pointStroke = '#000',
   pointStrokeWidth = 1,
   
@@ -144,6 +154,10 @@ const LineChart: React.FC<LineChartProps> = ({
 
   // Calculate the stroke-dasharray value based on the pattern
   const getStrokeDashArray = (pattern: string): string => {
+    if (pattern === 'custom') {
+      return lineDashArray;
+    }
+    
     switch (pattern) {
       case 'dashed':
         return '6,4';
@@ -160,35 +174,39 @@ const LineChart: React.FC<LineChartProps> = ({
 
   // Create pattern definitions for fill patterns
   const createFillPattern = (pattern: string, color: string) => {
+    // Size based on the zoom level (ensure it's at least 1px)
+    const size = Math.max(1, fillZoomLevel);
+
     switch (pattern) {
       case 'diagonal':
         return (
-          <pattern id="diagonalPattern" patternUnits="userSpaceOnUse" width="8" height="8">
-            <path d="M-1,1 l2,-2 M0,8 l8,-8 M7,9 l1,-1" stroke={color} strokeWidth="1" />
+          <pattern id="diagonalPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
+            <path d={`M-1,1 l2,-2 M0,${size} l${size},-${size} M${size-1},${size+1} l1,-1`} stroke={color} strokeWidth={Math.max(0.5, size/8)} />
           </pattern>
         );
       case 'crosshatch':
         return (
-          <pattern id="crosshatchPattern" patternUnits="userSpaceOnUse" width="8" height="8">
-            <path d="M0,0 l8,8 M8,0 l-8,8" stroke={color} strokeWidth="1" />
+          <pattern id="crosshatchPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
+            <path d={`M0,0 l${size},${size} M${size},0 l-${size},${size}`} stroke={color} strokeWidth={Math.max(0.5, size/8)} />
           </pattern>
         );
       case 'dots':
+        const radius = Math.max(0.5, size/5);
         return (
-          <pattern id="dotsPattern" patternUnits="userSpaceOnUse" width="8" height="8">
-            <circle cx="4" cy="4" r="1.5" fill={color} />
+          <pattern id="dotsPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
+            <circle cx={size/2} cy={size/2} r={radius} fill={color} />
           </pattern>
         );
       case 'grid':
         return (
-          <pattern id="gridPattern" patternUnits="userSpaceOnUse" width="8" height="8">
-            <path d="M0,0 h8 M0,8 h8 M0,0 v8 M8,0 v8" stroke={color} strokeWidth="1" />
+          <pattern id="gridPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
+            <path d={`M0,0 h${size} M0,${size} h${size} M0,0 v${size} M${size},0 v${size}`} stroke={color} strokeWidth={Math.max(0.5, size/12)} />
           </pattern>
         );
       case 'zigzag':
         return (
-          <pattern id="zigzagPattern" patternUnits="userSpaceOnUse" width="8" height="8">
-            <path d="M0,4 l4,-4 l4,4" stroke={color} strokeWidth="1" fill="none" />
+          <pattern id="zigzagPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
+            <path d={`M0,${size/2} l${size/2},-${size/2} l${size/2},${size/2}`} stroke={color} strokeWidth={Math.max(0.5, size/8)} fill="none" />
           </pattern>
         );
       default:
@@ -203,6 +221,94 @@ const LineChart: React.FC<LineChartProps> = ({
     return `url(#${pattern}Pattern)`;
   };
 
+  // Create a filter for the brush stroke effect
+  const createBrushStrokeEffect = (id: string) => {
+    return (
+      <filter id={id} x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence baseFrequency="0.05" numOctaves="2" seed="1" />
+        <feDisplacementMap in="SourceGraphic" scale="1.5" />
+      </filter>
+    );
+  };
+  
+  // Create a filter for the sketch stroke effect
+  const createSketchStrokeEffect = (id: string) => {
+    return (
+      <filter id={id} x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence baseFrequency="0.01" numOctaves="3" seed="2" />
+        <feDisplacementMap in="SourceGraphic" scale="2" />
+      </filter>
+    );
+  };
+  
+  // Create a filter for the rough stroke effect
+  const createRoughStrokeEffect = (id: string) => {
+    return (
+      <filter id={id} x="-50%" y="-50%" width="200%" height="200%">
+        <feTurbulence baseFrequency="0.08" numOctaves="2" seed="3" />
+        <feDisplacementMap in="SourceGraphic" scale="3" />
+      </filter>
+    );
+  };
+  
+  // Get the stroke style props based on style selection
+  const getStrokeStyleProps = () => {
+    const props: any = {
+      strokeWidth: lineStrokeWidth > 0 ? lineStrokeWidth : 0
+    };
+    
+    if (lineStrokeStyle !== 'normal' && lineStrokeWidth > 0) {
+      props.filter = `url(#${lineStrokeStyle}Effect)`;
+    }
+    
+    return props;
+  };
+
+  // Helper function to create SVG path for custom shapes
+  const createPointShape = (shape: string, x: number, y: number, radius: number) => {
+    switch (shape) {
+      case 'square':
+        return `M${x - radius},${y - radius} h${radius * 2} v${radius * 2} h${-radius * 2} z`;
+      case 'triangle':
+        return `M${x},${y - radius} L${x + radius * 0.866},${y + radius * 0.5} L${x - radius * 0.866},${y + radius * 0.5} z`;
+      case 'diamond':
+        return `M${x},${y - radius} L${x + radius},${y} L${x},${y + radius} L${x - radius},${y} z`;
+      case 'cross':
+        const crossWidth = radius * 0.3;
+        return `M${x - radius},${y - crossWidth} h${radius - crossWidth} v${-radius + crossWidth} h${crossWidth * 2} v${radius - crossWidth} h${radius - crossWidth} v${crossWidth * 2} h${-radius + crossWidth} v${radius - crossWidth} h${-crossWidth * 2} v${-radius + crossWidth} z`;
+      case 'star':
+        const outerRadius = radius;
+        const innerRadius = radius * 0.4;
+        let path = `M${x},${y - outerRadius} `;
+        
+        for (let i = 0; i < 5; i++) {
+          const outerAngle = Math.PI / 2 + i * Math.PI * 2 / 5;
+          const innerAngle = outerAngle + Math.PI / 5;
+          
+          const outerX = x + Math.cos(outerAngle) * outerRadius;
+          const outerY = y - Math.sin(outerAngle) * outerRadius;
+          const innerX = x + Math.cos(innerAngle) * innerRadius;
+          const innerY = y - Math.sin(innerAngle) * innerRadius;
+          
+          path += `L${innerX},${innerY} L`;
+          
+          if (i === 4) {
+            path += `${x},${y - outerRadius}`;
+          } else {
+            const nextOuterAngle = Math.PI / 2 + (i + 1) * Math.PI * 2 / 5;
+            const nextOuterX = x + Math.cos(nextOuterAngle) * outerRadius;
+            const nextOuterY = y - Math.sin(nextOuterAngle) * outerRadius;
+            path += `${nextOuterX},${nextOuterY} `;
+          }
+        }
+        
+        return path;
+      case 'circle':
+      default:
+        return null; // Use circle element for circles
+    }
+  };
+
   // Update chart with new data
   useEffect(() => {
     if (!svgRef.current || !data || data.length === 0) return;
@@ -211,12 +317,23 @@ const LineChart: React.FC<LineChartProps> = ({
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
 
-    // Add pattern definitions
+    // Add defs for patterns and filters
     const defs = svg.append('defs');
+    
+    // Add SVG filters for stroke styles
+    if (lineStrokeStyle === 'brush') {
+      defs.html(ReactDOMServer.renderToString(createBrushStrokeEffect('brushEffect')));
+    } else if (lineStrokeStyle === 'sketch') {
+      defs.html(ReactDOMServer.renderToString(createSketchStrokeEffect('sketchEffect')));
+    } else if (lineStrokeStyle === 'rough') {
+      defs.html(ReactDOMServer.renderToString(createRoughStrokeEffect('roughEffect')));
+    }
+    
+    // Add pattern for fill
     if (fill && fillPattern !== 'solid') {
       const pattern = createFillPattern(fillPattern, lineColor);
       if (pattern) {
-        defs.html(ReactDOMServer.renderToString(pattern));
+        defs.html(defs.html() + ReactDOMServer.renderToString(pattern));
       }
     }
 
@@ -282,18 +399,24 @@ const LineChart: React.FC<LineChartProps> = ({
         .attr('fill-opacity', fillOpacity);
     }
 
-    // Add line
+    // Add line with updated stroke properties
     g.append('path')
       .datum(data)
       .attr('class', 'line')
       .attr('d', line)
       .attr('fill', 'none')
-      .attr('stroke', lineColor)
-      .attr('stroke-width', lineWidth)
-      .attr('stroke-dasharray', getStrokeDashArray(lineStrokePattern));
+      .attr('stroke', lineStrokeWidth > 0 ? lineColor : 'none')
+      .attr('stroke-width', lineStrokeWidth)
+      .attr('stroke-dasharray', lineStrokeWidth > 0 ? getStrokeDashArray(lineStrokePattern) : 'none')
+      .call(sel => {
+        // Apply stroke style filter if not normal and stroke width > 0
+        if (lineStrokeStyle !== 'normal' && lineStrokeWidth > 0) {
+          sel.attr('filter', `url(#${lineStrokeStyle}Effect)`);
+        }
+      });
 
     // Add points if enabled
-    if (showPoints) {
+    if (showPoints && pointRadius > 0) {
       // Store the data points for external use
       const pointsData = data.map(d => ({
         x: x(String(d.x)) || 0,
@@ -302,17 +425,43 @@ const LineChart: React.FC<LineChartProps> = ({
       }));
       setDataPoints(pointsData);
 
-      g.selectAll('.point')
-        .data(data)
-        .enter()
-        .append('circle')
-        .attr('class', 'point')
-        .attr('cx', d => x(String(d.x)) || 0)
-        .attr('cy', d => y(d.y))
-        .attr('r', pointRadius)
-        .attr('fill', d => d.color || lineColor)
-        .attr('stroke', pointStroke)
-        .attr('stroke-width', pointStrokeWidth);
+      if (pointShape === 'circle') {
+        // Use circles for circle shapes
+        g.selectAll('.point')
+          .data(data)
+          .enter()
+          .append('circle')
+          .attr('class', 'point')
+          .attr('cx', d => x(String(d.x)) || 0)
+          .attr('cy', d => y(d.y))
+          .attr('r', pointRadius)
+          .attr('fill', d => d.color || lineColor)
+          .attr('stroke', pointStroke)
+          .attr('stroke-width', pointStrokeWidth);
+      } else {
+        // Use SVG paths for other shapes
+        g.selectAll('.point')
+          .data(data)
+          .enter()
+          .append('path')
+          .attr('class', 'point')
+          .attr('d', d => {
+            const pointX = x(String(d.x)) || 0;
+            const pointY = y(d.y);
+            return createPointShape(pointShape, pointX, pointY, pointRadius);
+          })
+          .attr('fill', d => d.color || lineColor)
+          .attr('stroke', pointStroke)
+          .attr('stroke-width', pointStrokeWidth);
+      }
+    } else if (showPoints) {
+      // Just store data points for external use without rendering them
+      const pointsData = data.map(d => ({
+        x: x(String(d.x)) || 0,
+        y: y(d.y),
+        color: d.color || lineColor
+      }));
+      setDataPoints(pointsData);
     }
 
     // Add axes if enabled
@@ -332,8 +481,8 @@ const LineChart: React.FC<LineChartProps> = ({
 
   }, [data, width, height, marginTop, marginRight, marginBottom, marginLeft, 
       curveType, curveTension, lineColor, lineWidth, fill, fillOpacity, fillPattern,
-      showPoints, pointRadius, pointStroke, pointStrokeWidth, lineStrokePattern,
-      showXAxis, showYAxis, yDomainMin, yDomainMax]);
+      showPoints, pointRadius, pointShape, pointStroke, pointStrokeWidth, lineStrokePattern,
+      showXAxis, showYAxis, yDomainMin, yDomainMax, lineStrokeWidth, lineStrokeStyle, lineDashArray]);
   
   // Effect to clean up when component unmounts
   useEffect(() => {

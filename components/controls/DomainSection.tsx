@@ -21,7 +21,7 @@ const DomainSection: React.FC<DomainSectionProps> = ({
   return (
     <div className="section">
       <h3>Y Domain</h3>
-      <div className="control-group space-y">
+      <div className="dimensions-grid">
         <div>
           <label>Min Value</label>
           <input
