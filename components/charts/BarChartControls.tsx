@@ -283,15 +283,46 @@ function BarChartControls({
   // Handle export
   const handleExport = () => {
     if (chartRef.current) {
-      // Download the chart
-      downloadChart(chartRef, exportFileName, exportFileType)
-        .then(() => {
-          // Close export options after successful export
-          setShowExportOptions(false);
-        })
-        .catch(error => {
-          console.error('Error exporting chart:', error);
+      const originalBarFill = barFill;
+      const originalFillOpacity = barFillOpacity;
+      const originalXAxis = axisOptions.showXAxis;
+      const originalYAxis = axisOptions.showYAxis;
+      const originalStrokePattern = barStrokePattern;
+      
+      const regularExport = downloadChart(chartRef, exportFileName, exportFileType);
+      
+      let segmentExport = Promise.resolve();
+      if (!originalBarFill || originalFillOpacity < 1) {
+        setBarFill(true);
+        setBarFillOpacity(1);
+        setAxisOptions(prev => ({ ...prev, showXAxis: false, showYAxis: false }));
+        setBarStrokePattern('solid')
+
+        segmentExport = new Promise<void>(resolve => {
+          setTimeout(() => {
+            downloadChart(chartRef, `${exportFileName}-segment`, exportFileType)
+              .then(() => {
+                setBarFill(originalBarFill);
+                setBarFillOpacity(originalFillOpacity);
+                setAxisOptions(prev => ({ ...prev, showXAxis: originalXAxis, showYAxis: originalYAxis }));
+                setBarStrokePattern(originalStrokePattern);
+                resolve();
+              })
+              .catch(error => {
+                console.error('Error exporting chart segment:', error);
+                setBarFill(originalBarFill);
+                setBarFillOpacity(originalFillOpacity);
+                setAxisOptions(prev => ({ ...prev, showXAxis: originalXAxis, showYAxis: originalYAxis }));
+                setBarStrokePattern(originalStrokePattern);
+                resolve();
+              });
+          }, 100);
         });
+      }
+      
+      Promise.all([regularExport, segmentExport])
+        .then(() => { setShowExportOptions(false); })
+        .catch(error => { console.error('Error during export process:', error); });
     }
   };
 

@@ -209,7 +209,9 @@ const BarChart: React.FC<BarChartProps> = ({
   // Helper function to get fill value based on pattern
   const getFillValue = (pattern: string, color: string) => {
     if (!barFill) return 'transparent';
-    if (pattern === 'solid') return color;
+    // If color is 'transparent' and we want a fill, use a default color
+    const fillColor = color === 'transparent' ? '#000' : color;
+    if (pattern === 'solid') return fillColor;
     return `url(#${pattern}Pattern)`;
   };
 
@@ -423,4 +425,4 @@ const BarChart: React.FC<BarChartProps> = ({
   );
 };
 
-export default BarChart; 
+export default BarChart;
