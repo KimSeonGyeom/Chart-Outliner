@@ -1,27 +1,66 @@
 import React from 'react';
 import ChartTypeSelector from './ChartTypeSelector.jsx';
+import DimensionsSection from './shared/DimensionsSection.jsx';
+import AxisSection from './shared/AxisSection.jsx';
+import DomainSection from './shared/DomainSection.jsx';
+import StrokePatternSection from './shared/StrokePatternSection.jsx';
+import FillSection from './shared/FillSection.jsx';
+import DataSection from './shared/DataSection.jsx';
+import LineAppearanceSection from './line/LineAppearanceSection.jsx';
+import PointsSection from './line/LinePointsSection.jsx';
+import BarTemplateSection from './bar/BarTemplateSection.jsx';
+import BarAppearanceSection from './bar/BarAppearanceSection.jsx';
+import './ControlPanel.scss';
+
+// Bar chart specific controls component
+const BarControls = () => {
+  return (
+    <div className="chart-specific-controls">
+      <div className="controls-heading">Bar Chart Settings</div>
+      <BarTemplateSection />
+      <BarAppearanceSection />
+    </div>
+  );
+};
+
+// Line chart specific controls component
+const LineControls = () => {
+  return (
+    <div className="chart-specific-controls">
+      <div className="controls-heading">Line Chart Settings</div>
+      <LineAppearanceSection />
+      <PointsSection />
+    </div>
+  );
+};
+
+// Shared controls component
+const SharedControls = () => {
+  return (
+    <div className="shared-controls">
+      <div className="controls-heading">Chart Settings</div>
+      <DimensionsSection />
+      <DataSection />
+      <AxisSection />
+      <DomainSection />
+      <StrokePatternSection />
+      <FillSection />
+    </div>
+  );
+};
 
 const ControlPanel = ({
   chartType,
   onChartTypeChange,
-  onSaveClick,
   onExportClick,
-  sharedControls,
-  chartSpecificControls,
   showExportOptions,
   exportOptions
 }) => {
   return (
     <div className="controls-panel">
       <div className="controls-header">
-        <h2>Chart Controls</h2>
+        <div className="header-title">Chart Controls</div>
         <div className="button-group">
-          <button 
-            className="save-button" 
-            onClick={onSaveClick}
-          >
-            Save Chart
-          </button>
           {onExportClick && (
             <button 
               className="export-button" 
@@ -33,7 +72,6 @@ const ControlPanel = ({
         </div>
       </div>
       
-      {/* Export options section */}
       {showExportOptions && exportOptions && (
         <div className="export-options-container">
           {exportOptions}
@@ -45,20 +83,13 @@ const ControlPanel = ({
         onChartTypeChange={onChartTypeChange}
       />
       
-      {/* Shared controls section */}
-      <div className="shared-controls">
-        {sharedControls}
-      </div>
-      
-      {/* Chart-specific controls section */}
-      <div className="chart-specific-controls">
-        <div className="section chart-specific-header">
-          <h3>{chartType === 'bar' ? 'Bar Chart' : 'Line Chart'} Options</h3>
-        </div>
-        {chartSpecificControls}
+      <div className="chart-controls">
+        <SharedControls chartType={chartType} />
+        {chartType === 'bar' ? <BarControls /> : <LineControls />}
       </div>
     </div>
   );
 };
 
+// Export components for direct use in other files if needed
 export default ControlPanel; 

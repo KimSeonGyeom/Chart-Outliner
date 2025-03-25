@@ -1,22 +1,24 @@
 import React from 'react';
+import { useSharedStore } from '../store/sharedStore.js';
 
-const ChartTypeSelector = ({
-  activeChart,
-  onChartTypeChange
-}) => {
+const ChartTypeSelector = () => {
+  // Get chart type from shared store
+  const chartType = useSharedStore(state => state.chartType);
+  const setChartType = useSharedStore(state => state.setChartType);
+  
   return (
-    <div className="section">
-      <h3>Chart Type</h3>
-      <div className="chart-selector">
+    <div className="chart-type-selector">
+      <div className="section-title">Chart Type</div>
+      <div className="chart-type-options">
         <button 
-          className={`chart-type-button ${activeChart === 'bar' ? 'active' : ''}`}
-          onClick={() => onChartTypeChange('bar')}
+          className={`chart-type-button ${chartType === 'bar' ? 'active' : ''}`}
+          onClick={() => setChartType('bar')}
         >
           Bar Chart
         </button>
         <button 
-          className={`chart-type-button ${activeChart === 'line' ? 'active' : ''}`}
-          onClick={() => onChartTypeChange('line')}
+          className={`chart-type-button ${chartType === 'line' ? 'active' : ''}`}
+          onClick={() => setChartType('line')}
         >
           Line Chart
         </button>

@@ -1,108 +1,44 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import ReactDOMServer from 'react-dom/server';
+import { useDataStore } from '../store/dataStore';
+import { useSharedStore } from '../store/sharedStore';
+import { useChartStore } from '../store/chartStore';
 
-const LineChart = ({
-  data,
-  width = 512,
-  height = 512,
-  marginTop = 20,
-  marginRight = 20,
-  marginBottom = 30,
-  marginLeft = 40,
-  fill = false,
-  fillOpacity = 0.0,
-  fillPattern = 'solid',
-  fillZoomLevel = 8,
+const LineChart = () => {
+  // Get data and settings from stores
+  const chartData = useDataStore((state) => state.chartData);
   
-  // Curve parameters
-  curveType = 'linear',
-  curveTension = 0.5,
+  // Get shared settings
+  const chartWidth = useSharedStore((state) => state.width);
+  const chartHeight = useSharedStore((state) => state.height);
+  const showXAxis = useSharedStore((state) => state.showXAxis);
+  const showYAxis = useSharedStore((state) => state.showYAxis);
+  const yDomainMin = useSharedStore((state) => state.yDomainMin);
+  const yDomainMax = useSharedStore((state) => state.yDomainMax);
+  const fill = useSharedStore((state) => state.fill);
+  const fillPattern = useSharedStore((state) => state.fillPattern);
+  const fillZoomLevel = useSharedStore((state) => state.fillZoomLevel);
+  const fillOpacity = useSharedStore((state) => state.fillOpacity);
   
-  // Line appearance
-  lineColor = '#000',
-  lineWidth = 1,
-  lineDash,
-  lineStrokePattern = 'solid',
-  lineStrokeWidth = 1,
-  lineStrokeStyle = 'normal',
-  lineDashArray = '6,4',
+  // Get chart-specific settings
+  const curveType = useChartStore((state) => state.curveType);
+  const curveTension = useChartStore((state) => state.curveTension);
+  const showPoints = useChartStore((state) => state.showPoints);
+  const pointRadius = useChartStore((state) => state.pointRadius);
+  const pointShape = useChartStore((state) => state.pointShape);
+  const lineStrokePattern = useChartStore((state) => state.lineStrokePattern);
+  const lineStrokeWidth = useChartStore((state) => state.lineStrokeWidth);
+  const lineDashArray = useChartStore((state) => state.lineDashArray);
+  const lineColor = useChartStore((state) => state.lineColor);
+  const pointStroke = useChartStore((state) => state.pointStroke);
+  const pointStrokeWidth = useChartStore((state) => state.pointStrokeWidth);
   
-  // Point appearance
-  showPoints = true,
-  pointRadius = 3,
-  pointShape = 'circle',
-  pointStroke = '#000',
-  pointStrokeWidth = 1,
-  
-  // Axis appearance
-  showXAxis = true,
-  showYAxis = true,
-  xAxisTickCount,
-  yAxisTickCount,
-  
-  // Domain customization
-  yDomainMin,
-  yDomainMax,
-  
-  // Resize callback
-  onResize
-}) => {
+  // Other state
   const svgRef = useRef(null);
   const chartRef = useRef(null);
-  const resizeHandleRef = useRef(null);
-  const [dataPoints, setDataPoints] = useState([]);
-  
-  // State for resize tracking
-  const [isResizing, setIsResizing] = useState(false);
-  const [startResizePos, setStartResizePos] = useState({ x: 0, y: 0 });
-  const [initialDimensions, setInitialDimensions] = useState({ width, height });
-
-  // Setup resize event handlers
-  useEffect(() => {
-    if (!resizeHandleRef.current) return;
-    
-    const handleMouseDown = (e) => {
-      e.preventDefault();
-      setIsResizing(true);
-      setStartResizePos({ x: e.clientX, y: e.clientY });
-      setInitialDimensions({ width, height });
-    };
-    
-    const handleMouseMove = (e) => {
-      if (!isResizing) return;
-      
-      const dx = e.clientX - startResizePos.x;
-      const dy = e.clientY - startResizePos.y;
-      
-      // Update dimensions with minimum constraints
-      const newWidth = Math.max(200, initialDimensions.width + dx);
-      const newHeight = Math.max(150, initialDimensions.height + dy);
-      
-      // Notify parent component of resize
-      if (onResize) {
-        onResize(newWidth, newHeight);
-      }
-    };
-    
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-    
-    const handle = resizeHandleRef.current;
-    handle.addEventListener('mousedown', handleMouseDown);
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    
-    return () => {
-      handle.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isResizing, startResizePos, initialDimensions, width, height, onResize]);
 
   // Calculate the stroke-dasharray value based on the pattern
   const getStrokeDashArray = (pattern) => {
@@ -173,49 +109,6 @@ const LineChart = ({
     return `url(#${pattern}Pattern)`;
   };
 
-  // Create a filter for the brush stroke effect
-  const createBrushStrokeEffect = (id) => {
-    return (
-      <filter id={id} x="-50%" y="-50%" width="200%" height="200%">
-        <feTurbulence baseFrequency="0.05" numOctaves="2" seed="1" />
-        <feDisplacementMap in="SourceGraphic" scale="1.5" />
-      </filter>
-    );
-  };
-  
-  // Create a filter for the sketch stroke effect
-  const createSketchStrokeEffect = (id) => {
-    return (
-      <filter id={id} x="-50%" y="-50%" width="200%" height="200%">
-        <feTurbulence baseFrequency="0.01" numOctaves="3" seed="2" />
-        <feDisplacementMap in="SourceGraphic" scale="2" />
-      </filter>
-    );
-  };
-  
-  // Create a filter for the rough stroke effect
-  const createRoughStrokeEffect = (id) => {
-    return (
-      <filter id={id} x="-50%" y="-50%" width="200%" height="200%">
-        <feTurbulence baseFrequency="0.08" numOctaves="2" seed="3" />
-        <feDisplacementMap in="SourceGraphic" scale="3" />
-      </filter>
-    );
-  };
-  
-  // Get the stroke style props based on style selection
-  const getStrokeStyleProps = () => {
-    const props = {
-      strokeWidth: lineStrokeWidth > 0 ? lineStrokeWidth : 0
-    };
-    
-    if (lineStrokeStyle !== 'normal' && lineStrokeWidth > 0) {
-      props.filter = `url(#${lineStrokeStyle}Effect)`;
-    }
-    
-    return props;
-  };
-
   // Helper function to create SVG path for custom shapes
   const createPointShape = (shape, x, y, radius) => {
     switch (shape) {
@@ -263,7 +156,7 @@ const LineChart = ({
 
   // Update chart with new data
   useEffect(() => {
-    if (!svgRef.current || !data || data.length === 0) return;
+    if (!svgRef.current || !chartData || chartData.length === 0) return;
 
     // Get the SVG element and clear it
     const svg = d3.select(svgRef.current);
@@ -272,35 +165,26 @@ const LineChart = ({
     // Add defs for patterns and filters
     const defs = svg.append('defs');
     
-    // Add SVG filters for stroke styles
-    if (lineStrokeStyle === 'brush') {
-      defs.html(ReactDOMServer.renderToString(createBrushStrokeEffect('brushEffect')));
-    } else if (lineStrokeStyle === 'sketch') {
-      defs.html(ReactDOMServer.renderToString(createSketchStrokeEffect('sketchEffect')));
-    } else if (lineStrokeStyle === 'rough') {
-      defs.html(ReactDOMServer.renderToString(createRoughStrokeEffect('roughEffect')));
-    }
-    
     // Add pattern for fill
     if (fill && fillPattern !== 'solid') {
       const pattern = createFillPattern(fillPattern, lineColor);
       if (pattern) {
-        defs.html(defs.html() + ReactDOMServer.renderToString(pattern));
+        defs.html(ReactDOMServer.renderToString(pattern));
       }
     }
 
     // Calculate inner dimensions
-    const innerWidth = width - marginLeft - marginRight;
-    const innerHeight = height - marginTop - marginBottom;
+    const innerWidth = chartWidth;
+    const innerHeight = chartHeight;
 
     // Create scales
     const x = d3.scalePoint()
-      .domain(data.map(d => String(d.x)))
+      .domain(chartData.map(d => String(d.x)))
       .range([0, innerWidth])
       .padding(0.5);
 
-    const yMin = yDomainMin !== undefined ? yDomainMin : d3.min(data, d => d.y) || 0;
-    const yMax = yDomainMax !== undefined ? yDomainMax : d3.max(data, d => d.y) || 0;
+    const yMin = yDomainMin !== undefined ? yDomainMin : d3.min(chartData, d => d.y) || 0;
+    const yMax = yDomainMax !== undefined ? yDomainMax : d3.max(chartData, d => d.y) || 0;
     
     const y = d3.scaleLinear()
       .domain([Math.min(0, yMin), yMax * 1.1])
@@ -308,8 +192,7 @@ const LineChart = ({
       .range([innerHeight, 0]);
 
     // Create main chart group
-    const g = svg.append('g')
-      .attr('transform', `translate(${marginLeft},${marginTop})`);
+    const g = svg.append('g');
 
     // Create line generator with specified curve
     const getCurveFunction = (type) => {
@@ -344,7 +227,7 @@ const LineChart = ({
         .curve(getCurveFunction(curveType));
 
       g.append('path')
-        .datum(data)
+        .datum(chartData)
         .attr('class', 'area')
         .attr('d', area)
         .attr('fill', getFillValue(fillPattern, lineColor))
@@ -353,24 +236,18 @@ const LineChart = ({
 
     // Add line with updated stroke properties
     g.append('path')
-      .datum(data)
+      .datum(chartData)
       .attr('class', 'line')
       .attr('d', line)
       .attr('fill', 'none')
       .attr('stroke', lineStrokeWidth > 0 ? lineColor : 'none')
       .attr('stroke-width', lineStrokeWidth)
-      .attr('stroke-dasharray', lineStrokeWidth > 0 ? getStrokeDashArray(lineStrokePattern) : 'none')
-      .call(sel => {
-        // Apply stroke style filter if not normal and stroke width > 0
-        if (lineStrokeStyle !== 'normal' && lineStrokeWidth > 0) {
-          sel.attr('filter', `url(#${lineStrokeStyle}Effect)`);
-        }
-      });
+      .attr('stroke-dasharray', lineStrokeWidth > 0 ? getStrokeDashArray(lineStrokePattern) : 'none');
 
     // Add points if enabled
     if (showPoints && pointRadius > 0) {
       // Store the data points for external use
-      const pointsData = data.map(d => ({
+      const pointsData = chartData.map(d => ({
         x: x(String(d.x)) || 0,
         y: y(d.y),
         color: d.color || lineColor
@@ -380,7 +257,7 @@ const LineChart = ({
       if (pointShape === 'circle') {
         // Use circles for circle shapes
         g.selectAll('.point')
-          .data(data)
+          .data(chartData)
           .enter()
           .append('circle')
           .attr('class', 'point')
@@ -393,7 +270,7 @@ const LineChart = ({
       } else {
         // Use SVG paths for other shapes
         g.selectAll('.point')
-          .data(data)
+          .data(chartData)
           .enter()
           .append('path')
           .attr('class', 'point')
@@ -408,7 +285,7 @@ const LineChart = ({
       }
     } else if (showPoints) {
       // Just store data points for external use without rendering them
-      const pointsData = data.map(d => ({
+      const pointsData = chartData.map(d => ({
         x: x(String(d.x)) || 0,
         y: y(d.y),
         color: d.color || lineColor
@@ -431,10 +308,10 @@ const LineChart = ({
     // Store chart references
     chartRef.current = { g, x, y };
 
-  }, [data, width, height, marginTop, marginRight, marginBottom, marginLeft, 
-      curveType, curveTension, lineColor, lineWidth, fill, fillOpacity, fillPattern,
+  }, [chartData, chartWidth, chartHeight, 
+      curveType, curveTension, lineColor, fill, fillOpacity, fillPattern,
       showPoints, pointRadius, pointShape, pointStroke, pointStrokeWidth, lineStrokePattern,
-      showXAxis, showYAxis, yDomainMin, yDomainMax, lineStrokeWidth, lineStrokeStyle, lineDashArray]);
+      showXAxis, showYAxis, yDomainMin, yDomainMax, lineStrokeWidth, lineDashArray, fillZoomLevel]);
   
   // Effect to clean up when component unmounts
   useEffect(() => {
@@ -445,31 +322,14 @@ const LineChart = ({
       }
     };
   }, []);
-  
-  // Resize handle styles
-  const resizeHandleStyle = {
-    cursor: 'nwse-resize',
-    backgroundColor: '#ccc',
-    opacity: isResizing ? 0.6 : 0.3,
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    width: 15,
-    height: 15
-  };
 
   return (
     <div style={{ position: 'relative' }}>
-      <div className="chart-wrapper" style={{ position: 'relative', width, height }}>
-        <svg ref={svgRef} width={width} height={height}>
+      <div className="chart-wrapper" style={{ position: 'relative', width: chartWidth, height: chartHeight }}>
+        <svg ref={svgRef} width={chartWidth} height={chartHeight}>
           {/* Chart will be rendered here by D3 */}
         </svg>
       </div>
-      {/* Resize handle */}
-      <div
-        ref={resizeHandleRef}
-        style={resizeHandleStyle}
-      />
     </div>
   );
 };

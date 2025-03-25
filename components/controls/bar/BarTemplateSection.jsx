@@ -1,16 +1,17 @@
 import React from 'react';
+import { useChartStore } from '../../store/chartStore';
 
-const BarTemplateSection = ({
-  selectedTemplate,
-  onTemplateChange
-}) => {
+const BarTemplateSection = () => {
+  const selectedTemplate = useChartStore(state => state.selectedTemplate);
+  const updateSetting = useChartStore(state => state.updateSetting);
+  
   return (
     <div className="section">
       <div className="control-group">
         <label>Select Template</label>
         <select 
           value={selectedTemplate}
-          onChange={(e) => onTemplateChange(e.target.value)}
+          onChange={(e) => updateSetting('selectedTemplate', e.target.value)}
         >
           <option value="none">Default Bars</option>
           <option value="rectangle">Rectangle</option>

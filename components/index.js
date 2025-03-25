@@ -1,22 +1,21 @@
 // Chart Components
-export { default } from './charts/BarChart.jsx';
-export { default } from './charts/LineChart.jsx';
-export { default } from './ChartWithDropdown.jsx';
-export { default } from './charts/BarChartControls.jsx';
-export { default } from './charts/LineChartControls.jsx';
+export { default as BarChart } from './charts/BarChart';
+export { default as LineChart } from './charts/LineChart';
+export { default as BarChartControls } from './charts/BarChartControls';
+export { default as LineChartControls } from './charts/LineChartControls';
 
 // Templates
-export { default } from './templates/TriangleTemplate.jsx';
-export { default } from './templates/DiamondTemplate.jsx';
-export { default } from './templates/CircleTemplate.jsx';
-export { default } from './templates/RectangleTemplate.jsx';
+export { default as TriangleTemplate } from './templates/TriangleTemplate';
+export { default as DiamondTemplate } from './templates/DiamondTemplate';
+export { default as CircleTemplate } from './templates/CircleTemplate';
+export { default as RectangleTemplate } from './templates/RectangleTemplate';
 
 // Stores
-export { useChartStore } from './store/chartStore.js';
-export { useDataStore } from './store/dataStore.js';
-export { useUIStore } from './store/uiStore.js';
-export { useSharedStore } from './store/sharedStore.js';
-export * from './store/storeUtils.js';
+export { useChartStore } from './store/chartStore';
+export { useDataStore } from './store/dataStore';
+export { useUIStore } from './store/uiStore';
+export { useSharedStore } from './store/sharedStore';
+export * from './store/storeUtils';
 
 // Types
 export * from './data'; 

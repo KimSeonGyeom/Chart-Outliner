@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useChartStore } from '../../store/chartStore';
 
 const pointShapeOptions = [
   { value: 'circle', label: 'Circle' },
@@ -9,55 +10,11 @@ const pointShapeOptions = [
   { value: 'star', label: 'Star' }
 ];
 
-const PointsSection = ({
-  showPoints,
-  pointRadius,
-  pointShape = 'circle',
-  pointStrokeWidth = 1,
-  onShowPointsChange,
-  onPointRadiusChange,
-  onPointShapeChange,
-  onPointStrokeWidthChange
-}) => {
-  // Track whether point stroke is enabled
-  const [strokeEnabled, setStrokeEnabled] = useState(pointStrokeWidth > 0);
-  // Store previous stroke width when toggling
-  const [prevStrokeWidth, setPrevStrokeWidth] = useState(pointStrokeWidth > 0 ? pointStrokeWidth : 1);
-
-  // Update stroke enabled state when stroke width changes from outside
-  useEffect(() => {
-    setStrokeEnabled(pointStrokeWidth > 0);
-    if (pointStrokeWidth > 0) {
-      setPrevStrokeWidth(pointStrokeWidth);
-    }
-  }, [pointStrokeWidth]);
-
-  // Validate and handle point radius change
-  const handleRadiusChange = (e) => {
-    const value = parseFloat(e.target.value);
-    if (!isNaN(value) && value >= 0) {
-      onPointRadiusChange(value);
-    }
-  };
-
-  // Handle point shape change
-  const handleShapeChange = (e) => {
-    onPointShapeChange(e.target.value);
-  };
-
-  // Toggle point stroke visibility
-  const handleStrokeToggle = (e) => {
-    const isEnabled = e.target.checked;
-    setStrokeEnabled(isEnabled);
-    
-    if (isEnabled) {
-      // Restore previous width when enabling
-      onPointStrokeWidthChange(prevStrokeWidth);
-    } else {
-      // Set width to 0 when disabling
-      onPointStrokeWidthChange(0);
-    }
-  };
+const PointsSection = () => {
+  const showPoints = useChartStore(state => state.showPoints);
+  const pointRadius = useChartStore(state => state.pointRadius);
+  const pointShape = useChartStore(state => state.pointShape);
+  const updateSetting = useChartStore(state => state.updateSetting);
 
   return (
     <div className="section">
@@ -66,7 +23,7 @@ const PointsSection = ({
           <input
             type="checkbox"
             checked={showPoints}
-            onChange={(e) => onShowPointsChange(e.target.checked)}
+            onChange={(e) => updateSetting('showPoints', e.target.checked)}
             id="points-checkbox"
           />
           <label htmlFor="points-checkbox">Show data points</label>
@@ -78,7 +35,7 @@ const PointsSection = ({
               <div className="dropdown-container">
                 <select 
                   value={pointShape}
-                  onChange={handleShapeChange}
+                  onChange={(e) => updateSetting('pointShape', e.target.value)}
                   className="dropdown-select"
                 >
                   {pointShapeOptions.map(option => (
@@ -100,7 +57,7 @@ const PointsSection = ({
                   min="0"
                   step="0.5"
                   value={pointRadius}
-                  onChange={handleRadiusChange}
+                  onChange={(e) => updateSetting('pointRadius', parseFloat(e.target.value))}
                   className="number-input"
                 />
               </div>

@@ -1,46 +1,32 @@
 import React from 'react';
+import { useDataStore } from '../../store/dataStore.js';
+import { sampleDataSets } from '../../store/dataStore.js';
 
-// Common preset options for both chart types
-const presetOptions = [
-  { value: 'basic', label: 'Basic Data', forChartTypes: ['bar', 'line'] },
-  { value: 'rising', label: 'Rising Trend', forChartTypes: ['bar', 'line'] },
-  { value: 'falling', label: 'Falling Trend', forChartTypes: ['bar', 'line'] },
-  { value: 'wave', label: 'Wave Pattern', forChartTypes: ['bar', 'line'] },
-  { value: 'exponential', label: 'Exponential Growth', forChartTypes: ['bar', 'line'] },
-  { value: 'logarithmic', label: 'Logarithmic Growth', forChartTypes: ['bar', 'line'] },
-  { value: 'sinusoidal', label: 'Sine Wave', forChartTypes: ['bar', 'line'] }
-];
+const DataSection = () => {
+  // Get data settings from data store
+  const selectedPreset = useDataStore(state => state.selectedPreset);
+  const setSelectedPreset = useDataStore(state => state.setSelectedPreset);
+  const randomizeData = useDataStore(state => state.randomizeData);
 
-const DataSection = ({
-  selectedPreset,
-  onPresetChange,
-  onRandomize,
-  chartType
-}) => {
-  // Filter options based on chart type
-  const filteredOptions = presetOptions.filter(option => 
-    option.forChartTypes.includes(chartType)
-  );
-  
   return (
-    <div className="section">
-      <h3>Preset Data</h3>
+    <div className="data-section">
+      <div className="section-title">Preset Data</div>
+      
       <div className="control-group">
         <div className="data-presets">
           <select 
             value={selectedPreset}
-            onChange={(e) => onPresetChange(e.target.value)}
+            onChange={(e) => setSelectedPreset(e.target.value)}
           >
-            {filteredOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            {Object.entries(sampleDataSets).map(([key, data]) => (
+              <option key={key} value={key}>
+                {key}
               </option>
             ))}
-            <option value="custom" disabled={selectedPreset !== "custom"}>Custom</option>
           </select>
           <button 
             className="randomize-button"
-            onClick={onRandomize}
+            onClick={() => randomizeData()}
             title="Generate random data"
           >
             Randomize

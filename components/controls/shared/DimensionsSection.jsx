@@ -1,12 +1,15 @@
 import React from 'react';
+import { useSharedStore } from '../../store/sharedStore.js';
 
-const DimensionsSection = ({ 
-  dimensions, 
-  onDimensionChange 
-}) => {
+const DimensionsSection = () => {
+  // Get dimensions from shared store
+  const width = useSharedStore(state => state.width);
+  const height = useSharedStore(state => state.height);
+  const updateSetting = useSharedStore(state => state.updateSetting);
+
   return (
     <div className="section">
-      <h3>Dimensions</h3>
+      <div className="section-title">Dimensions</div>
       <div className="dimensions-grid">
         <div>
           <label>Width</label>
@@ -14,8 +17,8 @@ const DimensionsSection = ({
             type="number"
             min="200"
             max="1200"
-            value={dimensions.width}
-            onChange={(e) => onDimensionChange('width', parseInt(e.target.value) || 600)}
+            value={width}
+            onChange={(e) => updateSetting('width', parseInt(e.target.value) || 600)}
           />
         </div>
         <div>
@@ -24,8 +27,8 @@ const DimensionsSection = ({
             type="number"
             min="100"
             max="800"
-            value={dimensions.height}
-            onChange={(e) => onDimensionChange('height', parseInt(e.target.value) || 400)}
+            value={height}
+            onChange={(e) => updateSetting('height', parseInt(e.target.value) || 400)}
           />
         </div>
       </div>

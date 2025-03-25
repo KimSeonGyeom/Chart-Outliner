@@ -1,27 +1,20 @@
 import { create } from 'zustand';
-import { SharedState, createSharedSlice } from './sharedStore.js';
-import { StoreSlice } from './storeUtils.js';
 
-// Data labels for random generation
-export const dataLabels = {
-  months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-  categories: ['Cat A', 'Cat B', 'Cat C', 'Cat D', 'Cat E', 'Cat F', 'Cat G', 'Cat H'],
-};
+// Data dataLabels for random generation
+export const dataLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 // Generate a new dataset with a specific trend
 export const generateTrendData = (
   trend, 
   numPoints = 7,
-  useCategories = false
 ) => {
   const data = [];
-  const labels = useCategories ? dataLabels.categories : dataLabels.months;
   
   switch (trend) {
     case 'linear':
       for (let i = 0; i < numPoints; i++) {
         data.push({
-          x: labels[i % labels.length],
+          x: dataLabels[i % dataLabels.length],
           y: Math.floor(10 + (i * 90) / (numPoints - 1))
         });
       }
@@ -33,7 +26,7 @@ export const generateTrendData = (
         // Using a = 10, b = 0.4
         const x = i / (numPoints - 1);
         data.push({
-          x: labels[i % labels.length],
+          x: dataLabels[i % dataLabels.length],
           y: Math.floor(10 * Math.exp(3 * x))
         });
       }
@@ -45,7 +38,7 @@ export const generateTrendData = (
         // Using a = 30, b = 10
         const x = (i + 1) / numPoints;
         data.push({
-          x: labels[i % labels.length],
+          x: dataLabels[i % dataLabels.length],
           y: Math.floor(30 * Math.log(10 * x + 1))
         });
       }
@@ -57,7 +50,7 @@ export const generateTrendData = (
         // Using a = 40, b = 2*π, c = 50
         const x = i / (numPoints - 1);
         data.push({
-          x: labels[i % labels.length],
+          x: dataLabels[i % dataLabels.length],
           y: Math.floor(40 * Math.sin(2 * Math.PI * x) + 50)
         });
       }
@@ -105,27 +98,20 @@ export const sampleDataSets = {
     { x: 'Jun', y: 70 },
     { x: 'Jul', y: 40 },
   ],
-  grouped: [
-    { x: 'Cat A', y: 25 },
-    { x: 'Cat B', y: 65 },
-    { x: 'Cat C', y: 40 },
-    { x: 'Cat D', y: 85 },
-    { x: 'Cat E', y: 50 },
-  ],
   // Add trend datasets
   exponential: generateTrendData('exponential'),
   logarithmic: generateTrendData('logarithmic'),
   sinusoidal: generateTrendData('sinusoidal'),
 };
 
-// Generate random data for line charts
-export const generateRandomLineData = () => {
-  const dataPoints = 7 + Math.floor(Math.random() * 6); // Between 7-12 data points
+// Generate random data for any chart type
+export const generateRandomData = (minPoints, maxExtraPoints) => {
+  const dataPoints = minPoints + Math.floor(Math.random() * maxExtraPoints); 
   const newData = [];
   
   for (let i = 0; i < dataPoints; i++) {
     newData.push({
-      x: dataLabels.months[i % 12],
+      x: dataLabels[i % dataLabels.length],
       y: Math.floor(Math.random() * 100) // Random value between 0-100
     });
   }
@@ -133,44 +119,36 @@ export const generateRandomLineData = () => {
   return newData;
 };
 
-// Generate random data for bar charts
-export const generateRandomBarData = () => {
-  const dataPoints = 5 + Math.floor(Math.random() * 4); // Between 5-8 data points
-  const newData = [];
+// Create the data store with only data-related properties
+export const useDataStore = create()((set) => ({
+  // Data properties
+  chartData: sampleDataSets.basic,
+  selectedPreset: 'basic',
   
-  for (let i = 0; i < dataPoints; i++) {
-    newData.push({
-      x: dataLabels.categories[i % dataLabels.categories.length],
-      y: Math.floor(Math.random() * 100) // Random value between 0-100
-    });
-  }
+  // Data actions
+  setChartData: (data) => set({ chartData: data }),
+  setSelectedPreset: (preset) => set({ 
+    selectedPreset: preset,
+    chartData: sampleDataSets[preset]
+  }),
   
-  return newData;
-};
-
-// Create data specific slice
-const createDataSpecificSlice = (set) => ({
-  // Generate random data based on chart type
-  randomizeData: (chartType) => {
-    if (chartType === 'bar') {
-      const newData = generateRandomBarData();
-      set({ chartData: newData, selectedPreset: 'custom' });
-    } else {
-      const newData = generateRandomLineData();
-      set({ chartData: newData, selectedPreset: 'custom' });
-    }
+  // Generate random data (works for any chart type)
+  randomizeData: () => {
+    const minPoints = 4;
+    const maxExtraPoints = 6;
+    
+    const newData = generateRandomData(minPoints, maxExtraPoints);
+    set({ chartData: newData, selectedPreset: 'custom' });
   },
   
   // Load preset data
-  loadPresetData: (preset, chartType) => {
+  loadPresetData: (preset) => {
     if (preset === 'random') {
-      if (chartType === 'bar') {
-        const newData = generateRandomBarData();
-        set({ chartData: newData, selectedPreset: 'custom' });
-      } else {
-        const newData = generateRandomLineData();
-        set({ chartData: newData, selectedPreset: 'custom' });
-      }
+      const minPoints = 4;
+      const maxExtraPoints = 6;
+      
+      const newData = generateRandomData(minPoints, maxExtraPoints);
+      set({ chartData: newData, selectedPreset: 'custom' });
       return;
     }
     
@@ -184,28 +162,14 @@ const createDataSpecificSlice = (set) => ({
     
     // Handle trend data
     if (['exponential', 'logarithmic', 'sinusoidal'].includes(preset)) {
-      const useCategories = chartType === 'bar';
-      const dataPoints = useCategories ? 5 : 7; // Fewer data points for bar charts
+      const dataPoints = 7;
       
       const trendData = generateTrendData(
         preset,
         dataPoints,
-        useCategories
       );
       
       set({ chartData: trendData, selectedPreset: preset });
     }
   }
-});
-
-// Create the data store
-export const useDataStore = create()((...args) => {
-  // Initialize shared state with sample data
-  const initialSharedState = createSharedSlice(...args);
-  initialSharedState.chartData = sampleDataSets.basic;
-
-  return {
-    ...initialSharedState,
-    ...createDataSpecificSlice(...args)
-  };
-}); 
+})); 

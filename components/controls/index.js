@@ -4,9 +4,8 @@
 export { downloadChart } from './downloadUtils.js';
 
 // Export main control panel
-export { default as ControlPanel } from './ControlPanel.jsx';
+export { default as ControlPanel, BarControls, LineControls, SharedControls } from './ControlPanel.jsx';
 export { default as ChartTypeSelector } from './ChartTypeSelector.jsx';
-export { default as SaveDialog } from './SaveDialog.jsx';
 
 // Export shared sections
 export { default as DimensionsSection } from './shared/DimensionsSection.jsx';

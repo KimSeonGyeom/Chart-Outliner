@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { useSharedStore } from '../../store/sharedStore.js';
 
 const strokePatternOptions = [
   { value: 'solid', label: 'Solid' },
@@ -16,93 +17,30 @@ const strokeStyleOptions = [
   { value: 'rough', label: 'Rough' }
 ];
 
-const StrokePatternSection = ({
-  strokePattern,
-  strokeWidth = 1,
-  strokeStyle = 'normal',
-  dashArray = '6,4',
-  onStrokePatternChange,
-  onStrokeWidthChange,
-  onStrokeStyleChange,
-  onDashArrayChange
-}) => {
-  // Store custom dash array input state
-  const [dashInput, setDashInput] = useState(dashArray);
-  // Track whether stroke is enabled
-  const [strokeEnabled, setStrokeEnabled] = useState(strokeWidth > 0);
-  // Store previous stroke width when toggling
-  const [prevStrokeWidth, setPrevStrokeWidth] = useState(strokeWidth > 0 ? strokeWidth : 1);
-
-  // Update stroke enabled state when stroke width changes from outside
-  useEffect(() => {
-    setStrokeEnabled(strokeWidth > 0);
-    if (strokeWidth > 0) {
-      setPrevStrokeWidth(strokeWidth);
-    }
-  }, [strokeWidth]);
-
-  // Handle custom dash array change
-  const handleDashInputChange = (e) => {
-    setDashInput(e.target.value);
-  };
-
-  // Apply custom dash array when blur
-  const applyCustomDash = () => {
-    if (dashInput.trim() && strokePattern === 'custom') {
-      onDashArrayChange(dashInput);
-    }
-  };
-
-  // Toggle stroke visibility
-  const handleStrokeToggle = (e) => {
-    const isEnabled = e.target.checked;
-    setStrokeEnabled(isEnabled);
-    
-    if (isEnabled) {
-      // Restore previous width when enabling
-      onStrokeWidthChange(prevStrokeWidth);
-    } else {
-      // Set width to 0 when disabling
-      onStrokeWidthChange(0);
-    }
-  };
-
-  // Validate and handle stroke width change
-  const handleStrokeWidthChange = (e) => {
-    const value = parseFloat(e.target.value);
-    if (!isNaN(value) && value >= 0) {
-      onStrokeWidthChange(value);
-      if (value > 0) {
-        setPrevStrokeWidth(value);
-      }
-    }
-  };
-
-  // Handle stroke style dropdown change
-  const handleStrokeStyleChange = (e) => {
-    onStrokeStyleChange(e.target.value);
-  };
-
-  // Handle stroke pattern dropdown change
-  const handleStrokePatternChange = (e) => {
-    onStrokePatternChange(e.target.value);
-  };
+const StrokePatternSection = () => {
+  // Get stroke settings from shared store
+  const strokePattern = useSharedStore(state => state.strokePattern);
+  const strokeWidth = useSharedStore(state => state.strokeWidth);
+  const strokeStyle = useSharedStore(state => state.strokeStyle);
+  const dashArray = useSharedStore(state => state.dashArray);
+  const updateSetting = useSharedStore(state => state.updateSetting);
 
   return (
     <div className="section">
-      <h3>Stroke Settings</h3>
+      <div className="section-title">Stroke Settings</div>
+      
       <div className="control-group space-y">
         <div className="checkbox-group">
           <input
             type="checkbox"
-            checked={strokeEnabled}
-            onChange={handleStrokeToggle}
+            checked={strokeWidth > 0}
+            onChange={() => updateSetting('strokeWidth', strokeWidth > 0 ? 0 : 2)}
             id="stroke-visibility-checkbox"
           />
           <label htmlFor="stroke-visibility-checkbox">Show outline</label>
         </div>
 
-        {strokeEnabled && (
+        {strokeWidth > 0 && (
           <>
             <div className="control-row">
               <label>Stroke Width (px)</label>
@@ -113,9 +51,8 @@ const StrokePatternSection = ({
                   max="10"
                   step="0.5"
                   value={strokeWidth}
-                  onChange={handleStrokeWidthChange}
+                  onChange={(e) => updateSetting('strokeWidth', parseFloat(e.target.value))}
                   className="number-input"
-                  disabled={!strokeEnabled}
                 />
               </div>
             </div>
@@ -125,9 +62,8 @@ const StrokePatternSection = ({
               <div className="dropdown-container">
                 <select 
                   value={strokeStyle}
-                  onChange={handleStrokeStyleChange}
+                  onChange={(e) => updateSetting('strokeStyle', e.target.value)}
                   className="dropdown-select"
-                  disabled={!strokeEnabled}
                 >
                   {strokeStyleOptions.map(option => (
                     <option key={option.value} value={option.value}>
@@ -146,9 +82,8 @@ const StrokePatternSection = ({
               <div className="dropdown-container">
                 <select 
                   value={strokePattern}
-                  onChange={handleStrokePatternChange}
+                  onChange={(e) => updateSetting('strokePattern', e.target.value)}
                   className="dropdown-select"
-                  disabled={!strokeEnabled}
                 >
                   {strokePatternOptions.map(option => (
                     <option key={option.value} value={option.value}>
@@ -170,12 +105,10 @@ const StrokePatternSection = ({
                 <label>Custom Dash (format)</label>
                 <input
                   type="text"
-                  value={dashInput}
-                  onChange={handleDashInputChange}
-                  onBlur={applyCustomDash}
+                  value={dashArray}
+                  onChange={(e) => updateSetting('dashArray', e.target.value)}
                   placeholder="e.g. 5,3 or 4,2,1,2"
                   className="text-input"
-                  disabled={!strokeEnabled}
                 />
                 <div className="hint-text">Enter comma-separated values for line and gap lengths</div>
               </div>

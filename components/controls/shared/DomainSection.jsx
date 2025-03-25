@@ -1,30 +1,22 @@
 import React from 'react';
+import { useSharedStore } from '../../store/sharedStore.js';
 
-const DomainSection = ({
-  yDomainMin,
-  yDomainMax,
-  onDomainChange
-}) => {
-  // Handle optional number input change
-  const handleOptionalNumberInput = (setter) => (e) => {
-    const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
-    if (value === undefined || !isNaN(value)) {
-      setter === 'min' 
-        ? onDomainChange(value, yDomainMax)
-        : onDomainChange(yDomainMin, value);
-    }
-  };
+const DomainSection = () => {
+  // Get domain options from shared store
+  const yDomainMin = useSharedStore(state => state.yDomainMin);
+  const yDomainMax = useSharedStore(state => state.yDomainMax);
+  const updateSetting = useSharedStore(state => state.updateSetting);
 
   return (
     <div className="section">
-      <h3>Y Domain</h3>
+      <div className="section-title">Y Domain</div>
       <div className="dimensions-grid">
         <div>
           <label>Min Value</label>
           <input
             type="text"
             value={yDomainMin === undefined ? "Auto" : yDomainMin}
-            onChange={handleOptionalNumberInput('min')}
+            onChange={(e) => updateSetting('yDomainMin', e.target.value)}
             placeholder="Auto"
           />
         </div>
@@ -34,7 +26,7 @@ const DomainSection = ({
           <input
             type="text"
             value={yDomainMax === undefined ? "Auto" : yDomainMax}
-            onChange={handleOptionalNumberInput('max')}
+            onChange={(e) => updateSetting('yDomainMax', e.target.value)}
             placeholder="Auto"
           />
         </div>

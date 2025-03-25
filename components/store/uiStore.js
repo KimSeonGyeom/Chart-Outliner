@@ -1,16 +1,12 @@
 import { create } from 'zustand';
-import { StoreSlice } from './storeUtils.js';
 
-// Define the UI store state
-
-
-// Create the UI store slice
-const createUISlice = (set) => ({
-  // Save dialog initial state
+// Create the UI store with direct state and actions
+export const useUIStore = create()((set) => ({
+  // Save dialog state
   isSavingOpen: false,
   chartName: '',
   
-  // Export dialog initial state
+  // Export dialog state
   isExportingOpen: false,
   showExportOptions: false,
   exportFileName: '',
@@ -20,6 +16,15 @@ const createUISlice = (set) => ({
   
   // Fill pattern preview state
   previewZoomLevel: 8,
+  
+  // Actions
+  updateSetting: (key, value) => set((state) => ({
+    [key]: value
+  })),
+  
+  updateSettings: (settings) => set((state) => ({
+    ...settings
+  })),
   
   // Save dialog actions
   openSaveDialog: () => set({ isSavingOpen: true }),
@@ -37,9 +42,4 @@ const createUISlice = (set) => ({
   
   // Fill pattern preview actions
   setPreviewZoomLevel: (value) => set({ previewZoomLevel: value })
-});
-
-// Create the UI store
-export const useUIStore = create()((...args) => ({
-  ...createUISlice(...args)
 })); 

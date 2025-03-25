@@ -1,35 +1,43 @@
 import { create } from 'zustand';
 
-// Create a slice with the shared state functionality
-export const createSharedSlice = (set) => ({
+// Create the shared store with common properties
+export const useSharedStore = create()((set) => ({
   // Default values
   chartType: 'bar',
-  dimensions: {
-    width: 512,
-    height: 512
-  },
-  axisOptions: {
-    showXAxis: true,
-    showYAxis: true,
-    yDomainMin: undefined,
-    yDomainMax: undefined
-  },
-  chartData: [], // Will be initialized by specific stores
-  selectedPreset: 'basic',
+  
+  // Dimensions
+  width: 512,
+  height: 512,
+  
+  // Axis options
+  showXAxis: true,
+  showYAxis: true,
+  yDomainMin: undefined,
+  yDomainMax: undefined,
+  
+  // Fill settings
+  fill: false,
+  fillPattern: 'solid',
+  fillZoomLevel: 8,
+  fillOpacity: 1,
+  
+  // Stroke settings
+  strokePattern: 'solid',
+  strokeWidth: 2,
+  strokeColor: '#000',
+  strokeStyle: 'normal',
+  dashArray: '6,4',
   
   // Actions
   setChartType: (type) => set({ chartType: type }),
-  setDimensions: (dimensions) => set((state) => ({
-    dimensions: { ...state.dimensions, ...dimensions }
+  
+  // Update any individual setting
+  updateSetting: (key, value) => set((state) => ({
+    [key]: value
   })),
-  setAxisOptions: (options) => set((state) => ({
-    axisOptions: { ...state.axisOptions, ...options }
+  
+  // Update multiple settings at once
+  updateSettings: (settings) => set((state) => ({
+    ...settings
   })),
-  setChartData: (data) => set({ chartData: data }),
-  setSelectedPreset: (preset) => set({ selectedPreset: preset })
-});
-
-// Create a standalone shared store that can be used if needed
-export const useSharedStore = create()((...args) => ({
-  ...createSharedSlice(...args)
 }));

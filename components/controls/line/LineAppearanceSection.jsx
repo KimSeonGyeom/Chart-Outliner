@@ -1,11 +1,11 @@
 import React from 'react';
+import { useChartStore } from '../../store/chartStore';
 
-const LineAppearanceSection = ({
-  curveType,
-  curveTension,
-  onCurveTypeChange,
-  onCurveTensionChange
-}) => {
+const LineAppearanceSection = () => {
+  const curveType = useChartStore(state => state.curveType);
+  const curveTension = useChartStore(state => state.curveTension);
+  const updateSetting = useChartStore(state => state.updateSetting);
+
   return (
     <div className="section">
       <div className="control-group space-y">
@@ -13,7 +13,7 @@ const LineAppearanceSection = ({
           <label>Curve Type</label>
           <select
             value={curveType}
-            onChange={(e) => onCurveTypeChange(e.target.value)}
+            onChange={(e) => updateSetting('curveType', e.target.value)}
           >
             <option value="cardinal">Cardinal</option>
             <option value="basis">Basis</option>
@@ -34,7 +34,7 @@ const LineAppearanceSection = ({
             max="1"
             step="0.1"
             value={curveTension}
-            onChange={(e) => onCurveTensionChange(parseFloat(e.target.value))}
+            onChange={(e) => updateSetting('curveTension', parseFloat(e.target.value))}
           />
         </div>
       </div>

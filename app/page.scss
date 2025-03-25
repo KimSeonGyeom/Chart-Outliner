@@ -1,0 +1,202 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 16px;
+
+  .main-title {
+    font-size: 28px;
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.87);
+    margin-bottom: 6px;
+    line-height: 1.2;
+    letter-spacing: 0.12px;
+  }
+}
+
+.chart-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+
+  .chart-section {
+    width: 70%;
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.87);
+      margin-bottom: 10px;
+      line-height: 1.4;
+      letter-spacing: 0.12px;
+    }
+
+    .chart-display-container {
+      width: 100%;
+      background-color: #ffffff;
+      border-radius: 4px;
+      padding: 12px;
+    }
+  }
+
+  .control-section {
+    width: 30%;
+  }
+}
+
+// Export options styles
+.export-options {
+  padding: 12px;
+  background-color: #ffffff;
+  border-radius: 4px;
+
+  .export-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.87);
+    margin-bottom: 10px;
+    line-height: 1.4;
+    letter-spacing: 0.15px;
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+
+    label {
+      display: block;
+      margin-bottom: 4px;
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 11px;
+      font-weight: 400;
+      line-height: 1.5;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid rgba(0, 0, 0, 0.23);
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+      line-height: 1.4;
+      height: 30px;
+      transition: border-color 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+
+      &:focus {
+        outline: none;
+        border-color: #1976d2;
+        border-width: 1px;
+      }
+
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.87);
+      }
+    }
+  }
+
+  .format-options {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+
+    .format-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 3px;
+      border-radius: 4px;
+      transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+      }
+
+      &.selected {
+        background-color: rgba(25, 118, 210, 0.08);
+      }
+
+      .format-radio {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(0, 0, 0, 0.54);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .selected & {
+          border-color: #1976d2;
+        }
+
+        .radio-inner {
+          width: 8px;
+          height: 8px;
+          background-color: #1976d2;
+          border-radius: 50%;
+          display: none;
+        }
+
+        .selected & .radio-inner {
+          display: block;
+        }
+      }
+
+      .format-label {
+        font-size: 13px;
+        color: rgba(0, 0, 0, 0.87);
+        font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+        line-height: 1.4;
+        letter-spacing: 0.17px;
+      }
+    }
+  }
+
+  .export-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 12px;
+
+    button {
+      min-width: 60px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+      line-height: 1.75;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+      text-transform: uppercase;
+
+      &.cancel-button {
+        background-color: transparent;
+        border: none;
+        color: #1976d2;
+
+        &:hover {
+          background-color: rgba(25, 118, 210, 0.04);
+        }
+      }
+
+      &.export-button {
+        background-color: #1976d2;
+        border: none;
+        color: white;
+
+        &:hover {
+          background-color: #1565c0;
+        }
+      }
+    }
+  }
+} 
