@@ -4,11 +4,8 @@ import DimensionsSection from './shared/DimensionsSection.jsx';
 import AxisSection from './shared/AxisSection.jsx';
 import DomainSection from './shared/DomainSection.jsx';
 import StrokePatternSection from './shared/StrokePatternSection.jsx';
-import TemplateFillSection from './shared/TemplateFillSection.jsx';
 import DataSection from './shared/DataSection.jsx';
 import LineAppearanceSection from './line/LineAppearanceSection.jsx';
-import PointsSection from './line/LinePointsSection.jsx';
-import BarTemplateSection from './bar/BarTemplateSection.jsx';
 import BarAppearanceSection from './bar/BarAppearanceSection.jsx';
 import './ControlPanel.scss';
 
@@ -17,7 +14,6 @@ const BarControls = () => {
   return (
     <div className="chart-specific-controls">
       <div className="controls-heading">Bar Chart Settings</div>
-      <BarTemplateSection />
       <BarAppearanceSection />
     </div>
   );
@@ -29,7 +25,6 @@ const LineControls = () => {
     <div className="chart-specific-controls">
       <div className="controls-heading">Line Chart Settings</div>
       <LineAppearanceSection />
-      <PointsSection />
     </div>
   );
 };
@@ -44,7 +39,6 @@ const SharedControls = () => {
       <AxisSection />
       <DomainSection />
       <StrokePatternSection /> 
-      <TemplateFillSection />
     </div>
   );
 };

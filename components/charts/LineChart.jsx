@@ -6,7 +6,6 @@ import ReactDOMServer from 'react-dom/server';
 import { useDataStore } from '../store/dataStore';
 import { useSharedStore } from '../store/sharedStore';
 import { useChartStore } from '../store/chartStore';
-import { createTemplatePattern } from '../utils/templatePatterns';
 
 const LineChart = () => {
   // Get data and settings from stores
@@ -34,13 +33,6 @@ const LineChart = () => {
   const showPoints = useChartStore((state) => state.showPoints);
   const pointRadius = useChartStore((state) => state.pointRadius);
   const pointShape = useChartStore((state) => state.pointShape);
-  
-  // Add template fill settings
-  const useTemplateFill = useSharedStore((state) => state.useTemplateFill);
-  const templateFillDensity = useSharedStore((state) => state.templateFillDensity);
-  const templateFillOpacity = useSharedStore((state) => state.templateFillOpacity);
-  const templateFillSize = useSharedStore((state) => state.templateFillSize);
-  const selectedTemplate = useSharedStore((state) => state.selectedTemplate);
   
   // Other state
   const svgRef = useRef(null);
@@ -135,18 +127,6 @@ const LineChart = () => {
         defs.html(ReactDOMServer.renderToString(pattern));
       }
     }
-    
-    // Add template fill pattern if enabled
-    if (useTemplateFill && selectedTemplate !== 'none') {
-      const templatePattern = createTemplatePattern(
-        selectedTemplate,
-        templateFillDensity,
-        templateFillSize,
-        templateFillOpacity,
-        'templateFillPattern'
-      );
-      defs.html(defs.html() + ReactDOMServer.renderToString(templatePattern));
-    }
 
     // Create main chart group with margin translation
     const g = svg.append('g')
@@ -191,7 +171,7 @@ const LineChart = () => {
       .curve(getCurveFunction(curveType));
 
     // Add area if fill is enabled
-    if (fill || useTemplateFill) {
+    if (fill) {
       const area = d3.area()
         .x(d => x(String(d.x)) || 0)
         .y0(innerHeight)
@@ -202,8 +182,8 @@ const LineChart = () => {
         .datum(chartData)
         .attr('class', 'area')
         .attr('d', area)
-        .attr('fill', useTemplateFill ? 'url(#templateFillPattern)' : (fill ? '#000' : 'none'))
-        .attr('fill-opacity', useTemplateFill ? templateFillOpacity : fillOpacity);
+        .attr('fill', fill ? '#000' : 'none')
+        .attr('fill-opacity', fillOpacity);
     }
 
     // Add line with updated stroke properties
@@ -263,8 +243,7 @@ const LineChart = () => {
   }, [chartData, chartWidth, chartHeight, 
       curveType, curveTension, strokeColor, fill, fillOpacity, fillPattern,
       showPoints, pointRadius, pointShape, strokePattern, strokeWidth, dashArray,
-      showXAxis, showYAxis, yDomainMin, yDomainMax, fillZoomLevel, innerWidth, innerHeight,
-      useTemplateFill, templateFillDensity, templateFillSize, templateFillOpacity, selectedTemplate]);
+      showXAxis, showYAxis, yDomainMin, yDomainMax, fillZoomLevel, innerWidth, innerHeight]);
   
   // Effect to clean up when component unmounts
   useEffect(() => {

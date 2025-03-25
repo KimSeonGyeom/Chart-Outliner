@@ -6,7 +6,6 @@ import ReactDOMServer from 'react-dom/server';
 import { useDataStore } from '../store/dataStore';
 import { useSharedStore } from '../store/sharedStore';
 import { useChartStore } from '../store/chartStore';
-import { createTemplatePattern } from '../utils/templatePatterns';
 
 const BarChart = () => {
   // Get data and settings from stores
@@ -31,13 +30,6 @@ const BarChart = () => {
   
   // Get chart-specific settings
   const barPadding = useChartStore((state) => state.barPadding);
-  const selectedTemplate = useChartStore((state) => state.selectedTemplate);
-  
-  // Add template fill settings
-  const useTemplateFill = useSharedStore((state) => state.useTemplateFill);
-  const templateFillDensity = useSharedStore((state) => state.templateFillDensity);
-  const templateFillOpacity = useSharedStore((state) => state.templateFillOpacity);
-  const templateFillSize = useSharedStore((state) => state.templateFillSize);
   
   // Other state
   const svgRef = useRef(null);
@@ -111,19 +103,6 @@ const BarChart = () => {
     }
   };
 
-  // Helper function to get fill value based on pattern
-  const getFillValue = (pattern) => {
-    if (useTemplateFill && selectedTemplate !== 'none') {
-      return 'url(#templateFillPattern)';
-    }
-    
-    if (!fill) return 'transparent';
-    // If color is 'transparent' and we want a fill, use a default color
-    const fillColor = '#000';
-    if (pattern === 'solid') return fillColor;
-    return `url(#${pattern}Pattern)`;
-  };
-
   // Update chart function to incorporate new features
   useEffect(() => {
     if (!svgRef.current || !chartData || chartData.length === 0) return;
@@ -141,18 +120,6 @@ const BarChart = () => {
       if (pattern) {
         defs.html(ReactDOMServer.renderToString(pattern));
       }
-    }
-    
-    // Add template fill pattern if enabled
-    if (useTemplateFill && selectedTemplate !== 'none') {
-      const templatePattern = createTemplatePattern(
-        selectedTemplate,
-        templateFillDensity,
-        templateFillSize,
-        templateFillOpacity,
-        'templateFillPattern'
-      );
-      defs.html(defs.html() + ReactDOMServer.renderToString(templatePattern));
     }
     
     // Create the chart group with margin translation
@@ -198,18 +165,16 @@ const BarChart = () => {
       .attr('y', d => y(d.y))
       .attr('width', x.bandwidth())
       .attr('height', d => innerHeight - y(d.y))
-      .attr('fill', d => getFillValue(fillPattern, d.color || 'transparent'))
+      .attr('fill', d => fill ? '#000' : 'transparent')
       .attr('stroke', strokeWidth > 0 ? strokeColor : 'none')
       .attr('stroke-width', strokeWidth)
-      .attr('stroke-dasharray', getStrokeDashArray(strokePattern));
-    
-    chartRef.current = { g, x, y };
+      .attr('stroke-dasharray', getStrokeDashArray(strokePattern))
+      .attr('stroke-linecap', strokeStyle);
     
   }, [chartData, chartWidth, chartHeight, 
       barPadding, fill, fillPattern, strokePattern,
       showXAxis, showYAxis, yDomainMin, yDomainMax, dashArray, strokeWidth, fillZoomLevel, strokeColor, 
-      innerWidth, innerHeight, useTemplateFill, templateFillDensity, templateFillSize, templateFillOpacity, 
-      selectedTemplate]);
+      innerWidth, innerHeight]);
 
   // Effect to clean up when component unmounts
   useEffect(() => {
