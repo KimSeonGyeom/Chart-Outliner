@@ -1,5 +1,5 @@
 import React from 'react';
-import { FillPatternSectionProps } from './types';
+import { FillPatternSectionProps } from '../types';
 
 const fillPatternOptions = [
   { value: 'solid', label: 'Solid' },
@@ -33,14 +33,6 @@ const FillPatternSection: React.FC<FillPatternSectionProps> = ({
   const finalizeZoomChange = () => {
     // Apply the final zoom level when slider interaction ends
     onFillZoomLevelChange(previewZoomLevel);
-  };
-
-  const getZoomDescription = (zoom: number) => {
-    if (zoom < 6) return 'Very Dense';
-    if (zoom < 10) return 'Dense';
-    if (zoom < 14) return 'Medium';
-    if (zoom < 20) return 'Sparse';
-    return 'Very Sparse';
   };
 
   return (
@@ -82,7 +74,6 @@ const FillPatternSection: React.FC<FillPatternSectionProps> = ({
           />
           <div className="range-display">
             <div className="range-value">{previewZoomLevel.toFixed(1)}</div>
-            <div className="range-label">{getZoomDescription(previewZoomLevel)}</div>
           </div>
         </div>
       </div>

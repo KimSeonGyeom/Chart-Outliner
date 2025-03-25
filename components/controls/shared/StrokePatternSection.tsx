@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StrokePatternSectionProps } from './types';
+import { StrokePatternSectionProps } from '../types';
 
 const strokePatternOptions = [
   { value: 'solid', label: 'Solid' },

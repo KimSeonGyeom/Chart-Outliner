@@ -1,5 +1,5 @@
 import React from 'react';
-import { LineAppearanceSectionProps } from './types';
+import { LineAppearanceSectionProps } from '../types';
 
 const LineAppearanceSection: React.FC<LineAppearanceSectionProps> = ({
   curveType,

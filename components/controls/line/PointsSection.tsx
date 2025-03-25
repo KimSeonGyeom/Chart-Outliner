@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PointsSectionProps } from './types';
+import { PointsSectionProps } from '../types';
 
 const pointShapeOptions = [
   { value: 'circle', label: 'Circle' },

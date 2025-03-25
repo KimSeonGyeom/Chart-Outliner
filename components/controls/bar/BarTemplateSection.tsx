@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarTemplateSectionProps } from './types';
+import { BarTemplateSectionProps } from '../types';
 
 const BarTemplateSection: React.FC<BarTemplateSectionProps> = ({
   selectedTemplate,

@@ -1,11 +1,7 @@
 import React from 'react';
 import * as d3 from 'd3';
 import { ChartData } from '../templates/types';
-import { sampleDataSets } from './sampleData';
-import RectangleTemplate from '../templates/RectangleTemplate';
-import CircleTemplate from '../templates/CircleTemplate';
-import TriangleTemplate from '../templates/TriangleTemplate';
-import DiamondTemplate from '../templates/DiamondTemplate';
+import { sampleDataSets } from '../store/dataStore';
 
 // Common interface for chart export variations
 interface ChartExportOptions {

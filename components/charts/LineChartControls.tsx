@@ -23,7 +23,7 @@ import {
   ExportVariationsButton,
   DataSection
 } from '../controls';
-import { sampleDataSets, generateRandomLineData } from '../data';
+import { sampleDataSets, generateRandomLineData } from '../store/dataStore';
 import '../../styles/components/ControlPanel.scss';
 import '../../styles/components/LineChartControls.scss';
 

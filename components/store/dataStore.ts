@@ -1,4 +1,6 @@
+import { create } from 'zustand';
 import { ChartData } from '../templates/types';
+import { ChartType } from '../controls/types';
 
 // Data labels for random generation
 export const dataLabels = {
@@ -144,4 +146,77 @@ export const generateRandomBarData = (): ChartData => {
   }
   
   return newData;
-}; 
+};
+
+interface DataStore {
+  // Chart data and preset
+  chartData: ChartData;
+  selectedPreset: string;
+  
+  // Actions to update data
+  setChartData: (data: ChartData) => void;
+  setSelectedPreset: (preset: string) => void;
+  
+  // Generate random data based on chart type
+  generateRandomData: (chartType: ChartType) => void;
+  
+  // Load preset data
+  loadPresetData: (preset: string, chartType: ChartType) => void;
+}
+
+export const useDataStore = create<DataStore>((set) => ({
+  // Initial data
+  chartData: sampleDataSets.basic,
+  selectedPreset: 'basic',
+  
+  // Data update actions
+  setChartData: (data) => set({ chartData: data }),
+  setSelectedPreset: (preset) => set({ selectedPreset: preset }),
+  
+  // Generate random data based on chart type
+  generateRandomData: (chartType) => {
+    if (chartType === 'bar') {
+      const newData = generateRandomBarData();
+      set({ chartData: newData, selectedPreset: 'custom' });
+    } else {
+      const newData = generateRandomLineData();
+      set({ chartData: newData, selectedPreset: 'custom' });
+    }
+  },
+  
+  // Load preset data
+  loadPresetData: (preset, chartType) => {
+    if (preset === 'random') {
+      if (chartType === 'bar') {
+        const newData = generateRandomBarData();
+        set({ chartData: newData, selectedPreset: 'custom' });
+      } else {
+        const newData = generateRandomLineData();
+        set({ chartData: newData, selectedPreset: 'custom' });
+      }
+      return;
+    }
+    
+    if (preset in sampleDataSets) {
+      set({ 
+        chartData: sampleDataSets[preset as keyof typeof sampleDataSets],
+        selectedPreset: preset 
+      });
+      return;
+    }
+    
+    // Handle trend data
+    if (['exponential', 'logarithmic', 'sinusoidal'].includes(preset)) {
+      const useCategories = chartType === 'bar';
+      const dataPoints = useCategories ? 5 : 12; // Fewer data points for bar charts
+      
+      const trendData = generateTrendData(
+        preset as 'exponential' | 'logarithmic' | 'sinusoidal',
+        dataPoints,
+        useCategories
+      );
+      
+      set({ chartData: trendData, selectedPreset: preset });
+    }
+  }
+})); 

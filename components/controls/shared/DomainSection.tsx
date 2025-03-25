@@ -1,5 +1,5 @@
 import React from 'react';
-import { DomainSectionProps } from './types';
+import { DomainSectionProps } from '../types';
 
 const DomainSection: React.FC<DomainSectionProps> = ({
   yDomainMin,

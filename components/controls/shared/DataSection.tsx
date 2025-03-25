@@ -1,5 +1,5 @@
 import React from 'react';
-import { DataSectionProps } from './types';
+import { DataSectionProps } from '../types';
 
 // Common preset options for both chart types
 const presetOptions = [

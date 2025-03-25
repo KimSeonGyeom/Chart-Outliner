@@ -1,2 +1,2 @@
-export * from './sampleData';
+export * from '../store/dataStore';
 export * from './exportVariations'; 

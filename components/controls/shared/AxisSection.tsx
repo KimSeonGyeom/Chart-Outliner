@@ -1,5 +1,5 @@
 import React from 'react';
-import { AxisSectionProps } from './types';
+import { AxisSectionProps } from '../types';
 
 const AxisSection: React.FC<AxisSectionProps> = ({ 
   axisOptions,

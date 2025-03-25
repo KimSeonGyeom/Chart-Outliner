@@ -1,11 +1,11 @@
 import React from 'react';
-import { BarAppearanceSectionProps } from './types';
-import FillPatternSection from './FillPatternSection';
+import { BarAppearanceSectionProps } from '../types';
+import FillPatternSection from '../shared/FillPatternSection';
 
 const BarAppearanceSection: React.FC<BarAppearanceSectionProps> = ({
   barPadding,
   barFill = false,
-  barFillOpacity = 0.5,
+  barFillOpacity = 1,
   barFillPattern = 'solid',
   barFillZoomLevel = 8,
   onBarPaddingChange,
@@ -14,6 +14,12 @@ const BarAppearanceSection: React.FC<BarAppearanceSectionProps> = ({
   onBarFillPatternChange,
   onBarFillZoomLevelChange
 }) => {
+  React.useEffect(() => {
+    if (barFill && barFillOpacity !== 1) {
+      onBarFillOpacityChange(1);
+    }
+  }, [barFill, barFillOpacity, onBarFillOpacityChange]);
+
   return (
     <div className="section">
       <h3>Bar Appearance</h3>
@@ -43,18 +49,6 @@ const BarAppearanceSection: React.FC<BarAppearanceSectionProps> = ({
 
         {barFill && (
           <>
-            <div>
-              <label>Fill Opacity</label>
-              <input
-                type="range"
-                min="0.1"
-                max="1"
-                step="0.1"
-                value={barFillOpacity}
-                onChange={(e) => onBarFillOpacityChange(parseFloat(e.target.value))}
-              />
-              <div className="range-value">{barFillOpacity}</div>
-            </div>
             <FillPatternSection 
               fillPattern={barFillPattern}
               fillZoomLevel={barFillZoomLevel}

@@ -1,10 +1,10 @@
 import React from 'react';
-import { LineFillSectionProps } from './types';
-import FillPatternSection from './FillPatternSection';
+import { LineFillSectionProps } from '../types';
+import FillPatternSection from '../shared/FillPatternSection';
 
 const LineFillSection: React.FC<LineFillSectionProps> = ({
   fill,
-  fillOpacity = 0.5,
+  fillOpacity = 1,
   fillPattern = 'solid',
   fillZoomLevel = 8,
   onFillChange,
@@ -12,6 +12,12 @@ const LineFillSection: React.FC<LineFillSectionProps> = ({
   onFillPatternChange,
   onFillZoomLevelChange
 }) => {
+  React.useEffect(() => {
+    if (fill && fillOpacity !== 1) {
+      onFillOpacityChange(1);
+    }
+  }, [fill, fillOpacity, onFillOpacityChange]);
+
   return (
     <div className="section">
       <h3>Line Fill</h3>
@@ -28,18 +34,6 @@ const LineFillSection: React.FC<LineFillSectionProps> = ({
         
         {fill && (
           <>
-            <div>
-              <label>Fill Opacity</label>
-              <input
-                type="range"
-                min="0.1"
-                max="1"
-                step="0.1"
-                value={fillOpacity}
-                onChange={(e) => onFillOpacityChange(parseFloat(e.target.value))}
-              />
-              <div className="range-value">{fillOpacity}</div>
-            </div>
             <FillPatternSection 
               fillPattern={fillPattern}
               fillZoomLevel={fillZoomLevel}
