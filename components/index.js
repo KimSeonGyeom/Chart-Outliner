@@ -11,9 +11,6 @@ export { default } from './templates/DiamondTemplate.jsx';
 export { default } from './templates/CircleTemplate.jsx';
 export { default } from './templates/RectangleTemplate.jsx';
 
-// Controls
-export { ExportVariationsButton } from './controls';
-
 // Stores
 export { useChartStore } from './store/chartStore.js';
 export { useDataStore } from './store/dataStore.js';

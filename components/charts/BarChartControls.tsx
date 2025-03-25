@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import BarChart from './BarChart.jsx';
-import DiamondTemplate from '../templates/DiamondTemplate.jsx';
-import TriangleTemplate from '../templates/TriangleTemplate.jsx';
-import RectangleTemplate from '../templates/RectangleTemplate.jsx';
-import CircleTemplate from '../templates/CircleTemplate.jsx';
+import { ChartData } from '../templates/types';
+import BarChart from './BarChart';
+import DiamondTemplate from '../templates/DiamondTemplate';
+import TriangleTemplate from '../templates/TriangleTemplate';
+import RectangleTemplate from '../templates/RectangleTemplate';
+import CircleTemplate from '../templates/CircleTemplate';
 import { 
   ControlPanel, 
   DimensionsSection, 
@@ -21,14 +22,39 @@ import {
   downloadChart,
   DataSection
 } from '../controls';
-import { sampleDataSets, generateRandomBarData, generateTrendData } from '../store/dataStore.js';
-import '../controls/ControlPanel.scss';
-import './BarChartControls.scss';
+import { sampleDataSets, generateRandomBarData, generateTrendData } from '../data';
+import '../../styles/components/ControlPanel.scss';
+import '../../styles/components/BarChartControls.scss';
 
-
+interface BarChartControlsProps {
+  data?: ChartData;
+  chartRef: React.RefObject<HTMLDivElement>;
+  activeChart: ChartType;
+  onChartTypeChange: (type: ChartType) => void;
+  isSaving: boolean;
+  chartName: string;
+  onSaveClick: () => void;
+  onSaveClose: () => void;
+  onChartNameChange: (name: string) => void;
+  onLoadChart?: (chart: SavedChartData) => void;
+  loadedChart?: SavedChartData | null;
+  onChartLoaded?: () => void;
+}
 
 // Define a BarOptions type that includes all bar-related options
-
+interface BarOptions {
+  barPadding?: number;
+  barColor?: string;
+  barStrokeColor?: string;
+  barStrokeWidth?: number;
+  barFill?: boolean;
+  barFillOpacity?: number;
+  barFillPattern?: string;
+  barFillZoomLevel?: number;
+  barStrokePattern?: string;
+  barStrokeStyle?: string;
+  barDashArray?: string;
+}
 
 function BarChartControls({
   data = sampleDataSets.basic,
@@ -43,11 +69,11 @@ function BarChartControls({
   onLoadChart,
   loadedChart,
   onChartLoaded
-}) {
-  const loadedConfig = loadedChart?.config;
+}: BarChartControlsProps) {
+  const loadedConfig = loadedChart?.config as BarChartConfig;
   
   // Chart dimensions
-  const [dimensions, setDimensions] = useState({
+  const [dimensions, setDimensions] = useState<ChartDimensions>({
     width: loadedConfig?.width || 512,
     height: loadedConfig?.height || 512
   });
@@ -64,14 +90,14 @@ function BarChartControls({
   const [barDashArray, setBarDashArray] = useState(loadedConfig?.barDashArray || '6,4');
   
   // Template selection
-  const [selectedTemplate, setSelectedTemplate] = useState(loadedConfig?.selectedTemplate || 'rectangle');
+  const [selectedTemplate, setSelectedTemplate] = useState<string>(loadedConfig?.selectedTemplate || 'rectangle');
   
   // Chart data state
-  const [chartData, setChartData] = useState(data);
-  const [selectedPreset, setSelectedPreset] = useState("basic");
+  const [chartData, setChartData] = useState<ChartData>(data);
+  const [selectedPreset, setSelectedPreset] = useState<string>("basic");
   
   // Axis appearance
-  const [axisOptions, setAxisOptions] = useState({
+  const [axisOptions, setAxisOptions] = useState<AxisOptions>({
     showXAxis: loadedConfig?.showXAxis || true,
     showYAxis: loadedConfig?.showYAxis || true,
     yDomainMin: loadedConfig?.yDomainMin,
@@ -81,10 +107,10 @@ function BarChartControls({
   // Replace isExporting dialog state with showExportOptions
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [exportFileName, setExportFileName] = useState('');
-  const [exportFileType, setExportFileType] = useState('png');
+  const [exportFileType, setExportFileType] = useState<'png' | 'jpg' | 'svg'>('png');
 
   // Template mapping
-  const templates = {
+  const templates: Record<string, React.ComponentType<any> | null> = {
     'none': null,
     'rectangle': RectangleTemplate,
     'circle': CircleTemplate,
@@ -93,12 +119,12 @@ function BarChartControls({
   };
   
   // Handle dimension change
-  const handleDimensionChange = (dimension, value) => {
+  const handleDimensionChange = (dimension: keyof ChartDimensions, value: number) => {
     setDimensions(prev => ({ ...prev, [dimension]: value }));
   };
   
   // Update the handleBarOptionChange function to use the correct type
-  const handleBarOptionChange = (option, value) => {
+  const handleBarOptionChange = (option: keyof BarOptions, value: any) => {
     // Update the appropriate state variable based on the option
     switch(option) {
       case 'barStrokePattern':
@@ -113,17 +139,19 @@ function BarChartControls({
       case 'barDashArray':
         setBarDashArray(value);
         break;
-      // Add other options
+      // Add other options as needed
+      default:
+        break;
     }
   };
   
   // Keep the original handleAxisOptionChange function
-  const handleAxisOptionChange = (option, value) => {
+  const handleAxisOptionChange = (option: keyof AxisOptions, value: boolean | number | undefined) => {
     setAxisOptions(prev => ({ ...prev, [option]: value }));
   };
   
   // Handle domain change
-  const handleDomainChange = (min, max) => {
+  const handleDomainChange = (min: number | undefined, max: number | undefined) => {
     setAxisOptions(prev => ({ ...prev, yDomainMin: min, yDomainMax: max }));
   };
   
@@ -135,16 +163,16 @@ function BarChartControls({
   };
   
   // Add function to handle preset selection
-  const handlePresetChange = (preset) => {
+  const handlePresetChange = (preset: string) => {
     if (preset === "random") {
       generateRandomData();
     } else if (preset in sampleDataSets && preset !== 'grouped') {
-      setChartData(sampleDataSets[preset]);
+      setChartData(sampleDataSets[preset as keyof typeof sampleDataSets]);
       setSelectedPreset(preset);
     } else if (['exponential', 'logarithmic', 'sinusoidal'].includes(preset)) {
       // Generate special trends for bar chart with category labels
       const trendData = generateTrendData(
-        preset,
+        preset as 'exponential' | 'logarithmic' | 'sinusoidal',
         5, // Fewer data points for bar charts
         true // Use categories instead of months
       );
@@ -154,10 +182,19 @@ function BarChartControls({
   };
   
   // Get chart config for saving
-  const getChartConfig = () => {
+  const getChartConfig = (): BarChartConfig => {
     return {
       width: dimensions.width,
       height: dimensions.height,
+      barPadding,
+      barFill,
+      barFillOpacity,
+      barStrokePattern,
+      barFillPattern,
+      barFillZoomLevel,
+      barStrokeWidth,
+      barStrokeStyle,
+      barDashArray,
       showXAxis: axisOptions.showXAxis,
       showYAxis: axisOptions.showYAxis,
       yDomainMin: axisOptions.yDomainMin,
@@ -187,7 +224,7 @@ function BarChartControls({
   // Load chart when loadedChart prop changes
   useEffect(() => {
     if (loadedChart && loadedChart.type === 'bar') {
-      const config = loadedChart.config;
+      const config = loadedChart.config as BarChartConfig;
       setDimensions({
         width: config.width,
         height: config.height
@@ -256,9 +293,9 @@ function BarChartControls({
         setBarFill(true);
         setBarFillOpacity(1);
         setAxisOptions(prev => ({ ...prev, showXAxis: false, showYAxis: false }));
-        setBarStrokePattern('solid');
+        setBarStrokePattern('solid')
 
-        segmentExport = new Promise(resolve => {
+        segmentExport = new Promise<void>(resolve => {
           setTimeout(() => {
             downloadChart(chartRef, `${exportFileName}-segment`, exportFileType)
               .then(() => {
@@ -403,7 +440,7 @@ function BarChartControls({
                     <div 
                       key={format}
                       className={`format-option ${exportFileType === format ? 'selected' : ''}`}
-                      onClick={() => setExportFileType(format)}
+                      onClick={() => setExportFileType(format as 'png' | 'jpg' | 'svg')}
                     >
                       <div className="format-radio">
                         <div className="radio-inner"></div>
@@ -446,6 +483,6 @@ function BarChartControls({
       )}
     </div>
   );
-}
+};
 
 export default BarChartControls;

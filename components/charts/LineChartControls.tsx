@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import LineChart from './LineChart.jsx';
+import { ChartData } from '../templates/types';
+import LineChart from './LineChart';
 import { 
   ControlPanel, 
   DimensionsSection, 
@@ -19,11 +20,26 @@ import {
   downloadChart,
   DataSection
 } from '../controls';
-import { sampleDataSets, generateRandomLineData } from '../store/dataStore.js';
-import '../controls/ControlPanel.scss';
-import './LineChartControls.scss';
+import { sampleDataSets, generateRandomLineData } from '../store/dataStore';
+import '../../styles/components/ControlPanel.scss';
+import '../../styles/components/LineChartControls.scss';
 
-
+interface LineChartControlsProps {
+  data?: ChartData;
+  width?: number;
+  height?: number;
+  chartRef: React.RefObject<HTMLDivElement>;
+  activeChart: ChartType;
+  onChartTypeChange: (type: ChartType) => void;
+  isSaving: boolean;
+  chartName: string;
+  onSaveClick: () => void;
+  onSaveClose: () => void;
+  onChartNameChange: (name: string) => void;
+  onLoadChart?: (chart: SavedChartData) => void;
+  loadedChart?: SavedChartData | null;
+  onChartLoaded?: () => void;
+}
 
 function LineChartControls({
   data = sampleDataSets.basic,
@@ -40,11 +56,11 @@ function LineChartControls({
   onLoadChart,
   loadedChart,
   onChartLoaded
-}) {
-  const loadedConfig = loadedChart?.config;
+}: LineChartControlsProps) {
+  const loadedConfig = loadedChart?.config as LineChartConfig;
 
   // Chart dimensions
-  const [dimensions, setDimensions] = useState({
+  const [dimensions, setDimensions] = useState<ChartDimensions>({
     width: loadedConfig?.width || width,
     height: loadedConfig?.height || height
   });
@@ -55,7 +71,7 @@ function LineChartControls({
   const [marginLeft, setMarginLeft] = useState(40);
   
   // Line chart specific options
-  const [lineOptions, setLineOptions] = useState({
+  const [lineOptions, setLineOptions] = useState<LineChartOptions>({
     curveType: loadedConfig?.curveType || 'linear',
     curveTension: loadedConfig?.curveTension || 0.5,
     fill: loadedConfig?.fill || false,
@@ -73,7 +89,7 @@ function LineChartControls({
   });
   
   // Axis appearance
-  const [axisOptions, setAxisOptions] = useState({
+  const [axisOptions, setAxisOptions] = useState<AxisOptions>({
     showXAxis: loadedConfig?.showXAxis || true,
     showYAxis: loadedConfig?.showYAxis || true,
     yDomainMin: loadedConfig?.yDomainMin,
@@ -83,37 +99,44 @@ function LineChartControls({
   // Replace isExporting dialog state with showExportOptions
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [exportFileName, setExportFileName] = useState('');
-  const [exportFileType, setExportFileType] = useState('png');
+  const [exportFileType, setExportFileType] = useState<'png' | 'jpg' | 'svg'>('png');
   
   // Add state for current data
-  const [chartData, setChartData] = useState(data);
-  const [selectedPreset, setSelectedPreset] = useState("basic");
+  const [chartData, setChartData] = useState<ChartData>(data);
+  const [selectedPreset, setSelectedPreset] = useState<string>("basic");
   
   // Handle dimension change
-  const handleDimensionChange = (dimension, value) => {
+  const handleDimensionChange = (dimension: keyof ChartDimensions, value: number) => {
     setDimensions(prev => ({ ...prev, [dimension]: value }));
   };
   
   // Handle line option change
-  const handleLineOptionChange = (option, value) => {
+  const handleLineOptionChange = <K extends keyof LineChartOptions>(
+    option: K, 
+    value: LineChartOptions[K]
+  ) => {
     setLineOptions(prev => ({ ...prev, [option]: value }));
   };
   
   // Handle axis option change
-  const handleAxisOptionChange = (option, value) => {
+  const handleAxisOptionChange = (option: keyof AxisOptions, value: boolean | number | undefined) => {
     setAxisOptions(prev => ({ ...prev, [option]: value }));
   };
   
   // Handle domain change
-  const handleDomainChange = (min, max) => {
+  const handleDomainChange = (min: number | undefined, max: number | undefined) => {
     setAxisOptions(prev => ({ ...prev, yDomainMin: min, yDomainMax: max }));
   };
   
   // Get chart config for saving
-  const getChartConfig = () => {
+  const getChartConfig = (): LineChartConfig => {
     return {
       width: dimensions.width,
       height: dimensions.height,
+      marginTop,
+      marginRight,
+      marginBottom,
+      marginLeft,
       curveType: lineOptions.curveType,
       curveTension: lineOptions.curveTension,
       fill: lineOptions.fill,
@@ -156,7 +179,7 @@ function LineChartControls({
   // Load chart when loadedChart prop changes
   useEffect(() => {
     if (loadedChart && loadedChart.type === 'line') {
-      const config = loadedChart.config;
+      const config = loadedChart.config as LineChartConfig;
       setDimensions({
         width: config.width,
         height: config.height
@@ -171,13 +194,13 @@ function LineChartControls({
         fill: config.fill,
         fillOpacity: config.fillOpacity,
         fillPattern: config.fillPattern || 'solid',
-        fillZoomLevel: config.fillZoomLevel,
+        fillZoomLevel: config.fillZoomLevel || 8,
         showPoints: config.showPoints,
         pointRadius: config.pointRadius,
         pointShape: config.pointShape ?? 'circle',
         pointStrokeWidth: config.pointStrokeWidth ?? 1,
         lineStrokePattern: config.lineStrokePattern || 'solid',
-        lineStrokeWidth: config.lineStrokeWidth,
+        lineStrokeWidth: config.lineStrokeWidth || 1,
         lineStrokeStyle: config.lineStrokeStyle || 'normal',
         lineDashArray: config.lineDashArray || '6,4'
       });
@@ -241,11 +264,11 @@ function LineChartControls({
   };
   
   // Function to handle preset selection
-  const handlePresetChange = (preset) => {
+  const handlePresetChange = (preset: string) => {
     if (preset === "random") {
       generateRandomData();
     } else if (preset in sampleDataSets && preset !== 'grouped') {
-      setChartData(sampleDataSets[preset]);
+      setChartData(sampleDataSets[preset as keyof typeof sampleDataSets]);
       setSelectedPreset(preset);
     }
   };
@@ -327,16 +350,14 @@ function LineChartControls({
   const exportOptions = (
     <div className="export-options-dialog">
       <h3>Export Options</h3>
-      
       <label>
-        Filename
+        Filename:
         <input
           type="text"
           value={exportFileName}
           onChange={(e) => setExportFileName(e.target.value)}
         />
       </label>
-      
       <div className="file-type-options">
         <label>
           <input
@@ -348,7 +369,6 @@ function LineChartControls({
           />
           PNG
         </label>
-        
         <label>
           <input
             type="radio"
@@ -359,7 +379,6 @@ function LineChartControls({
           />
           JPG
         </label>
-        
         <label>
           <input
             type="radio"
@@ -371,7 +390,6 @@ function LineChartControls({
           SVG
         </label>
       </div>
-      
       <div className="export-actions">
         <button onClick={handleExport}>Export</button>
         <button onClick={() => setShowExportOptions(false)}>Cancel</button>
@@ -433,17 +451,15 @@ function LineChartControls({
       </div>
       
       {/* Save dialog */}
-      {isSaving && (
-        <SaveDialog
-          isOpen={isSaving}
-          chartName={chartName}
-          onClose={onSaveClose}
-          onSave={handleSaveChart}
-          onChartNameChange={onChartNameChange}
-        />
-      )}
+      <SaveDialog
+        isOpen={isSaving}
+        chartName={chartName}
+        onClose={onSaveClose}
+        onSave={handleSaveChart}
+        onChartNameChange={onChartNameChange}
+      />
     </div>
   );
-}
+};
 
 export default LineChartControls; 
