@@ -1,9 +1,9 @@
 import React from 'react';
-import { useChartStore } from '../../store/chartStore';
+import { useSharedStore } from '../../store/sharedStore';
 
 const BarTemplateSection = () => {
-  const selectedTemplate = useChartStore(state => state.selectedTemplate);
-  const updateSetting = useChartStore(state => state.updateSetting);
+  const selectedTemplate = useSharedStore(state => state.selectedTemplate);
+  const updateSetting = useSharedStore(state => state.updateSetting);
   
   return (
     <div className="section">

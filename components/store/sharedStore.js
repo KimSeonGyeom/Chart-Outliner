@@ -21,6 +21,13 @@ export const useSharedStore = create()((set) => ({
   fillZoomLevel: 8,
   fillOpacity: 1,
   
+  // Template fill settings
+  useTemplateFill: false,
+  templateFillDensity: 5,
+  templateFillOpacity: 1,
+  templateFillSize: 10,
+  selectedTemplate: 'rectangle',
+  
   // Stroke settings
   strokePattern: 'solid',
   strokeWidth: 2,

@@ -4,7 +4,7 @@ import DimensionsSection from './shared/DimensionsSection.jsx';
 import AxisSection from './shared/AxisSection.jsx';
 import DomainSection from './shared/DomainSection.jsx';
 import StrokePatternSection from './shared/StrokePatternSection.jsx';
-import FillSection from './shared/FillSection.jsx';
+import TemplateFillSection from './shared/TemplateFillSection.jsx';
 import DataSection from './shared/DataSection.jsx';
 import LineAppearanceSection from './line/LineAppearanceSection.jsx';
 import PointsSection from './line/LinePointsSection.jsx';
@@ -43,8 +43,8 @@ const SharedControls = () => {
       <DataSection />
       <AxisSection />
       <DomainSection />
-      <StrokePatternSection />
-      <FillSection />
+      <StrokePatternSection /> 
+      <TemplateFillSection />
     </div>
   );
 };

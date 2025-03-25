@@ -6,6 +6,7 @@ import ReactDOMServer from 'react-dom/server';
 import { useDataStore } from '../store/dataStore';
 import { useSharedStore } from '../store/sharedStore';
 import { useChartStore } from '../store/chartStore';
+import { createTemplatePattern } from '../utils/templatePatterns';
 
 const BarChart = () => {
   // Get data and settings from stores
@@ -32,6 +33,12 @@ const BarChart = () => {
   const barPadding = useChartStore((state) => state.barPadding);
   const selectedTemplate = useChartStore((state) => state.selectedTemplate);
   
+  // Add template fill settings
+  const useTemplateFill = useSharedStore((state) => state.useTemplateFill);
+  const templateFillDensity = useSharedStore((state) => state.templateFillDensity);
+  const templateFillOpacity = useSharedStore((state) => state.templateFillOpacity);
+  const templateFillSize = useSharedStore((state) => state.templateFillSize);
+  
   // Other state
   const svgRef = useRef(null);
   const chartRef = useRef(null);
@@ -45,7 +52,7 @@ const BarChart = () => {
   // Calculate the stroke-dasharray value based on the pattern
   const getStrokeDashArray = (pattern) => {
     if (pattern === 'custom') {
-      return barDashArray;
+      return dashArray;
     }
     
     switch (pattern) {
@@ -106,6 +113,10 @@ const BarChart = () => {
 
   // Helper function to get fill value based on pattern
   const getFillValue = (pattern) => {
+    if (useTemplateFill && selectedTemplate !== 'none') {
+      return 'url(#templateFillPattern)';
+    }
+    
     if (!fill) return 'transparent';
     // If color is 'transparent' and we want a fill, use a default color
     const fillColor = '#000';
@@ -125,10 +136,23 @@ const BarChart = () => {
     
     // Add pattern for fill
     if (fill && fillPattern !== 'solid') {
+      const fillColor = '#000'; // Define fillColor here
       const pattern = createFillPattern(fillPattern, fillColor);
       if (pattern) {
         defs.html(ReactDOMServer.renderToString(pattern));
       }
+    }
+    
+    // Add template fill pattern if enabled
+    if (useTemplateFill && selectedTemplate !== 'none') {
+      const templatePattern = createTemplatePattern(
+        selectedTemplate,
+        templateFillDensity,
+        templateFillSize,
+        templateFillOpacity,
+        'templateFillPattern'
+      );
+      defs.html(defs.html() + ReactDOMServer.renderToString(templatePattern));
     }
     
     // Create the chart group with margin translation
@@ -183,7 +207,9 @@ const BarChart = () => {
     
   }, [chartData, chartWidth, chartHeight, 
       barPadding, fill, fillPattern, strokePattern,
-      showXAxis, showYAxis, yDomainMin, yDomainMax, dashArray, strokeWidth, fillZoomLevel, strokeColor, innerWidth, innerHeight]);
+      showXAxis, showYAxis, yDomainMin, yDomainMax, dashArray, strokeWidth, fillZoomLevel, strokeColor, 
+      innerWidth, innerHeight, useTemplateFill, templateFillDensity, templateFillSize, templateFillOpacity, 
+      selectedTemplate]);
 
   // Effect to clean up when component unmounts
   useEffect(() => {
@@ -199,24 +225,7 @@ const BarChart = () => {
     <div style={{ position: 'relative' }}>
       <div className="chart-wrapper" style={{ position: 'relative', width: chartWidth, height: chartHeight }}>
         <svg ref={svgRef} width={chartWidth} height={chartHeight}>
-          {chartData.map((bar, i) => {
-            return (
-              <g 
-                key={`template-bar-${i}`} 
-                className="template-bar"
-              >
-                <selectedTemplate
-                  x={bar.x}
-                  y={bar.y}
-                  width={bar.width}
-                  height={bar.height}
-                  color={bar.color}
-                  strokeColor={bar.strokeColor}
-                  strokeWidth={bar.strokeWidth}
-                />
-              </g>
-            );
-          })}
+          {/* Chart will be rendered by D3 */}
         </svg>
       </div>
     </div>

@@ -6,6 +6,7 @@ import ReactDOMServer from 'react-dom/server';
 import { useDataStore } from '../store/dataStore';
 import { useSharedStore } from '../store/sharedStore';
 import { useChartStore } from '../store/chartStore';
+import { createTemplatePattern } from '../utils/templatePatterns';
 
 const LineChart = () => {
   // Get data and settings from stores
@@ -34,6 +35,13 @@ const LineChart = () => {
   const pointRadius = useChartStore((state) => state.pointRadius);
   const pointShape = useChartStore((state) => state.pointShape);
   
+  // Add template fill settings
+  const useTemplateFill = useSharedStore((state) => state.useTemplateFill);
+  const templateFillDensity = useSharedStore((state) => state.templateFillDensity);
+  const templateFillOpacity = useSharedStore((state) => state.templateFillOpacity);
+  const templateFillSize = useSharedStore((state) => state.templateFillSize);
+  const selectedTemplate = useSharedStore((state) => state.selectedTemplate);
+  
   // Other state
   const svgRef = useRef(null);
   const chartRef = useRef(null);
@@ -61,48 +69,6 @@ const LineChart = () => {
         return '12,6';
       default:
         return 'none';
-    }
-  };
-
-  // Create pattern definitions for fill patterns
-  const createFillPattern = () => {
-    // Size based on the zoom level (ensure it's at least 1px)
-    const size = Math.max(1, fillZoomLevel);
-
-    switch (fillPattern) {
-      case 'diagonal':
-        return (
-          <pattern id="diagonalPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
-            <path d={`M-1,1 l2,-2 M0,${size} l${size},-${size} M${size-1},${size+1} l1,-1`} stroke={strokeColor} strokeWidth={Math.max(0.5, size/8)} />
-          </pattern>
-        );
-      case 'crosshatch':
-        return (
-          <pattern id="crosshatchPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
-            <path d={`M0,0 l${size},${size} M${size},0 l-${size},${size}`} stroke={strokeColor} strokeWidth={Math.max(0.5, size/8)} />
-          </pattern>
-        );
-      case 'dots':
-        const radius = Math.max(0.5, size/5);
-        return (
-          <pattern id="dotsPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
-            <circle cx={size/2} cy={size/2} r={radius} fill={'#000'} />
-          </pattern>
-        );
-      case 'grid':
-        return (
-          <pattern id="gridPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
-            <path d={`M0,0 h${size} M0,${size} h${size} M0,0 v${size} M${size},0 v${size}`} stroke={strokeColor} strokeWidth={Math.max(0.5, size/12)} />
-          </pattern>
-        );
-      case 'zigzag':
-        return (
-          <pattern id="zigzagPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
-            <path d={`M0,${size/2} l${size/2},-${size/2} l${size/2},${size/2}`} stroke={strokeColor} strokeWidth={Math.max(0.5, size/8)} fill="none" />
-          </pattern>
-        );
-      default:
-        return null;
     }
   };
 
@@ -169,6 +135,18 @@ const LineChart = () => {
         defs.html(ReactDOMServer.renderToString(pattern));
       }
     }
+    
+    // Add template fill pattern if enabled
+    if (useTemplateFill && selectedTemplate !== 'none') {
+      const templatePattern = createTemplatePattern(
+        selectedTemplate,
+        templateFillDensity,
+        templateFillSize,
+        templateFillOpacity,
+        'templateFillPattern'
+      );
+      defs.html(defs.html() + ReactDOMServer.renderToString(templatePattern));
+    }
 
     // Create main chart group with margin translation
     const g = svg.append('g')
@@ -213,7 +191,7 @@ const LineChart = () => {
       .curve(getCurveFunction(curveType));
 
     // Add area if fill is enabled
-    if (fill) {
+    if (fill || useTemplateFill) {
       const area = d3.area()
         .x(d => x(String(d.x)) || 0)
         .y0(innerHeight)
@@ -224,8 +202,8 @@ const LineChart = () => {
         .datum(chartData)
         .attr('class', 'area')
         .attr('d', area)
-        .attr('fill', fill ? '#000' : 'none')
-        .attr('fill-opacity', fillOpacity);
+        .attr('fill', useTemplateFill ? 'url(#templateFillPattern)' : (fill ? '#000' : 'none'))
+        .attr('fill-opacity', useTemplateFill ? templateFillOpacity : fillOpacity);
     }
 
     // Add line with updated stroke properties
@@ -235,7 +213,7 @@ const LineChart = () => {
       .attr('d', line)
       .attr('fill', 'none')
       .attr('stroke', strokeColor || '#000')
-      .attr('stroke-width', strokeWidth || 2)
+      .attr('stroke-width', strokeWidth)
       .attr('stroke-dasharray', getStrokeDashArray(strokePattern));
 
     // Add points if enabled
@@ -285,7 +263,8 @@ const LineChart = () => {
   }, [chartData, chartWidth, chartHeight, 
       curveType, curveTension, strokeColor, fill, fillOpacity, fillPattern,
       showPoints, pointRadius, pointShape, strokePattern, strokeWidth, dashArray,
-      showXAxis, showYAxis, yDomainMin, yDomainMax, fillZoomLevel, innerWidth, innerHeight]);
+      showXAxis, showYAxis, yDomainMin, yDomainMax, fillZoomLevel, innerWidth, innerHeight,
+      useTemplateFill, templateFillDensity, templateFillSize, templateFillOpacity, selectedTemplate]);
   
   // Effect to clean up when component unmounts
   useEffect(() => {

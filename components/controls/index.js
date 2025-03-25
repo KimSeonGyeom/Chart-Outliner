@@ -12,7 +12,7 @@ export { default as DimensionsSection } from './shared/DimensionsSection.jsx';
 export { default as AxisSection } from './shared/AxisSection.jsx';
 export { default as DomainSection } from './shared/DomainSection.jsx';
 export { default as StrokePatternSection } from './shared/StrokePatternSection.jsx';
-export { default as FillSection } from './shared/FillSection.jsx';
+export { default as TemplateFillSection } from './shared/TemplateFillSection.jsx';
 export { default as DataSection } from './shared/DataSection.jsx'; 
 
 // Export bar chart sections
