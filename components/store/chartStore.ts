@@ -4,6 +4,8 @@ import { ChartDimensions, AxisOptions } from '../controls/types';
 import { BarChartConfig, LineChartConfig } from '../gallery/types';
 import { sampleDataSets } from './dataStore';
 import { ChartData } from '../templates/types';
+import { SharedState, createSharedSlice } from './sharedStore';
+import { StoreSlice, combineSlices } from './storeUtils';
 
 // Define interfaces for each chart type's settings
 interface BarChartSettings {
@@ -40,35 +42,17 @@ interface LineChartSettings {
   lineDashArray: string;
 }
 
-// Define the chart store state interface
-interface ChartStore {
-  // Common chart properties
-  chartType: ChartType;
-  dimensions: ChartDimensions;
-  axisOptions: AxisOptions;
-  chartData: ChartData;
-  selectedPreset: string;
-  
+// Define chart-specific functionality interface
+interface ChartSpecificState {
   // Chart-specific settings
   barSettings: BarChartSettings;
   lineSettings: LineChartSettings;
-  
-  // Action to change chart type
-  setChartType: (type: ChartType) => void;
-  
-  // Actions to update dimensions and axis options
-  setDimensions: (dimensions: Partial<ChartDimensions>) => void;
-  setAxisOptions: (options: Partial<AxisOptions>) => void;
   
   // Actions for bar chart settings
   updateBarSettings: (settings: Partial<BarChartSettings>) => void;
   
   // Actions for line chart settings
   updateLineSettings: (settings: Partial<LineChartSettings>) => void;
-  
-  // Data-related actions
-  setChartData: (data: ChartData) => void;
-  setSelectedPreset: (preset: string) => void;
   
   // Load chart configuration
   loadBarChartConfig: (config: BarChartConfig) => void;
@@ -79,28 +63,16 @@ interface ChartStore {
   getLineChartConfig: () => LineChartConfig;
 }
 
-// Create the store with default values
-export const useChartStore = create<ChartStore>((set, get) => ({
-  // Default common chart properties
-  chartType: 'bar',
-  dimensions: {
-    width: 512,
-    height: 512
-  },
-  axisOptions: {
-    showXAxis: true,
-    showYAxis: true,
-    yDomainMin: undefined,
-    yDomainMax: undefined
-  },
-  chartData: sampleDataSets.basic,
-  selectedPreset: 'basic',
-  
+// Combine shared state and chart-specific state
+type ChartStore = SharedState & ChartSpecificState;
+
+// Create chart-specific slice
+const createChartSpecificSlice: StoreSlice<ChartStore, ChartSpecificState> = (set, get) => ({
   // Default bar chart settings
   barSettings: {
     barPadding: 0.2,
     barFill: false,
-    barFillOpacity: 1, // Changed to 1 as per requirement
+    barFillOpacity: 1,
     barFillPattern: 'solid',
     barFillZoomLevel: 8,
     barStrokePattern: 'solid',
@@ -119,7 +91,7 @@ export const useChartStore = create<ChartStore>((set, get) => ({
     curveType: 'linear',
     curveTension: 0.5,
     fill: false,
-    fillOpacity: 1, // Changed to 1 as per requirement
+    fillOpacity: 1,
     fillPattern: 'solid',
     fillZoomLevel: 8,
     showPoints: true,
@@ -132,18 +104,6 @@ export const useChartStore = create<ChartStore>((set, get) => ({
     lineDashArray: '6,4'
   },
   
-  // Chart type action
-  setChartType: (type) => set({ chartType: type }),
-  
-  // Dimensions and axis actions
-  setDimensions: (dimensions) => set((state) => ({
-    dimensions: { ...state.dimensions, ...dimensions }
-  })),
-  
-  setAxisOptions: (options) => set((state) => ({
-    axisOptions: { ...state.axisOptions, ...options }
-  })),
-  
   // Bar chart actions
   updateBarSettings: (settings) => set((state) => ({
     barSettings: { ...state.barSettings, ...settings }
@@ -154,12 +114,8 @@ export const useChartStore = create<ChartStore>((set, get) => ({
     lineSettings: { ...state.lineSettings, ...settings }
   })),
   
-  // Data-related actions
-  setChartData: (data) => set({ chartData: data }),
-  setSelectedPreset: (preset) => set({ selectedPreset: preset }),
-  
   // Load bar chart configuration
-  loadBarChartConfig: (config) => set({
+  loadBarChartConfig: (config) => set((state) => ({
     chartType: 'bar',
     dimensions: {
       width: config.width,
@@ -183,10 +139,10 @@ export const useChartStore = create<ChartStore>((set, get) => ({
       barDashArray: config.barDashArray ?? '6,4',
       selectedTemplate: config.selectedTemplate ?? 'rectangle'
     }
-  }),
+  })),
   
   // Load line chart configuration
-  loadLineChartConfig: (config) => set({
+  loadLineChartConfig: (config) => set((state) => ({
     chartType: 'line',
     dimensions: {
       width: config.width,
@@ -218,7 +174,7 @@ export const useChartStore = create<ChartStore>((set, get) => ({
       lineStrokeStyle: config.lineStrokeStyle ?? 'normal',
       lineDashArray: config.lineDashArray ?? '6,4'
     }
-  }),
+  })),
   
   // Get current bar chart configuration
   getBarChartConfig: () => {
@@ -273,4 +229,16 @@ export const useChartStore = create<ChartStore>((set, get) => ({
       yDomainMax: state.axisOptions.yDomainMax
     };
   }
-})); 
+});
+
+// Create the store with combined slices
+export const useChartStore = create<ChartStore>()((...args) => {
+  // Initialize shared state with sample data
+  const initialSharedState = createSharedSlice(...args);
+  initialSharedState.chartData = sampleDataSets.basic;
+
+  return {
+    ...initialSharedState,
+    ...createChartSpecificSlice(...args)
+  };
+}); 

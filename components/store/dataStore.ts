@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { ChartData } from '../templates/types';
 import { ChartType } from '../controls/types';
+import { SharedState, createSharedSlice } from './sharedStore';
+import { StoreSlice } from './storeUtils';
 
 // Data labels for random generation
 export const dataLabels = {
@@ -148,15 +150,8 @@ export const generateRandomBarData = (): ChartData => {
   return newData;
 };
 
-interface DataStore {
-  // Chart data and preset
-  chartData: ChartData;
-  selectedPreset: string;
-  
-  // Actions to update data
-  setChartData: (data: ChartData) => void;
-  setSelectedPreset: (preset: string) => void;
-  
+// Define the data store specific state
+interface DataSpecificState {
   // Generate random data based on chart type
   generateRandomData: (chartType: ChartType) => void;
   
@@ -164,15 +159,11 @@ interface DataStore {
   loadPresetData: (preset: string, chartType: ChartType) => void;
 }
 
-export const useDataStore = create<DataStore>((set) => ({
-  // Initial data
-  chartData: sampleDataSets.basic,
-  selectedPreset: 'basic',
-  
-  // Data update actions
-  setChartData: (data) => set({ chartData: data }),
-  setSelectedPreset: (preset) => set({ selectedPreset: preset }),
-  
+// Combine with shared state
+type DataStore = SharedState & DataSpecificState;
+
+// Create data specific slice
+const createDataSpecificSlice: StoreSlice<DataStore, DataSpecificState> = (set) => ({
   // Generate random data based on chart type
   generateRandomData: (chartType) => {
     if (chartType === 'bar') {
@@ -219,4 +210,16 @@ export const useDataStore = create<DataStore>((set) => ({
       set({ chartData: trendData, selectedPreset: preset });
     }
   }
-})); 
+});
+
+// Create the data store
+export const useDataStore = create<DataStore>()((...args) => {
+  // Initialize shared state with sample data
+  const initialSharedState = createSharedSlice(...args);
+  initialSharedState.chartData = sampleDataSets.basic;
+
+  return {
+    ...initialSharedState,
+    ...createDataSpecificSlice(...args)
+  };
+}); 

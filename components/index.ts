@@ -14,6 +14,13 @@ export { default as RectangleTemplate } from './templates/RectangleTemplate';
 // Controls
 export { ExportVariationsButton } from './controls';
 
+// Stores
+export { useChartStore } from './store/chartStore';
+export { useDataStore } from './store/dataStore';
+export { useUIStore } from './store/uiStore';
+export { useSharedStore } from './store/sharedStore';
+export * from './store/storeUtils';
+
 // Types
 export * from './templates/types';
 export * from './data'; 

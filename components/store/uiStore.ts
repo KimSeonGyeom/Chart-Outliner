@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import { StoreSlice } from './storeUtils';
 
-interface UIStore {
+// Define the UI store state
+interface UIState {
   // Save dialog state
   isSavingOpen: boolean;
   chartName: string;
@@ -28,7 +30,8 @@ interface UIStore {
   setExportWireframeStyle: (value: boolean) => void;
 }
 
-export const useUIStore = create<UIStore>((set) => ({
+// Create the UI store slice
+const createUISlice: StoreSlice<UIState> = (set) => ({
   // Save dialog initial state
   isSavingOpen: false,
   chartName: '',
@@ -54,4 +57,9 @@ export const useUIStore = create<UIStore>((set) => ({
   setExportFileType: (type) => set({ exportFileType: type }),
   setExportAsOutlines: (value) => set({ exportAsOutlines: value }),
   setExportWireframeStyle: (value) => set({ exportWireframeStyle: value })
+});
+
+// Create the UI store
+export const useUIStore = create<UIState>()((...args) => ({
+  ...createUISlice(...args)
 })); 
