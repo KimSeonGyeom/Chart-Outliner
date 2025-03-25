@@ -3,131 +3,13 @@
 import React, { useRef } from 'react';
 import BarChart from '../components/charts/BarChart.jsx';
 import LineChart from '../components/charts/LineChart.jsx';
-import DiamondTemplate from '../components/templates/DiamondTemplate.jsx';
-import TriangleTemplate from '../components/templates/TriangleTemplate.jsx';
-import RectangleTemplate from '../components/templates/RectangleTemplate.jsx';
-import CircleTemplate from '../components/templates/CircleTemplate.jsx';
 import { useSharedStore } from '../components/store/sharedStore.js';
 import { useChartStore } from '../components/store/chartStore.js';
-import { useDataStore } from '../components/store/dataStore.js';
 import { 
   ControlPanel,
   downloadChart
 } from '../components/controls';
 import './page.scss';
-
-// Chart component that renders the appropriate chart based on chartType
-const ChartDisplay = ({ chartType, chartRef }) => {
-  // Shared store properties (used by both chart types)
-  const width = useSharedStore(state => state.width);
-  const height = useSharedStore(state => state.height);
-  const showXAxis = useSharedStore(state => state.showXAxis);
-  const showYAxis = useSharedStore(state => state.showYAxis);
-  const yDomainMin = useSharedStore(state => state.yDomainMin);
-  const yDomainMax = useSharedStore(state => state.yDomainMax);
-  const fill = useSharedStore(state => state.fill);
-  const fillPattern = useSharedStore(state => state.fillPattern);
-  const fillZoomLevel = useSharedStore(state => state.fillZoomLevel);
-  const fillOpacity = useSharedStore(state => state.fillOpacity);
-  const updateSetting = useSharedStore(state => state.updateSetting);
-  
-  // Data store properties
-  const chartData = useDataStore(state => state.chartData);
-  
-  // Use all chart store properties regardless of chart type to avoid hook inconsistency
-  // Bar chart specific properties
-  const barPadding = useChartStore(state => state.barPadding);
-  const barStrokePattern = useChartStore(state => state.barStrokePattern);
-  const barStrokeWidth = useChartStore(state => state.barStrokeWidth);
-  const barDashArray = useChartStore(state => state.barDashArray);
-  const barStrokeColor = useChartStore(state => state.barStrokeColor);
-  const selectedTemplate = useChartStore(state => state.selectedTemplate);
-  
-  // Line chart specific properties
-  const curveType = useChartStore(state => state.curveType);
-  const curveTension = useChartStore(state => state.curveTension);
-  const showPoints = useChartStore(state => state.showPoints);
-  const pointRadius = useChartStore(state => state.pointRadius);
-  const pointShape = useChartStore(state => state.pointShape);
-  const lineStrokePattern = useChartStore(state => state.lineStrokePattern);
-  const lineStrokeWidth = useChartStore(state => state.lineStrokeWidth);
-  const lineDashArray = useChartStore(state => state.lineDashArray);
-  const lineColor = useChartStore(state => state.lineColor);
-  const pointStroke = useChartStore(state => state.pointStroke);
-  const pointStrokeWidth = useChartStore(state => state.pointStrokeWidth);
-    
-  // Template mapping
-  const templates = {
-    'none': null,
-    'rectangle': RectangleTemplate,
-    'circle': CircleTemplate,
-    'triangle': TriangleTemplate,
-    'diamond': DiamondTemplate,
-  };
-  
-  if (chartType === 'bar') {
-    return (
-      <div ref={chartRef} className="chart-display">
-        <BarChart 
-          data={chartData}
-          width={width} 
-          height={height}
-          barPadding={barPadding}
-          barFill={fill}
-          barFillPattern={fillPattern}
-          barFillZoomLevel={fillZoomLevel}
-          barFillOpacity={fillOpacity}
-          barStrokePattern={barStrokePattern}
-          barStrokeWidth={barStrokeWidth}
-          barDashArray={barDashArray}
-          barStrokeColor={barStrokeColor}
-          showXAxis={showXAxis}
-          showYAxis={showYAxis}
-          yDomainMin={yDomainMin}
-          yDomainMax={yDomainMax}
-          template={templates[selectedTemplate]}
-          onResize={(newWidth, newHeight) => {
-            updateSetting('width', newWidth);
-            updateSetting('height', newHeight);
-          }}
-        />
-      </div>
-    );
-  } else {
-    return (
-      <div ref={chartRef} className="chart-display">
-        <LineChart
-          data={chartData}
-          width={width}
-          height={height}
-          curveType={curveType}
-          curveTension={curveTension}
-          fill={fill}
-          fillPattern={fillPattern}
-          fillZoomLevel={fillZoomLevel}
-          fillOpacity={fillOpacity}
-          lineStrokePattern={lineStrokePattern}
-          lineStrokeWidth={lineStrokeWidth}
-          lineDashArray={lineDashArray}
-          lineColor={lineColor}
-          showPoints={showPoints}
-          pointRadius={pointRadius}
-          pointShape={pointShape}
-          pointStroke={pointStroke}
-          pointStrokeWidth={pointStrokeWidth}
-          showXAxis={showXAxis}
-          showYAxis={showYAxis}
-          yDomainMin={yDomainMin}
-          yDomainMax={yDomainMax}
-          onResize={(newWidth, newHeight) => {
-            updateSetting('width', newWidth);
-            updateSetting('height', newHeight);
-          }}
-        />
-      </div>
-    );
-  }
-};
 
 export default function Home() {
   const chartType = useSharedStore(state => state.chartType);
@@ -223,7 +105,9 @@ export default function Home() {
           <div className="section-title">Current Chart</div>
           {/* Chart display */}
           <div className="chart-display-container">
-            <ChartDisplay chartType={chartType} chartRef={chartRef} />
+            <div ref={chartRef} className="chart-display">
+              {chartType === 'bar' ? <BarChart/> : <LineChart/>}
+            </div>
           </div>
         </div>
         

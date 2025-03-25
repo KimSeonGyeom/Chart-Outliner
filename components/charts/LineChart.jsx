@@ -22,6 +22,10 @@ const LineChart = () => {
   const fillPattern = useSharedStore((state) => state.fillPattern);
   const fillZoomLevel = useSharedStore((state) => state.fillZoomLevel);
   const fillOpacity = useSharedStore((state) => state.fillOpacity);
+  const strokeColor = useSharedStore((state) => state.strokeColor);
+  const strokeWidth = useSharedStore((state) => state.strokeWidth);
+  const strokePattern = useSharedStore((state) => state.strokePattern);
+  const dashArray = useSharedStore((state) => state.dashArray);
   
   // Get chart-specific settings
   const curveType = useChartStore((state) => state.curveType);
@@ -29,21 +33,21 @@ const LineChart = () => {
   const showPoints = useChartStore((state) => state.showPoints);
   const pointRadius = useChartStore((state) => state.pointRadius);
   const pointShape = useChartStore((state) => state.pointShape);
-  const lineStrokePattern = useChartStore((state) => state.lineStrokePattern);
-  const lineStrokeWidth = useChartStore((state) => state.lineStrokeWidth);
-  const lineDashArray = useChartStore((state) => state.lineDashArray);
-  const lineColor = useChartStore((state) => state.lineColor);
-  const pointStroke = useChartStore((state) => state.pointStroke);
-  const pointStrokeWidth = useChartStore((state) => state.pointStrokeWidth);
   
   // Other state
   const svgRef = useRef(null);
   const chartRef = useRef(null);
 
+  // Define margins for axes
+  const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+  // Calculate the inner dimensions of the chart
+  const innerWidth = chartWidth - margin.left - margin.right;
+  const innerHeight = chartHeight - margin.top - margin.bottom;
+
   // Calculate the stroke-dasharray value based on the pattern
   const getStrokeDashArray = (pattern) => {
     if (pattern === 'custom') {
-      return lineDashArray;
+      return dashArray;
     }
     
     switch (pattern) {
@@ -61,52 +65,45 @@ const LineChart = () => {
   };
 
   // Create pattern definitions for fill patterns
-  const createFillPattern = (pattern, color) => {
+  const createFillPattern = () => {
     // Size based on the zoom level (ensure it's at least 1px)
     const size = Math.max(1, fillZoomLevel);
 
-    switch (pattern) {
+    switch (fillPattern) {
       case 'diagonal':
         return (
           <pattern id="diagonalPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
-            <path d={`M-1,1 l2,-2 M0,${size} l${size},-${size} M${size-1},${size+1} l1,-1`} stroke={color} strokeWidth={Math.max(0.5, size/8)} />
+            <path d={`M-1,1 l2,-2 M0,${size} l${size},-${size} M${size-1},${size+1} l1,-1`} stroke={strokeColor} strokeWidth={Math.max(0.5, size/8)} />
           </pattern>
         );
       case 'crosshatch':
         return (
           <pattern id="crosshatchPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
-            <path d={`M0,0 l${size},${size} M${size},0 l-${size},${size}`} stroke={color} strokeWidth={Math.max(0.5, size/8)} />
+            <path d={`M0,0 l${size},${size} M${size},0 l-${size},${size}`} stroke={strokeColor} strokeWidth={Math.max(0.5, size/8)} />
           </pattern>
         );
       case 'dots':
         const radius = Math.max(0.5, size/5);
         return (
           <pattern id="dotsPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
-            <circle cx={size/2} cy={size/2} r={radius} fill={color} />
+            <circle cx={size/2} cy={size/2} r={radius} fill={'#000'} />
           </pattern>
         );
       case 'grid':
         return (
           <pattern id="gridPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
-            <path d={`M0,0 h${size} M0,${size} h${size} M0,0 v${size} M${size},0 v${size}`} stroke={color} strokeWidth={Math.max(0.5, size/12)} />
+            <path d={`M0,0 h${size} M0,${size} h${size} M0,0 v${size} M${size},0 v${size}`} stroke={strokeColor} strokeWidth={Math.max(0.5, size/12)} />
           </pattern>
         );
       case 'zigzag':
         return (
           <pattern id="zigzagPattern" patternUnits="userSpaceOnUse" width={size} height={size}>
-            <path d={`M0,${size/2} l${size/2},-${size/2} l${size/2},${size/2}`} stroke={color} strokeWidth={Math.max(0.5, size/8)} fill="none" />
+            <path d={`M0,${size/2} l${size/2},-${size/2} l${size/2},${size/2}`} stroke={strokeColor} strokeWidth={Math.max(0.5, size/8)} fill="none" />
           </pattern>
         );
       default:
         return null;
     }
-  };
-
-  // Helper function to get fill value based on pattern
-  const getFillValue = (pattern, color) => {
-    if (!fill) return 'transparent';
-    if (pattern === 'solid') return color;
-    return `url(#${pattern}Pattern)`;
   };
 
   // Helper function to create SVG path for custom shapes
@@ -167,15 +164,15 @@ const LineChart = () => {
     
     // Add pattern for fill
     if (fill && fillPattern !== 'solid') {
-      const pattern = createFillPattern(fillPattern, lineColor);
+      const pattern = createFillPattern();
       if (pattern) {
         defs.html(ReactDOMServer.renderToString(pattern));
       }
     }
 
-    // Calculate inner dimensions
-    const innerWidth = chartWidth;
-    const innerHeight = chartHeight;
+    // Create main chart group with margin translation
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
 
     // Create scales
     const x = d3.scalePoint()
@@ -190,9 +187,6 @@ const LineChart = () => {
       .domain([Math.min(0, yMin), yMax * 1.1])
       .nice()
       .range([innerHeight, 0]);
-
-    // Create main chart group
-    const g = svg.append('g');
 
     // Create line generator with specified curve
     const getCurveFunction = (type) => {
@@ -230,7 +224,7 @@ const LineChart = () => {
         .datum(chartData)
         .attr('class', 'area')
         .attr('d', area)
-        .attr('fill', getFillValue(fillPattern, lineColor))
+        .attr('fill', fill ? '#000' : 'none')
         .attr('fill-opacity', fillOpacity);
     }
 
@@ -240,20 +234,12 @@ const LineChart = () => {
       .attr('class', 'line')
       .attr('d', line)
       .attr('fill', 'none')
-      .attr('stroke', lineStrokeWidth > 0 ? lineColor : 'none')
-      .attr('stroke-width', lineStrokeWidth)
-      .attr('stroke-dasharray', lineStrokeWidth > 0 ? getStrokeDashArray(lineStrokePattern) : 'none');
+      .attr('stroke', strokeColor || '#000')
+      .attr('stroke-width', strokeWidth || 2)
+      .attr('stroke-dasharray', getStrokeDashArray(strokePattern));
 
     // Add points if enabled
     if (showPoints && pointRadius > 0) {
-      // Store the data points for external use
-      const pointsData = chartData.map(d => ({
-        x: x(String(d.x)) || 0,
-        y: y(d.y),
-        color: d.color || lineColor
-      }));
-      setDataPoints(pointsData);
-
       if (pointShape === 'circle') {
         // Use circles for circle shapes
         g.selectAll('.point')
@@ -264,9 +250,7 @@ const LineChart = () => {
           .attr('cx', d => x(String(d.x)) || 0)
           .attr('cy', d => y(d.y))
           .attr('r', pointRadius)
-          .attr('fill', d => d.color || lineColor)
-          .attr('stroke', pointStroke)
-          .attr('stroke-width', pointStrokeWidth);
+          .attr('fill', '#000')
       } else {
         // Use SVG paths for other shapes
         g.selectAll('.point')
@@ -279,18 +263,8 @@ const LineChart = () => {
             const pointY = y(d.y);
             return createPointShape(pointShape, pointX, pointY, pointRadius);
           })
-          .attr('fill', d => d.color || lineColor)
-          .attr('stroke', pointStroke)
-          .attr('stroke-width', pointStrokeWidth);
+          .attr('fill', '#000')
       }
-    } else if (showPoints) {
-      // Just store data points for external use without rendering them
-      const pointsData = chartData.map(d => ({
-        x: x(String(d.x)) || 0,
-        y: y(d.y),
-        color: d.color || lineColor
-      }));
-      setDataPoints(pointsData);
     }
 
     // Add axes if enabled
@@ -309,9 +283,9 @@ const LineChart = () => {
     chartRef.current = { g, x, y };
 
   }, [chartData, chartWidth, chartHeight, 
-      curveType, curveTension, lineColor, fill, fillOpacity, fillPattern,
-      showPoints, pointRadius, pointShape, pointStroke, pointStrokeWidth, lineStrokePattern,
-      showXAxis, showYAxis, yDomainMin, yDomainMax, lineStrokeWidth, lineDashArray, fillZoomLevel]);
+      curveType, curveTension, strokeColor, fill, fillOpacity, fillPattern,
+      showPoints, pointRadius, pointShape, strokePattern, strokeWidth, dashArray,
+      showXAxis, showYAxis, yDomainMin, yDomainMax, fillZoomLevel, innerWidth, innerHeight]);
   
   // Effect to clean up when component unmounts
   useEffect(() => {

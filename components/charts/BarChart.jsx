@@ -36,6 +36,12 @@ const BarChart = () => {
   const svgRef = useRef(null);
   const chartRef = useRef(null);
   
+  // Define margins for axes
+  const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+  // Calculate the inner dimensions of the chart
+  const innerWidth = chartWidth - margin.left - margin.right;
+  const innerHeight = chartHeight - margin.top - margin.bottom;
+  
   // Calculate the stroke-dasharray value based on the pattern
   const getStrokeDashArray = (pattern) => {
     if (pattern === 'custom') {
@@ -99,10 +105,10 @@ const BarChart = () => {
   };
 
   // Helper function to get fill value based on pattern
-  const getFillValue = (pattern, color) => {
+  const getFillValue = (pattern) => {
     if (!fill) return 'transparent';
     // If color is 'transparent' and we want a fill, use a default color
-    const fillColor = color === 'transparent' ? '#000' : color;
+    const fillColor = '#000';
     if (pattern === 'solid') return fillColor;
     return `url(#${pattern}Pattern)`;
   };
@@ -119,16 +125,20 @@ const BarChart = () => {
     
     // Add pattern for fill
     if (fill && fillPattern !== 'solid') {
-      const pattern = createFillPattern(fillPattern, barColor !== 'transparent' ? barColor : '#333');
+      const pattern = createFillPattern(fillPattern, fillColor);
       if (pattern) {
         defs.html(ReactDOMServer.renderToString(pattern));
       }
     }
     
+    // Create the chart group with margin translation
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+    
     // X scale
     const x = d3.scaleBand()
       .domain(chartData.map(d => String(d.x)))
-      .range([0, chartWidth])
+      .range([0, innerWidth])
       .padding(barPadding);
     
     // Y scale
@@ -138,15 +148,12 @@ const BarChart = () => {
         yDomainMax !== undefined ? yDomainMax : d3.max(chartData, d => d.y) * 1.1
       ])
       .nice()
-      .range([chartHeight, 0]);
-    
-    // Create the chart group
-    const g = svg.append('g');
+      .range([innerHeight, 0]);
     
     // Add axes if enabled
     if (showXAxis) {
       g.append('g')
-        .attr('transform', `translate(0,${chartHeight})`)
+        .attr('transform', `translate(0,${innerHeight})`)
         .call(d3.axisBottom(x))
         .selectAll('text')
         .style('text-anchor', 'middle');
@@ -166,7 +173,7 @@ const BarChart = () => {
       .attr('x', d => x(String(d.x)) ?? 0)
       .attr('y', d => y(d.y))
       .attr('width', x.bandwidth())
-      .attr('height', d => chartHeight - y(d.y))
+      .attr('height', d => innerHeight - y(d.y))
       .attr('fill', d => getFillValue(fillPattern, d.color || 'transparent'))
       .attr('stroke', strokeWidth > 0 ? strokeColor : 'none')
       .attr('stroke-width', strokeWidth)
@@ -176,7 +183,7 @@ const BarChart = () => {
     
   }, [chartData, chartWidth, chartHeight, 
       barPadding, fill, fillPattern, strokePattern,
-      showXAxis, showYAxis, yDomainMin, yDomainMax, dashArray, strokeWidth, fillZoomLevel, strokeColor]);
+      showXAxis, showYAxis, yDomainMin, yDomainMax, dashArray, strokeWidth, fillZoomLevel, strokeColor, innerWidth, innerHeight]);
 
   // Effect to clean up when component unmounts
   useEffect(() => {

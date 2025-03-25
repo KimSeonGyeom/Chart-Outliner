@@ -53,15 +53,6 @@ const FillSection = () => {
                     </option>
                   ))}
                 </select>
-                <div className="fill-preview-container">
-                  <div 
-                    className={`fill-pattern-preview ${fillPattern}`}
-                    style={{ 
-                      backgroundSize: `${previewZoomLevel}px ${previewZoomLevel}px`,
-                      opacity: fillOpacity
-                    }}
-                  />
-                </div>
               </div>
             </div>
             
