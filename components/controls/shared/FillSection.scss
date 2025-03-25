@@ -111,4 +111,103 @@
     font-size: 12px;
     color: #666;
   }
+}
+
+// New dropdown styles
+.dropdown-container {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  gap: 10px;
+}
+
+.dropdown-select {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  min-width: 150px;
+
+  &:hover {
+    border-color: #aaa;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  }
+}
+
+.fill-preview-container {
+  width: 60px;
+  height: 28px;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .fill-pattern-preview {
+    width: 50px;
+    height: 18px;
+    border: 1px solid #333;
+    
+    &.solid {
+      background-color: #333;
+    }
+    
+    &.diagonal {
+      background-image: repeating-linear-gradient(
+        45deg,
+        #333,
+        #333 2px,
+        transparent 2px,
+        transparent 8px
+      );
+    }
+    
+    &.crosshatch {
+      background-image: 
+        repeating-linear-gradient(
+          45deg,
+          #333,
+          #333 2px,
+          transparent 2px,
+          transparent 8px
+        ),
+        repeating-linear-gradient(
+          -45deg,
+          #333,
+          #333 2px,
+          transparent 2px,
+          transparent 8px
+        );
+    }
+    
+    &.dots {
+      background-image: radial-gradient(
+        #333 2px,
+        transparent 2px
+      );
+    }
+    
+    &.grid {
+      background-image:
+        linear-gradient(#333 1px, transparent 1px),
+        linear-gradient(90deg, #333 1px, transparent 1px);
+    }
+    
+    &.zigzag {
+      background-image: 
+        linear-gradient(135deg, #333 25%, transparent 25%) 0 0,
+        linear-gradient(225deg, #333 25%, transparent 25%) 0 0,
+        linear-gradient(315deg, #333 25%, transparent 25%) 0 0,
+        linear-gradient(45deg, #333 25%, transparent 25%) 0 0;
+    }
+  }
 } 

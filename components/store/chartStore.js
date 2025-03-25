@@ -29,7 +29,8 @@ const createChartSpecificSlice = (set, get) => ({
   fillSettings: {
     fill: false,
     fillPattern: 'solid',
-    fillZoomLevel: 8
+    fillZoomLevel: 8,
+    fillOpacity: 1
   },
   
   // Default bar chart settings
@@ -133,7 +134,8 @@ const createChartSpecificSlice = (set, get) => ({
     fillSettings: {
       fill: config.fill ?? false,
       fillPattern: config.fillPattern ?? 'solid',
-      fillZoomLevel: config.fillZoomLevel ?? 8
+      fillZoomLevel: config.fillZoomLevel ?? 8,
+      fillOpacity: config.fillOpacity ?? 1
     },
     lineSettings: {
       marginTop: config.marginTop ?? 20,
@@ -189,6 +191,7 @@ const createChartSpecificSlice = (set, get) => ({
       fill: state.fillSettings.fill,
       fillPattern: state.fillSettings.fillPattern,
       fillZoomLevel: state.fillSettings.fillZoomLevel,
+      fillOpacity: state.fillSettings.fillOpacity,
       showPoints: state.lineSettings.showPoints,
       pointRadius: state.lineSettings.pointRadius,
       pointShape: state.lineSettings.pointShape,

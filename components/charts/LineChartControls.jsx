@@ -66,6 +66,7 @@ function LineChartControls({
   const fill = useChartStore(state => state.fillSettings.fill);
   const fillPattern = useChartStore(state => state.fillSettings.fillPattern);
   const fillZoomLevel = useChartStore(state => state.fillSettings.fillZoomLevel);
+  const fillOpacity = useChartStore(state => state.fillSettings.fillOpacity);
   
   // Chart data
   const chartData = useChartStore(state => state.chartData);
@@ -331,6 +332,7 @@ function LineChartControls({
               fill={fill}
               fillPattern={fillPattern}
               fillZoomLevel={fillZoomLevel}
+              fillOpacity={fillOpacity}
               lineStrokePattern={lineStrokePattern}
               lineStrokeWidth={lineStrokeWidth}
               lineStrokeStyle={lineStrokeStyle}

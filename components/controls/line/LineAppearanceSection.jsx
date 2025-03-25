@@ -1,5 +1,4 @@
 import React from 'react';
-import './LinePointsSection.scss';
 
 const LineAppearanceSection = ({
   curveType,

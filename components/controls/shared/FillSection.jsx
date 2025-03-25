@@ -16,6 +16,7 @@ const FillSection = () => {
   const fill = useChartStore(state => state.fillSettings.fill);
   const fillPattern = useChartStore(state => state.fillSettings.fillPattern);
   const fillZoomLevel = useChartStore(state => state.fillSettings.fillZoomLevel);
+  const fillOpacity = useChartStore(state => state.fillSettings.fillOpacity);
   const updateFillSettings = useChartStore(state => state.updateFillSettings);
   
   // Use the previewZoomLevel from the UI store for immediate visual feedback
@@ -31,8 +32,8 @@ const FillSection = () => {
     updateFillSettings({ fill: checked });
   };
 
-  const handlePatternChange = (pattern) => {
-    updateFillSettings({ fillPattern: pattern });
+  const handlePatternChange = (e) => {
+    updateFillSettings({ fillPattern: e.target.value });
   };
 
   const handleZoomChange = (e) => {
@@ -44,6 +45,11 @@ const FillSection = () => {
   const finalizeZoomChange = () => {
     // Apply the final zoom level when slider interaction ends
     updateFillSettings({ fillZoomLevel: previewZoomLevel });
+  };
+  
+  const handleOpacityChange = (e) => {
+    const newOpacity = parseFloat(e.target.value);
+    updateFillSettings({ fillOpacity: newOpacity });
   };
 
   return (
@@ -64,22 +70,27 @@ const FillSection = () => {
           <>
             <div className="control-row">
               <label>Pattern Style</label>
-              <div className="fill-pattern-options">
-                {fillPatternOptions.map((option) => (
+              <div className="dropdown-container">
+                <select 
+                  value={fillPattern}
+                  onChange={handlePatternChange}
+                  className="dropdown-select"
+                >
+                  {fillPatternOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="fill-preview-container">
                   <div 
-                    key={option.value}
-                    className={`fill-pattern-option ${fillPattern === option.value ? 'selected' : ''}`}
-                    onClick={() => handlePatternChange(option.value)}
-                  >
-                    <div 
-                      className={`fill-pattern-preview ${option.value}`} 
-                      style={{ 
-                        backgroundSize: `${previewZoomLevel}px ${previewZoomLevel}px` 
-                      }}
-                    />
-                    <span>{option.label}</span>
-                  </div>
-                ))}
+                    className={`fill-pattern-preview ${fillPattern}`}
+                    style={{ 
+                      backgroundSize: `${previewZoomLevel}px ${previewZoomLevel}px`,
+                      opacity: fillOpacity
+                    }}
+                  />
+                </div>
               </div>
             </div>
             
@@ -97,6 +108,21 @@ const FillSection = () => {
               />
               <div className="range-display">
                 <div className="range-value">{previewZoomLevel.toFixed(1)}</div>
+              </div>
+            </div>
+            
+            <div className="control-row">
+              <label>Fill Opacity</label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={fillOpacity}
+                onChange={handleOpacityChange}
+              />
+              <div className="range-display">
+                <div className="range-value">{fillOpacity.toFixed(2)}</div>
               </div>
             </div>
           </>
