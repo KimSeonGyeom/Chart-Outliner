@@ -6,7 +6,6 @@ const BarTemplateSection = ({
 }) => {
   return (
     <div className="section">
-      <h3>Bar Template</h3>
       <div className="control-group">
         <label>Select Template</label>
         <select 

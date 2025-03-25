@@ -14,6 +14,7 @@ import {
   BarTemplateSection, 
   BarAppearanceSection,
   StrokePatternSection,
+  FillSection,
   ChartDimensions,
   AxisOptions,
   ChartType,
@@ -22,6 +23,7 @@ import {
   DataSection
 } from '../controls';
 import { sampleDataSets, generateRandomBarData, generateTrendData } from '../store/dataStore.js';
+import { useChartStore } from '../store/chartStore.js';
 import '../controls/ControlPanel.scss';
 import './BarChartControls.scss';
 
@@ -40,48 +42,51 @@ function BarChartControls({
   onSaveClick,
   onSaveClose,
   onChartNameChange,
-  onLoadChart,
-  loadedChart,
-  onChartLoaded
 }) {
-  const loadedConfig = loadedChart?.config;
+  // Get all settings from the chart store
+  const chartStore = useChartStore();
   
-  // Chart dimensions
-  const [dimensions, setDimensions] = useState({
-    width: loadedConfig?.width || 512,
-    height: loadedConfig?.height || 512
-  });
+  // Dimensions
+  const dimensions = useChartStore(state => state.dimensions);
+  const setDimensions = useChartStore(state => state.setDimensions);
   
-  // Bar appearance
-  const [barPadding, setBarPadding] = useState(loadedConfig?.barPadding || 0.2);
-  const [barFill, setBarFill] = useState(loadedConfig?.barFill || false);
-  const [barFillOpacity, setBarFillOpacity] = useState(loadedConfig?.barFillOpacity || 0.5);
-  const [barStrokePattern, setBarStrokePattern] = useState(loadedConfig?.barStrokePattern || 'solid');
-  const [barFillPattern, setBarFillPattern] = useState(loadedConfig?.barFillPattern || 'solid');
-  const [barFillZoomLevel, setBarFillZoomLevel] = useState(loadedConfig?.barFillZoomLevel || 8);
-  const [barStrokeWidth, setBarStrokeWidth] = useState(loadedConfig?.barStrokeWidth || 1);
-  const [barStrokeStyle, setBarStrokeStyle] = useState(loadedConfig?.barStrokeStyle || 'normal');
-  const [barDashArray, setBarDashArray] = useState(loadedConfig?.barDashArray || '6,4');
+  // Bar appearance settings
+  const barPadding = useChartStore(state => state.barSettings.barPadding);
+  const barStrokePattern = useChartStore(state => state.barSettings.barStrokePattern);
+  const barStrokeWidth = useChartStore(state => state.barSettings.barStrokeWidth);
+  const barStrokeStyle = useChartStore(state => state.barSettings.barStrokeStyle);
+  const barDashArray = useChartStore(state => state.barSettings.barDashArray);
+  const selectedTemplate = useChartStore(state => state.barSettings.selectedTemplate);
   
-  // Template selection
-  const [selectedTemplate, setSelectedTemplate] = useState(loadedConfig?.selectedTemplate || 'rectangle');
+  // Fill settings (shared)
+  const fill = useChartStore(state => state.fillSettings.fill);
+  const fillPattern = useChartStore(state => state.fillSettings.fillPattern);
+  const fillZoomLevel = useChartStore(state => state.fillSettings.fillZoomLevel);
   
-  // Chart data state
-  const [chartData, setChartData] = useState(data);
-  const [selectedPreset, setSelectedPreset] = useState("basic");
+  // Chart data
+  const chartData = useChartStore(state => state.chartData);
+  const selectedPreset = useChartStore(state => state.selectedPreset);
   
-  // Axis appearance
-  const [axisOptions, setAxisOptions] = useState({
-    showXAxis: loadedConfig?.showXAxis || true,
-    showYAxis: loadedConfig?.showYAxis || true,
-    yDomainMin: loadedConfig?.yDomainMin,
-    yDomainMax: loadedConfig?.yDomainMax
-  });
-
-  // Replace isExporting dialog state with showExportOptions
-  const [showExportOptions, setShowExportOptions] = useState(false);
-  const [exportFileName, setExportFileName] = useState('');
-  const [exportFileType, setExportFileType] = useState('png');
+  // Axis options
+  const axisOptions = useChartStore(state => state.axisOptions);
+  
+  // Export options
+  const exportOptions = useChartStore(state => state.exportOptions);
+  
+  // Store actions
+  const updateBarSettings = useChartStore(state => state.updateBarSettings);
+  const setAxisOptions = useChartStore(state => state.setAxisOptions);
+  const setChartData = useChartStore(state => state.setChartData);
+  const setSelectedPreset = useChartStore(state => state.setSelectedPreset);
+  const setExportOptions = useChartStore(state => state.setExportOptions);
+  const updateFillSettings = useChartStore(state => state.updateFillSettings);
+  
+  // Initialize chart data
+  React.useEffect(() => {
+    if (data !== chartData) {
+      setChartData(data);
+    }
+  }, [data, chartData, setChartData]);
 
   // Template mapping
   const templates = {
@@ -94,37 +99,43 @@ function BarChartControls({
   
   // Handle dimension change
   const handleDimensionChange = (dimension, value) => {
-    setDimensions(prev => ({ ...prev, [dimension]: value }));
+    setDimensions({ [dimension]: value });
   };
   
-  // Update the handleBarOptionChange function to use the correct type
+  // Update the handleBarOptionChange function to use the store
   const handleBarOptionChange = (option, value) => {
-    // Update the appropriate state variable based on the option
+    // Update the appropriate setting in the store
     switch(option) {
       case 'barStrokePattern':
-        setBarStrokePattern(value);
+        updateBarSettings({ barStrokePattern: value });
         break;
       case 'barStrokeWidth':
-        setBarStrokeWidth(value);
+        updateBarSettings({ barStrokeWidth: value });
         break;
       case 'barStrokeStyle':
-        setBarStrokeStyle(value);
+        updateBarSettings({ barStrokeStyle: value });
         break;
       case 'barDashArray':
-        setBarDashArray(value);
+        updateBarSettings({ barDashArray: value });
+        break;
+      case 'selectedTemplate':
+        updateBarSettings({ selectedTemplate: value });
+        break;
+      case 'barPadding':
+        updateBarSettings({ barPadding: value });
         break;
       // Add other options
     }
   };
   
-  // Keep the original handleAxisOptionChange function
+  // Handle axis option change
   const handleAxisOptionChange = (option, value) => {
-    setAxisOptions(prev => ({ ...prev, [option]: value }));
+    setAxisOptions({ [option]: value });
   };
   
   // Handle domain change
   const handleDomainChange = (min, max) => {
-    setAxisOptions(prev => ({ ...prev, yDomainMin: min, yDomainMax: max }));
+    setAxisOptions({ yDomainMin: min, yDomainMax: max });
   };
   
   // Function to generate random data
@@ -155,15 +166,7 @@ function BarChartControls({
   
   // Get chart config for saving
   const getChartConfig = () => {
-    return {
-      width: dimensions.width,
-      height: dimensions.height,
-      showXAxis: axisOptions.showXAxis,
-      showYAxis: axisOptions.showYAxis,
-      yDomainMin: axisOptions.yDomainMin,
-      yDomainMax: axisOptions.yDomainMax,
-      selectedTemplate
-    };
+    return chartStore.getBarChartConfig();
   };
   
   // Handle chart save
@@ -184,38 +187,6 @@ function BarChartControls({
     });
   };
   
-  // Load chart when loadedChart prop changes
-  useEffect(() => {
-    if (loadedChart && loadedChart.type === 'bar') {
-      const config = loadedChart.config;
-      setDimensions({
-        width: config.width,
-        height: config.height
-      });
-      setBarPadding(config.barPadding);
-      setBarFill(config.barFill ?? false);
-      setBarFillOpacity(config.barFillOpacity ?? 0.5);
-      setBarStrokePattern(config.barStrokePattern ?? 'solid');
-      setBarFillPattern(config.barFillPattern ?? 'solid');
-      setBarFillZoomLevel(config.barFillZoomLevel ?? 8);
-      setBarStrokeWidth(config.barStrokeWidth ?? 1);
-      setBarStrokeStyle(config.barStrokeStyle ?? 'normal');
-      setBarDashArray(config.barDashArray ?? '6,4');
-      setAxisOptions({
-        showXAxis: config.showXAxis,
-        showYAxis: config.showYAxis,
-        yDomainMin: config.yDomainMin,
-        yDomainMax: config.yDomainMax
-      });
-      setSelectedTemplate(config.selectedTemplate);
-      
-      // Call onChartLoaded callback to reset loadedChart state
-      if (onChartLoaded) {
-        onChartLoaded();
-      }
-    }
-  }, [loadedChart, onChartLoaded]);
-
   // Use a useEffect to set the selectedPreset based on the data
   useEffect(() => {
     // Check if the current data matches a preset
@@ -232,48 +203,46 @@ function BarChartControls({
     } else {
       setSelectedPreset('custom');
     }
-  }, [chartData]);
+  }, [chartData, setChartData, setSelectedPreset]);
 
   // Handle export click
   const handleExportClick = () => {
-    setExportFileName(chartName || 'chart');
-    setShowExportOptions(!showExportOptions);
+    setExportOptions({ 
+      exportFileName: chartName || 'chart',
+      showExportOptions: !exportOptions.showExportOptions 
+    });
   };
   
   // Handle export
   const handleExport = () => {
     if (chartRef.current) {
-      const originalBarFill = barFill;
-      const originalFillOpacity = barFillOpacity;
+      const originalFill = fill;
       const originalXAxis = axisOptions.showXAxis;
       const originalYAxis = axisOptions.showYAxis;
       const originalStrokePattern = barStrokePattern;
       
-      const regularExport = downloadChart(chartRef, exportFileName, exportFileType);
+      const regularExport = downloadChart(chartRef, exportOptions.exportFileName, exportOptions.exportFileType);
       
       let segmentExport = Promise.resolve();
-      if (!originalBarFill || originalFillOpacity < 1) {
-        setBarFill(true);
-        setBarFillOpacity(1);
-        setAxisOptions(prev => ({ ...prev, showXAxis: false, showYAxis: false }));
-        setBarStrokePattern('solid');
+      if (!originalFill) {
+        updateFillSettings({ fill: true });
+        setAxisOptions({ showXAxis: false, showYAxis: false });
+        updateBarSettings({ barStrokePattern: 'solid' });
 
         segmentExport = new Promise(resolve => {
           setTimeout(() => {
-            downloadChart(chartRef, `${exportFileName}-segment`, exportFileType)
+            downloadChart(chartRef, `${exportOptions.exportFileName}-segment`, exportOptions.exportFileType)
               .then(() => {
-                setBarFill(originalBarFill);
-                setBarFillOpacity(originalFillOpacity);
-                setAxisOptions(prev => ({ ...prev, showXAxis: originalXAxis, showYAxis: originalYAxis }));
-                setBarStrokePattern(originalStrokePattern);
+                updateFillSettings({ fill: originalFill });
+                setAxisOptions({ showXAxis: originalXAxis, showYAxis: originalYAxis });
+                updateBarSettings({ barStrokePattern: originalStrokePattern });
                 resolve();
               })
               .catch(error => {
                 console.error('Error exporting chart segment:', error);
-                setBarFill(originalBarFill);
-                setBarFillOpacity(originalFillOpacity);
-                setAxisOptions(prev => ({ ...prev, showXAxis: originalXAxis, showYAxis: originalYAxis }));
-                setBarStrokePattern(originalStrokePattern);
+                updateFillSettings({ fill: originalFill });
+                setAxisOptions({ showXAxis: originalXAxis, showYAxis: originalYAxis });
+                updateBarSettings({ barStrokePattern: originalStrokePattern });
                 resolve();
               });
           }, 100);
@@ -281,7 +250,7 @@ function BarChartControls({
       }
       
       Promise.all([regularExport, segmentExport])
-        .then(() => { setShowExportOptions(false); })
+        .then(() => { setExportOptions({ showExportOptions: false }); })
         .catch(error => { console.error('Error during export process:', error); });
     }
   };
@@ -297,11 +266,10 @@ function BarChartControls({
               width={dimensions.width} 
               height={dimensions.height}
               barPadding={barPadding}
-              barFill={barFill}
-              barFillOpacity={barFillOpacity}
+              barFill={fill}
+              barFillPattern={fillPattern}
+              barFillZoomLevel={fillZoomLevel}
               barStrokePattern={barStrokePattern}
-              barFillPattern={barFillPattern}
-              barFillZoomLevel={barFillZoomLevel}
               barStrokeWidth={barStrokeWidth}
               barStrokeStyle={barStrokeStyle}
               barDashArray={barDashArray}
@@ -311,8 +279,7 @@ function BarChartControls({
               yDomainMax={axisOptions.yDomainMax}
               template={templates[selectedTemplate]}
               onResize={(newWidth, newHeight) => {
-                handleDimensionChange('width', newWidth);
-                handleDimensionChange('height', newHeight);
+                setDimensions({ width: newWidth, height: newHeight });
               }}
             />
           </div>
@@ -359,30 +326,21 @@ function BarChartControls({
                 onStrokeStyleChange={(style) => handleBarOptionChange('barStrokeStyle', style)}
                 onDashArrayChange={(dash) => handleBarOptionChange('barDashArray', dash)}
               />
+
+              <FillSection />
             </>
           }
           chartSpecificControls={
             <>
               <BarTemplateSection 
                 selectedTemplate={selectedTemplate}
-                onTemplateChange={setSelectedTemplate}
+                onTemplateChange={(value) => handleBarOptionChange('selectedTemplate', value)}
               />
               
-              <BarAppearanceSection 
-                barPadding={barPadding}
-                barFill={barFill}
-                barFillOpacity={barFillOpacity}
-                barFillPattern={barFillPattern}
-                barFillZoomLevel={barFillZoomLevel}
-                onBarPaddingChange={setBarPadding}
-                onBarFillChange={setBarFill}
-                onBarFillOpacityChange={setBarFillOpacity}
-                onBarFillPatternChange={setBarFillPattern}
-                onBarFillZoomLevelChange={setBarFillZoomLevel}
-              />
+              <BarAppearanceSection />
             </>
           }
-          showExportOptions={showExportOptions}
+          showExportOptions={exportOptions.showExportOptions}
           exportOptions={
             <div className="export-options">
               <div className="form-group">
@@ -390,8 +348,8 @@ function BarChartControls({
                 <input
                   id="fileName"
                   type="text"
-                  value={exportFileName}
-                  onChange={(e) => setExportFileName(e.target.value)}
+                  value={exportOptions.exportFileName}
+                  onChange={(e) => setExportOptions({ exportFileName: e.target.value })}
                   placeholder="Enter a name for your file"
                 />
               </div>
@@ -402,8 +360,8 @@ function BarChartControls({
                   {['png', 'jpg', 'svg'].map((format) => (
                     <div 
                       key={format}
-                      className={`format-option ${exportFileType === format ? 'selected' : ''}`}
-                      onClick={() => setExportFileType(format)}
+                      className={`format-option ${exportOptions.exportFileType === format ? 'selected' : ''}`}
+                      onClick={() => setExportOptions({ exportFileType: format })}
                     >
                       <div className="format-radio">
                         <div className="radio-inner"></div>
@@ -417,14 +375,14 @@ function BarChartControls({
               <div className="export-actions">
                 <button 
                   className="cancel-button"
-                  onClick={() => setShowExportOptions(false)}
+                  onClick={() => setExportOptions({ showExportOptions: false })}
                 >
                   Cancel
                 </button>
                 <button 
                   className="export-button"
                   onClick={handleExport}
-                  disabled={!exportFileName.trim()}
+                  disabled={!exportOptions.exportFileName.trim()}
                 >
                   Export
                 </button>

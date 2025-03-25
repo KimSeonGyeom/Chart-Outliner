@@ -61,7 +61,6 @@ const PointsSection = ({
 
   return (
     <div className="section">
-      <h3>Points</h3>
       <div className="control-group space-y">
         <div className="checkbox-group">
           <input
@@ -104,17 +103,7 @@ const PointsSection = ({
                   onChange={handleRadiusChange}
                   className="number-input"
                 />
-                <span className="unit">px</span>
               </div>
-            </div>
-            <div className="checkbox-group">
-              <input
-                type="checkbox"
-                checked={strokeEnabled}
-                onChange={handleStrokeToggle}
-                id="point-stroke-checkbox"
-              />
-              <label htmlFor="point-stroke-checkbox">Show point outline</label>
             </div>
           </>
         )}

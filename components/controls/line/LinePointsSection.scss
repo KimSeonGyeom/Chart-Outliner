@@ -1,3 +1,18 @@
+.control-slider {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+  label {
+    width: 50%;
+  }
+
+  .range-value {
+    width: fit-content;
+    text-align: right;
+  }
+}
+
 .point-preview-container {
   width: 40px;
   height: 40px;

@@ -355,23 +355,26 @@ const BarChart = ({
           {/* Chart will be rendered here by D3 */}
           
           {/* If we have a template, render it for each bar */}
-          {template && barData.map((bar, i) => (
-            <g 
-              key={`template-${templateKey}-bar-${i}`} 
-              transform={`translate(${marginLeft}, ${marginTop})`}
-              className="template-bar"
-            >
-              <template
-                x={bar.x}
-                y={bar.y}
-                width={bar.width}
-                height={bar.height}
-                color={bar.color}
-                strokeColor={bar.strokeColor}
-                strokeWidth={bar.strokeWidth}
-              />
-            </g>
-          ))}
+          {template && barData.map((bar, i) => {
+            const TemplateComponent = template;
+            return (
+              <g 
+                key={`template-${templateKey}-bar-${i}`} 
+                transform={`translate(${marginLeft}, ${marginTop})`}
+                className="template-bar"
+              >
+                <TemplateComponent
+                  x={bar.x}
+                  y={bar.y}
+                  width={bar.width}
+                  height={bar.height}
+                  color={bar.color}
+                  strokeColor={bar.strokeColor}
+                  strokeWidth={bar.strokeWidth}
+                />
+              </g>
+            );
+          })}
         </svg>
       </div>
       {/* Resize handle */}

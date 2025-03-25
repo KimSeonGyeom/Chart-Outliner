@@ -8,7 +8,7 @@ import {
   AxisSection, 
   DomainSection, 
   LineAppearanceSection, 
-  LineFillSection,
+  FillSection,
   PointsSection,
   StrokePatternSection,
   ChartDimensions,
@@ -20,6 +20,7 @@ import {
   DataSection
 } from '../controls';
 import { sampleDataSets, generateRandomLineData } from '../store/dataStore.js';
+import { useChartStore } from '../store/chartStore.js';
 import '../controls/ControlPanel.scss';
 import './LineChartControls.scss';
 
@@ -37,102 +38,85 @@ function LineChartControls({
   onSaveClick,
   onSaveClose,
   onChartNameChange,
-  onLoadChart,
-  loadedChart,
-  onChartLoaded
 }) {
-  const loadedConfig = loadedChart?.config;
-
-  // Chart dimensions
-  const [dimensions, setDimensions] = useState({
-    width: loadedConfig?.width || width,
-    height: loadedConfig?.height || height
-  });
+  // Get all settings from the chart store
+  const chartStore = useChartStore();
   
-  const [marginTop, setMarginTop] = useState(20);
-  const [marginRight, setMarginRight] = useState(20);
-  const [marginBottom, setMarginBottom] = useState(30);
-  const [marginLeft, setMarginLeft] = useState(40);
+  // Dimensions
+  const dimensions = useChartStore(state => state.dimensions);
+  const setDimensions = useChartStore(state => state.setDimensions);
   
-  // Line chart specific options
-  const [lineOptions, setLineOptions] = useState({
-    curveType: loadedConfig?.curveType || 'linear',
-    curveTension: loadedConfig?.curveTension || 0.5,
-    fill: loadedConfig?.fill || false,
-    fillOpacity: loadedConfig?.fillOpacity || 0.0,
-    fillPattern: loadedConfig?.fillPattern || 'solid',
-    fillZoomLevel: loadedConfig?.fillZoomLevel || 8,
-    showPoints: loadedConfig?.showPoints ?? true,
-    pointRadius: loadedConfig?.pointRadius ?? 3,
-    pointShape: loadedConfig?.pointShape ?? 'circle',
-    pointStrokeWidth: loadedConfig?.pointStrokeWidth ?? 1,
-    lineStrokePattern: loadedConfig?.lineStrokePattern || 'solid',
-    lineStrokeWidth: loadedConfig?.lineStrokeWidth || 1,
-    lineStrokeStyle: loadedConfig?.lineStrokeStyle || 'normal',
-    lineDashArray: loadedConfig?.lineDashArray || '6,4'
-  });
+  // Line chart settings
+  const lineSettings = useChartStore(state => state.lineSettings);
+  const marginTop = useChartStore(state => state.lineSettings.marginTop);
+  const marginRight = useChartStore(state => state.lineSettings.marginRight);
+  const marginBottom = useChartStore(state => state.lineSettings.marginBottom);
+  const marginLeft = useChartStore(state => state.lineSettings.marginLeft);
+  const curveType = useChartStore(state => state.lineSettings.curveType);
+  const curveTension = useChartStore(state => state.lineSettings.curveTension);
+  const showPoints = useChartStore(state => state.lineSettings.showPoints);
+  const pointRadius = useChartStore(state => state.lineSettings.pointRadius);
+  const pointShape = useChartStore(state => state.lineSettings.pointShape);
+  const lineStrokePattern = useChartStore(state => state.lineSettings.lineStrokePattern);
+  const lineStrokeWidth = useChartStore(state => state.lineSettings.lineStrokeWidth);
+  const lineStrokeStyle = useChartStore(state => state.lineSettings.lineStrokeStyle);
+  const lineDashArray = useChartStore(state => state.lineSettings.lineDashArray);
   
-  // Axis appearance
-  const [axisOptions, setAxisOptions] = useState({
-    showXAxis: loadedConfig?.showXAxis || true,
-    showYAxis: loadedConfig?.showYAxis || true,
-    yDomainMin: loadedConfig?.yDomainMin,
-    yDomainMax: loadedConfig?.yDomainMax
-  });
+  // Fill settings (shared)
+  const fill = useChartStore(state => state.fillSettings.fill);
+  const fillPattern = useChartStore(state => state.fillSettings.fillPattern);
+  const fillZoomLevel = useChartStore(state => state.fillSettings.fillZoomLevel);
   
-  // Replace isExporting dialog state with showExportOptions
-  const [showExportOptions, setShowExportOptions] = useState(false);
-  const [exportFileName, setExportFileName] = useState('');
-  const [exportFileType, setExportFileType] = useState('png');
+  // Chart data
+  const chartData = useChartStore(state => state.chartData);
+  const selectedPreset = useChartStore(state => state.selectedPreset);
   
-  // Add state for current data
-  const [chartData, setChartData] = useState(data);
-  const [selectedPreset, setSelectedPreset] = useState("basic");
+  // Axis options
+  const axisOptions = useChartStore(state => state.axisOptions);
+  
+  // Export options
+  const exportOptions = useChartStore(state => state.exportOptions);
+  
+  // Store actions
+  const updateLineSettings = useChartStore(state => state.updateLineSettings);
+  const setAxisOptions = useChartStore(state => state.setAxisOptions);
+  const setChartData = useChartStore(state => state.setChartData);
+  const setSelectedPreset = useChartStore(state => state.setSelectedPreset);
+  const setExportOptions = useChartStore(state => state.setExportOptions);
+  
+  // Initialize chart data and dimensions
+  React.useEffect(() => {
+    if (data !== chartData) {
+      setChartData(data);
+    }
+    if (width !== dimensions.width || height !== dimensions.height) {
+      setDimensions({ width, height });
+    }
+  }, [data, chartData, width, height, dimensions, setChartData, setDimensions]);
   
   // Handle dimension change
   const handleDimensionChange = (dimension, value) => {
-    setDimensions(prev => ({ ...prev, [dimension]: value }));
+    setDimensions({ [dimension]: value });
   };
   
   // Handle line option change
   const handleLineOptionChange = (option, value) => {
-    setLineOptions(prev => ({ ...prev, [option]: value }));
+    updateLineSettings({ [option]: value });
   };
   
   // Handle axis option change
   const handleAxisOptionChange = (option, value) => {
-    setAxisOptions(prev => ({ ...prev, [option]: value }));
+    setAxisOptions({ [option]: value });
   };
   
   // Handle domain change
   const handleDomainChange = (min, max) => {
-    setAxisOptions(prev => ({ ...prev, yDomainMin: min, yDomainMax: max }));
+    setAxisOptions({ yDomainMin: min, yDomainMax: max });
   };
   
   // Get chart config for saving
   const getChartConfig = () => {
-    return {
-      width: dimensions.width,
-      height: dimensions.height,
-      curveType: lineOptions.curveType,
-      curveTension: lineOptions.curveTension,
-      fill: lineOptions.fill,
-      fillOpacity: lineOptions.fillOpacity,
-      fillPattern: lineOptions.fillPattern,
-      fillZoomLevel: lineOptions.fillZoomLevel,
-      showPoints: lineOptions.showPoints,
-      pointRadius: lineOptions.pointRadius,
-      pointShape: lineOptions.pointShape,
-      pointStrokeWidth: lineOptions.pointStrokeWidth,
-      lineStrokePattern: lineOptions.lineStrokePattern,
-      lineStrokeWidth: lineOptions.lineStrokeWidth,
-      lineStrokeStyle: lineOptions.lineStrokeStyle,
-      lineDashArray: lineOptions.lineDashArray,
-      showXAxis: axisOptions.showXAxis,
-      showYAxis: axisOptions.showYAxis,
-      yDomainMin: axisOptions.yDomainMin,
-      yDomainMax: axisOptions.yDomainMax
-    };
+    return chartStore.getLineChartConfig();
   };
   
   // Handle chart save
@@ -153,48 +137,6 @@ function LineChartControls({
     });
   };
   
-  // Load chart when loadedChart prop changes
-  useEffect(() => {
-    if (loadedChart && loadedChart.type === 'line') {
-      const config = loadedChart.config;
-      setDimensions({
-        width: config.width,
-        height: config.height
-      });
-      setMarginTop(config.marginTop);
-      setMarginRight(config.marginRight);
-      setMarginBottom(config.marginBottom);
-      setMarginLeft(config.marginLeft);
-      setLineOptions({
-        curveType: config.curveType,
-        curveTension: config.curveTension,
-        fill: config.fill,
-        fillOpacity: config.fillOpacity,
-        fillPattern: config.fillPattern || 'solid',
-        fillZoomLevel: config.fillZoomLevel,
-        showPoints: config.showPoints,
-        pointRadius: config.pointRadius,
-        pointShape: config.pointShape ?? 'circle',
-        pointStrokeWidth: config.pointStrokeWidth ?? 1,
-        lineStrokePattern: config.lineStrokePattern || 'solid',
-        lineStrokeWidth: config.lineStrokeWidth,
-        lineStrokeStyle: config.lineStrokeStyle || 'normal',
-        lineDashArray: config.lineDashArray || '6,4'
-      });
-      setAxisOptions({
-        showXAxis: config.showXAxis,
-        showYAxis: config.showYAxis,
-        yDomainMin: config.yDomainMin,
-        yDomainMax: config.yDomainMax
-      });
-      
-      // Call onChartLoaded callback to reset loadedChart state
-      if (onChartLoaded) {
-        onChartLoaded();
-      }
-    }
-  }, [loadedChart, onChartLoaded]);
-
   // Use a useEffect to set the selectedPreset based on the data
   useEffect(() => {
     // Check if the current data matches a preset
@@ -211,22 +153,24 @@ function LineChartControls({
     } else {
       setSelectedPreset('custom');
     }
-  }, [chartData]);
+  }, [chartData, setChartData, setSelectedPreset]);
 
   // Handle export click
   const handleExportClick = () => {
-    setExportFileName(chartName || 'chart');
-    setShowExportOptions(!showExportOptions);
+    setExportOptions({ 
+      exportFileName: chartName || 'chart',
+      showExportOptions: !exportOptions.showExportOptions 
+    });
   };
   
   // Handle export
   const handleExport = () => {
     if (chartRef.current) {
       // Download the chart
-      downloadChart(chartRef, exportFileName, exportFileType)
+      downloadChart(chartRef, exportOptions.exportFileName, exportOptions.exportFileType)
         .then(() => {
           // Close export options after successful export
-          setShowExportOptions(false);
+          setExportOptions({ showExportOptions: false });
         })
         .catch(error => {
           console.error('Error exporting chart:', error);
@@ -277,15 +221,17 @@ function LineChartControls({
       />
       
       <StrokePatternSection
-        strokePattern={lineOptions.lineStrokePattern}
-        strokeWidth={lineOptions.lineStrokeWidth}
-        strokeStyle={lineOptions.lineStrokeStyle}
-        dashArray={lineOptions.lineDashArray}
+        strokePattern={lineStrokePattern}
+        strokeWidth={lineStrokeWidth}
+        strokeStyle={lineStrokeStyle}
+        dashArray={lineDashArray}
         onStrokePatternChange={(pattern) => handleLineOptionChange('lineStrokePattern', pattern)}
         onStrokeWidthChange={(width) => handleLineOptionChange('lineStrokeWidth', width)}
         onStrokeStyleChange={(style) => handleLineOptionChange('lineStrokeStyle', style)}
         onDashArrayChange={(dashArray) => handleLineOptionChange('lineDashArray', dashArray)}
       />
+
+      <FillSection />
     </>
   );
   
@@ -293,38 +239,25 @@ function LineChartControls({
   const chartSpecificControls = (
     <>
       <LineAppearanceSection
-        curveType={lineOptions.curveType}
-        curveTension={lineOptions.curveTension}
+        curveType={curveType}
+        curveTension={curveTension}
         onCurveTypeChange={(type) => handleLineOptionChange('curveType', type)}
         onCurveTensionChange={(tension) => handleLineOptionChange('curveTension', tension)}
       />
       
-      <LineFillSection
-        fill={lineOptions.fill}
-        fillOpacity={lineOptions.fillOpacity}
-        fillPattern={lineOptions.fillPattern}
-        fillZoomLevel={lineOptions.fillZoomLevel}
-        onFillChange={(fill) => handleLineOptionChange('fill', fill)}
-        onFillOpacityChange={(opacity) => handleLineOptionChange('fillOpacity', opacity)}
-        onFillPatternChange={(pattern) => handleLineOptionChange('fillPattern', pattern)}
-        onFillZoomLevelChange={(zoomLevel) => handleLineOptionChange('fillZoomLevel', zoomLevel)}
-      />
-      
       <PointsSection
-        showPoints={lineOptions.showPoints}
-        pointRadius={lineOptions.pointRadius}
-        pointShape={lineOptions.pointShape}
-        pointStrokeWidth={lineOptions.pointStrokeWidth}
+        showPoints={showPoints}
+        pointRadius={pointRadius}
+        pointShape={pointShape}
         onShowPointsChange={(show) => handleLineOptionChange('showPoints', show)}
         onPointRadiusChange={(radius) => handleLineOptionChange('pointRadius', radius)}
         onPointShapeChange={(shape) => handleLineOptionChange('pointShape', shape)}
-        onPointStrokeWidthChange={(width) => handleLineOptionChange('pointStrokeWidth', width)}
       />
     </>
   );
 
   // Export options component
-  const exportOptions = (
+  const exportOptionsComponent = (
     <div className="export-options-dialog">
       <h3>Export Options</h3>
       
@@ -332,8 +265,8 @@ function LineChartControls({
         Filename
         <input
           type="text"
-          value={exportFileName}
-          onChange={(e) => setExportFileName(e.target.value)}
+          value={exportOptions.exportFileName}
+          onChange={(e) => setExportOptions({ exportFileName: e.target.value })}
         />
       </label>
       
@@ -343,8 +276,8 @@ function LineChartControls({
             type="radio"
             name="fileType"
             value="png"
-            checked={exportFileType === 'png'}
-            onChange={() => setExportFileType('png')}
+            checked={exportOptions.exportFileType === 'png'}
+            onChange={() => setExportOptions({ exportFileType: 'png' })}
           />
           PNG
         </label>
@@ -354,8 +287,8 @@ function LineChartControls({
             type="radio"
             name="fileType"
             value="jpg"
-            checked={exportFileType === 'jpg'}
-            onChange={() => setExportFileType('jpg')}
+            checked={exportOptions.exportFileType === 'jpg'}
+            onChange={() => setExportOptions({ exportFileType: 'jpg' })}
           />
           JPG
         </label>
@@ -365,8 +298,8 @@ function LineChartControls({
             type="radio"
             name="fileType"
             value="svg"
-            checked={exportFileType === 'svg'}
-            onChange={() => setExportFileType('svg')}
+            checked={exportOptions.exportFileType === 'svg'}
+            onChange={() => setExportOptions({ exportFileType: 'svg' })}
           />
           SVG
         </label>
@@ -374,7 +307,7 @@ function LineChartControls({
       
       <div className="export-actions">
         <button onClick={handleExport}>Export</button>
-        <button onClick={() => setShowExportOptions(false)}>Cancel</button>
+        <button onClick={() => setExportOptions({ showExportOptions: false })}>Cancel</button>
       </div>
     </div>
   );
@@ -393,27 +326,24 @@ function LineChartControls({
               marginRight={marginRight}
               marginBottom={marginBottom}
               marginLeft={marginLeft}
-              curveType={lineOptions.curveType}
-              curveTension={lineOptions.curveTension}
-              fill={lineOptions.fill}
-              fillOpacity={lineOptions.fillOpacity}
-              fillPattern={lineOptions.fillPattern}
-              fillZoomLevel={lineOptions.fillZoomLevel}
-              lineStrokePattern={lineOptions.lineStrokePattern}
-              lineStrokeWidth={lineOptions.lineStrokeWidth}
-              lineStrokeStyle={lineOptions.lineStrokeStyle}
-              lineDashArray={lineOptions.lineDashArray}
-              showPoints={lineOptions.showPoints}
-              pointRadius={lineOptions.pointRadius}
-              pointShape={lineOptions.pointShape}
-              pointStrokeWidth={lineOptions.pointStrokeWidth}
+              curveType={curveType}
+              curveTension={curveTension}
+              fill={fill}
+              fillPattern={fillPattern}
+              fillZoomLevel={fillZoomLevel}
+              lineStrokePattern={lineStrokePattern}
+              lineStrokeWidth={lineStrokeWidth}
+              lineStrokeStyle={lineStrokeStyle}
+              lineDashArray={lineDashArray}
+              showPoints={showPoints}
+              pointRadius={pointRadius}
+              pointShape={pointShape}
               showXAxis={axisOptions.showXAxis}
               showYAxis={axisOptions.showYAxis}
               yDomainMin={axisOptions.yDomainMin}
               yDomainMax={axisOptions.yDomainMax}
               onResize={(newWidth, newHeight) => {
-                handleDimensionChange('width', newWidth);
-                handleDimensionChange('height', newHeight);
+                setDimensions({ width: newWidth, height: newHeight });
               }}
             />
           </div>
@@ -427,8 +357,8 @@ function LineChartControls({
           onExportClick={handleExportClick}
           sharedControls={sharedControls}
           chartSpecificControls={chartSpecificControls}
-          showExportOptions={showExportOptions}
-          exportOptions={exportOptions}
+          showExportOptions={exportOptions.showExportOptions}
+          exportOptions={exportOptionsComponent}
         />
       </div>
       

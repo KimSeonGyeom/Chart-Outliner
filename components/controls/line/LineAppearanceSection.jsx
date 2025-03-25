@@ -1,4 +1,5 @@
 import React from 'react';
+import './LinePointsSection.scss';
 
 const LineAppearanceSection = ({
   curveType,
@@ -8,10 +9,9 @@ const LineAppearanceSection = ({
 }) => {
   return (
     <div className="section">
-      <h3>Curve</h3>
       <div className="control-group space-y">
         <div>
-          <label>Type</label>
+          <label>Curve Type</label>
           <select
             value={curveType}
             onChange={(e) => onCurveTypeChange(e.target.value)}
@@ -25,7 +25,10 @@ const LineAppearanceSection = ({
           </select>
         </div>
         <div>
-          <label>Tension (0-1)</label>
+          <div className='control-slider'>
+            <label>Curve Tension (0-1)</label>
+            <div className="range-value">{curveTension}</div>
+          </div>
           <input
             type="range"
             min="0"
@@ -34,7 +37,6 @@ const LineAppearanceSection = ({
             value={curveTension}
             onChange={(e) => onCurveTensionChange(parseFloat(e.target.value))}
           />
-          <div className="range-value">{curveTension}</div>
         </div>
       </div>
     </div>

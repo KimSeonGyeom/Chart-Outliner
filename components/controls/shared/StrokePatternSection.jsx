@@ -117,7 +117,6 @@ const StrokePatternSection = ({
                   className="number-input"
                   disabled={!strokeEnabled}
                 />
-                <span className="unit">px</span>
               </div>
             </div>
 

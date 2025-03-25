@@ -18,6 +18,9 @@ const createUISlice = (set) => ({
   exportAsOutlines: true,
   exportWireframeStyle: false,
   
+  // Fill pattern preview state
+  previewZoomLevel: 8,
+  
   // Save dialog actions
   openSaveDialog: () => set({ isSavingOpen: true }),
   closeSaveDialog: () => set({ isSavingOpen: false }),
@@ -30,7 +33,10 @@ const createUISlice = (set) => ({
   setExportFileName: (name) => set({ exportFileName: name }),
   setExportFileType: (type) => set({ exportFileType: type }),
   setExportAsOutlines: (value) => set({ exportAsOutlines: value }),
-  setExportWireframeStyle: (value) => set({ exportWireframeStyle: value })
+  setExportWireframeStyle: (value) => set({ exportWireframeStyle: value }),
+  
+  // Fill pattern preview actions
+  setPreviewZoomLevel: (value) => set({ previewZoomLevel: value })
 });
 
 // Create the UI store

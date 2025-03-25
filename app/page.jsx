@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import BarChartControls from '../components/charts/BarChartControls';
-import LineChartControls from '../components/charts/LineChartControls';
+import BarChartControls from '../components/charts/BarChartControls.jsx';
+import LineChartControls from '../components/charts/LineChartControls.jsx';
 
 export default function Home() {
   const [activeChart, setActiveChart] = useState('bar');
