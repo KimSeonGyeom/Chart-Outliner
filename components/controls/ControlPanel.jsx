@@ -1,20 +1,20 @@
 import React from 'react';
-import ChartTypeSelector from './ChartTypeSelector.jsx';
+import ChartTypeSelector from './shared/ChartTypeSelector.jsx';
 import DimensionsSection from './shared/DimensionsSection.jsx';
 import AxisSection from './shared/AxisSection.jsx';
 import DomainSection from './shared/DomainSection.jsx';
 import StrokePatternSection from './shared/StrokePatternSection.jsx';
 import DataSection from './shared/DataSection.jsx';
-import LineAppearanceSection from './line/LineAppearanceSection.jsx';
-import BarAppearanceSection from './bar/BarAppearanceSection.jsx';
+import LineCurveSection from './line/LineCurveSection.jsx';
+import BarPaddingSection from './bar/BarPaddingSection.jsx';
 import './ControlPanel.scss';
+import { useSharedStore } from '../store/sharedStore.js';
 
 // Bar chart specific controls component
 const BarControls = () => {
   return (
     <div className="chart-specific-controls">
-      <div className="controls-heading">Bar Chart Settings</div>
-      <BarAppearanceSection />
+      <BarPaddingSection />
     </div>
   );
 };
@@ -23,8 +23,7 @@ const BarControls = () => {
 const LineControls = () => {
   return (
     <div className="chart-specific-controls">
-      <div className="controls-heading">Line Chart Settings</div>
-      <LineAppearanceSection />
+      <LineCurveSection />
     </div>
   );
 };
@@ -33,7 +32,7 @@ const LineControls = () => {
 const SharedControls = () => {
   return (
     <div className="shared-controls">
-      <div className="controls-heading">Chart Settings</div>
+      <ChartTypeSelector />
       <DimensionsSection />
       <DataSection />
       <AxisSection />
@@ -43,42 +42,40 @@ const SharedControls = () => {
   );
 };
 
-const ControlPanel = ({
-  chartType,
-  onChartTypeChange,
-  onExportClick,
-  showExportOptions,
-  exportOptions
-}) => {
+const ControlPanel = () => {
+  const chartType = useSharedStore(state => state.chartType);
+
   return (
     <div className="controls-panel">
-      <div className="controls-header">
-        <div className="header-title">Chart Controls</div>
+      <label>Export Settings</label>
+      <div className="button-group">
         <div className="button-group">
-          {onExportClick && (
-            <button 
-              className="export-button" 
-              onClick={onExportClick}
-            >
-              Export
-            </button>
-          )}
+          <div>
+            <input
+              type="radio"
+              id="png-option"
+              name="export-type"
+              value="png"
+              defaultChecked
+            />
+            <label htmlFor="png-option">PNG</label>
+          </div>
+          <div>
+            <input
+              type="radio" 
+              id="svg-option"
+              name="export-type"
+              value="svg"
+            />
+            <label htmlFor="svg-option">SVG</label>
+          </div>
         </div>
+        <button className="export-button">
+          Export
+        </button>
       </div>
-      
-      {showExportOptions && exportOptions && (
-        <div className="export-options-container">
-          {exportOptions}
-        </div>
-      )}
-      
-      <ChartTypeSelector 
-        activeChart={chartType}
-        onChartTypeChange={onChartTypeChange}
-      />
-      
       <div className="chart-controls">
-        <SharedControls chartType={chartType} />
+        <SharedControls />
         {chartType === 'bar' ? <BarControls /> : <LineControls />}
       </div>
     </div>

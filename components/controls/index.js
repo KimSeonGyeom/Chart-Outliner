@@ -5,7 +5,7 @@ export { downloadChart } from './downloadUtils.js';
 
 // Export main control panel
 export { default as ControlPanel, BarControls, LineControls, SharedControls } from './ControlPanel.jsx';
-export { default as ChartTypeSelector } from './ChartTypeSelector.jsx';
+export { default as ChartTypeSelector } from './shared/ChartTypeSelector.jsx';
 
 // Export shared sections
 export { default as DimensionsSection } from './shared/DimensionsSection.jsx';
@@ -15,7 +15,7 @@ export { default as StrokePatternSection } from './shared/StrokePatternSection.j
 export { default as DataSection } from './shared/DataSection.jsx'; 
 
 // Export bar chart sections
-export { default as BarAppearanceSection } from './bar/BarAppearanceSection.jsx';
+export { default as BarAppearanceSection } from './bar/BarPaddingSection.jsx';
 
 // Export line chart sections
-export { default as LineAppearanceSection } from './line/LineAppearanceSection.jsx';
+export { default as LineAppearanceSection } from './line/LineCurveSection.jsx';

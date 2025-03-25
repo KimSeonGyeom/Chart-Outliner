@@ -10,8 +10,8 @@ const DimensionsSection = () => {
   return (
     <div className="section">
       <div className="section-title">Dimensions</div>
-      <div className="dimensions-grid">
-        <div>
+      <div className="control-items">
+        <div className="input-group">
           <label>Width</label>
           <input
             type="number"
@@ -21,7 +21,7 @@ const DimensionsSection = () => {
             onChange={(e) => updateSetting('width', parseInt(e.target.value) || 600)}
           />
         </div>
-        <div>
+        <div className="input-group">
           <label>Height</label>
           <input
             type="number"

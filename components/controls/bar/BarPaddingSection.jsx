@@ -8,19 +8,17 @@ const BarAppearanceSection = () => {
 
   return (
     <div className="section">
-      <div className="control-group space-y">
-        <div>
-          <label>Bar Padding</label>
-          <input
-            type="range"
-            min="0"
-            max="0.9"
-            step="0.05"
-            value={barPadding}
-            onChange={(e) => updateSetting('barPadding', parseFloat(e.target.value))}
-          />
-          <div className="range-value">{barPadding}</div>
-        </div>
+      <div className="section-title">Padding</div>
+      <div className="control-items">
+        <input
+          type="range"
+          min="0"
+          max="0.9"
+          step="0.05"
+          value={barPadding}
+          onChange={(e) => updateSetting('barPadding', parseFloat(e.target.value))}
+        />
+        <div className="range-value">{barPadding}</div>
       </div>
     </div>
   );

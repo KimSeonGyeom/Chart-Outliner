@@ -10,9 +10,9 @@ const DomainSection = () => {
   return (
     <div className="section">
       <div className="section-title">Y Domain</div>
-      <div className="dimensions-grid">
-        <div>
-          <label>Min Value</label>
+      <div className="control-items">
+        <div className="input-group">
+          <label>Min</label>
           <input
             type="text"
             value={yDomainMin === undefined ? "Auto" : yDomainMin}
@@ -21,8 +21,8 @@ const DomainSection = () => {
           />
         </div>
         
-        <div>
-          <label>Max Value</label>
+        <div className="input-group">
+          <label>Max</label>
           <input
             type="text"
             value={yDomainMax === undefined ? "Auto" : yDomainMax}

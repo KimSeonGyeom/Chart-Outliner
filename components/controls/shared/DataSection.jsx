@@ -9,11 +9,10 @@ const DataSection = () => {
   const randomizeData = useDataStore(state => state.randomizeData);
 
   return (
-    <div className="data-section">
+    <div className="section">
       <div className="section-title">Preset Data</div>
-      
-      <div className="control-group">
-        <div className="data-presets">
+      <div className="control-items">
+        <div className="dropdown-group">
           <select 
             value={selectedPreset}
             onChange={(e) => setSelectedPreset(e.target.value)}
@@ -28,7 +27,7 @@ const DataSection = () => {
             className="randomize-button"
             onClick={() => randomizeData()}
             title="Generate random data"
-          >
+            >
             Randomize
           </button>
         </div>

@@ -11,27 +11,24 @@ const AxisSection = () => {
     <div className="section">
       <div className="section-title">Axes & Grid</div>
       
-      <div className="control-group">
-        <div className="checkbox-grid">
-          <div className="checkbox-group">
-            <input
-              type="checkbox"
-              id="x-axis-checkbox"
-              checked={showXAxis}
-              onChange={(e) => updateSetting('showXAxis', e.target.checked)}
-            />
-            <label htmlFor="x-axis-checkbox">Show X Axis</label>
-          </div>
-          
-          <div className="checkbox-group">
-            <input
-              type="checkbox"
-              id="y-axis-checkbox"
-              checked={showYAxis}
-              onChange={(e) => updateSetting('showYAxis', e.target.checked)}
-            />
-            <label htmlFor="y-axis-checkbox">Show Y Axis</label>
-          </div>
+      <div className="control-items">
+        <div className="checkbox-group">
+          <input
+            type="checkbox"
+            id="x-axis-checkbox"
+            checked={showXAxis}
+            onChange={(e) => updateSetting('showXAxis', e.target.checked)}
+          />
+          <label htmlFor="x-axis-checkbox">Show X Axis</label>
+        </div>
+        <div className="checkbox-group">
+          <input
+            type="checkbox"
+            id="y-axis-checkbox"
+            checked={showYAxis}
+            onChange={(e) => updateSetting('showYAxis', e.target.checked)}
+          />
+          <label htmlFor="y-axis-checkbox">Show Y Axis</label>
         </div>
       </div>
     </div>
