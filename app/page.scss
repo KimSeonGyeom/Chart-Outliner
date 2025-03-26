@@ -10,12 +10,9 @@ header {
   margin-bottom: 16px;
 
   .main-title {
-    font-size: 28px;
-    font-weight: 400;
-    color: rgba(0, 0, 0, 0.87);
-    margin-bottom: 6px;
-    line-height: 1.2;
-    letter-spacing: 0.12px;
+    font-size: 2.0rem;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
   }
 }
 
@@ -28,19 +25,18 @@ header {
     width: 70%;
     
     .section-title {
-      font-size: 18px;
-      font-weight: 500;
-      color: rgba(0, 0, 0, 0.87);
+      font-size: 1.2rem;
+      font-weight: 600;
       margin-bottom: 10px;
-      line-height: 1.4;
-      letter-spacing: 0.12px;
     }
 
-    .chart-display-container {
+    .chart-wrapper {
       width: 100%;
       background-color: #ffffff;
       border-radius: 4px;
-      padding: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.32);
+      margin: 0;
+      padding: 0;
     }
   }
 

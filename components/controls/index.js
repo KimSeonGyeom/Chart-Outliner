@@ -1,7 +1,7 @@
 "use client";
 
 // Export utility functions
-export { downloadChart } from './downloadUtils.js';
+export { downloadChart, downloadChartAsImage, downloadChartAsSVG } from './downloadUtils.js';
 
 // Export main control panel
 export { default as ControlPanel, BarControls, LineControls, SharedControls } from './ControlPanel.jsx';

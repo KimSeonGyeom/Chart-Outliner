@@ -3,7 +3,6 @@ import { create } from 'zustand';
 // Create chart-specific store with no shared properties
 export const useChartStore = create()((set, get) => ({
   // Export options
-  showExportOptions: false,
   exportFileName: '',
   exportFileType: 'png',
   
