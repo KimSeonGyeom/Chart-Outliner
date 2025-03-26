@@ -105,11 +105,10 @@ export const sampleDataSets = {
 };
 
 // Generate random data for any chart type
-export const generateRandomData = (minPoints, maxExtraPoints) => {
-  const dataPoints = minPoints + Math.floor(Math.random() * maxExtraPoints); 
+export const generateRandomData = (numPoints) => {
   const newData = [];
   
-  for (let i = 0; i < dataPoints; i++) {
+  for (let i = 0; i < numPoints; i++) {
     newData.push({
       x: dataLabels[i % dataLabels.length],
       y: Math.floor(Math.random() * 100) // Random value between 0-100
@@ -119,42 +118,165 @@ export const generateRandomData = (minPoints, maxExtraPoints) => {
   return newData;
 };
 
+// Adjust data set to match the desired number of points
+export const adjustDataSetSize = (dataset, numPoints) => {
+  if (dataset.length === numPoints) {
+    return dataset; // No adjustment needed
+  }
+  
+  // If we need to trim data points
+  if (dataset.length > numPoints) {
+    // Keep first and last points for trend consistency, and sample points in between
+    if (numPoints < 3) {
+      return dataset.slice(0, numPoints);
+    }
+    
+    const result = [dataset[0]]; // Always include the first point
+    
+    // Calculate how many internal points to keep
+    const internalPoints = numPoints - 2;
+    const step = (dataset.length - 2) / internalPoints;
+    
+    // Add internal points at approximately even intervals
+    for (let i = 1; i <= internalPoints; i++) {
+      const index = Math.min(Math.floor(i * step) + 1, dataset.length - 2);
+      result.push(dataset[index]);
+    }
+    
+    result.push(dataset[dataset.length - 1]); // Always include the last point
+    return result;
+  }
+  
+  // If we need to add data points
+  if (dataset.length < numPoints) {
+    // Clone the original dataset
+    const result = [...dataset];
+    
+    // Extend the data by interpolating between existing points
+    while (result.length < numPoints) {
+      const newData = [];
+      
+      // Keep all existing points
+      for (let i = 0; i < result.length; i++) {
+        newData.push(result[i]);
+        
+        // Add an interpolated point between each existing pair of points
+        if (i < result.length - 1 && result.length < numPoints) {
+          const currentX = result[i].x;
+          const nextX = result[i + 1].x;
+          const currentY = result[i].y;
+          const nextY = result[i + 1].y;
+          
+          // Simple linear interpolation for y values
+          const interpolatedY = Math.floor((currentY + nextY) / 2);
+          
+          // For x values, use the month labels
+          const currentIndex = dataLabels.indexOf(currentX);
+          let interpolatedIndex = (currentIndex + 1) % dataLabels.length;
+          
+          // Make sure the interpolated x doesn't already exist
+          while (newData.some(d => d.x === dataLabels[interpolatedIndex])) {
+            interpolatedIndex = (interpolatedIndex + 1) % dataLabels.length;
+          }
+          
+          newData.push({
+            x: dataLabels[interpolatedIndex],
+            y: interpolatedY
+          });
+        }
+      }
+      
+      // Break if we couldn't add any new points
+      if (newData.length === result.length) break;
+      
+      result.length = 0;
+      result.push(...newData);
+    }
+    
+    // Trim if we added too many points
+    return result.slice(0, numPoints);
+  }
+  
+  return dataset;
+};
+
 // Create the data store with only data-related properties
-export const useDataStore = create()((set) => ({
+export const useDataStore = create()((set, get) => ({
   // Data properties
   chartData: sampleDataSets.basic,
   selectedPreset: 'basic',
+  numDataPoints: 5, // Default number of data points
   
   // Data actions
   setChartData: (data) => set({ chartData: data }),
-  setSelectedPreset: (preset) => set({ 
-    selectedPreset: preset,
-    chartData: sampleDataSets[preset]
-  }),
+  setSelectedPreset: (preset) => {
+    const { numDataPoints } = get();
+    // Ensure we're within our min/max bounds
+    const pointsToGenerate = Math.max(3, Math.min(8, numDataPoints));
+    
+    // For trend data presets that support variable length
+    if (['exponential', 'logarithmic', 'sinusoidal'].includes(preset)) {
+      const trendData = generateTrendData(
+        preset,
+        pointsToGenerate,
+      );
+      
+      set({ 
+        chartData: trendData,
+        selectedPreset: preset 
+      });
+      return;
+    }
+    
+    // For fixed presets, adjust their size to match numDataPoints
+    if (preset in sampleDataSets) {
+      const originalData = sampleDataSets[preset];
+      console.log(`Loading ${preset} preset: adjusting from ${originalData.length} to ${pointsToGenerate} points`);
+      const adjustedData = adjustDataSetSize(originalData, pointsToGenerate);
+      
+      set({ 
+        chartData: adjustedData,
+        selectedPreset: preset 
+      });
+      return;
+    }
+    
+    // Fallback
+    set({ selectedPreset: preset });
+  },
+  setNumDataPoints: (num) => set({ numDataPoints: num }),
   
   // Generate random data (works for any chart type)
   randomizeData: () => {
-    const minPoints = 4;
-    const maxExtraPoints = 6;
+    const { numDataPoints } = get();
+    // Ensure we're within our min/max bounds
+    const pointsToGenerate = Math.max(3, Math.min(8, numDataPoints));
     
-    const newData = generateRandomData(minPoints, maxExtraPoints);
+    console.log(`Generating ${pointsToGenerate} random data points`);
+    
+    const newData = generateRandomData(pointsToGenerate);
     set({ chartData: newData, selectedPreset: 'custom' });
   },
   
   // Load preset data
   loadPresetData: (preset) => {
+    const { numDataPoints } = get();
+    // Ensure we're within our min/max bounds
+    const pointsToGenerate = Math.max(3, Math.min(8, numDataPoints));
+    
     if (preset === 'random') {
-      const minPoints = 4;
-      const maxExtraPoints = 6;
-      
-      const newData = generateRandomData(minPoints, maxExtraPoints);
+      const newData = generateRandomData(pointsToGenerate);
       set({ chartData: newData, selectedPreset: 'custom' });
       return;
     }
     
     if (preset in sampleDataSets) {
+      const originalData = sampleDataSets[preset];
+      console.log(`Loading ${preset} preset: adjusting from ${originalData.length} to ${pointsToGenerate} points`);
+      const adjustedData = adjustDataSetSize(originalData, pointsToGenerate);
+      
       set({ 
-        chartData: sampleDataSets[preset],
+        chartData: adjustedData,
         selectedPreset: preset 
       });
       return;
@@ -162,11 +284,9 @@ export const useDataStore = create()((set) => ({
     
     // Handle trend data
     if (['exponential', 'logarithmic', 'sinusoidal'].includes(preset)) {
-      const dataPoints = 7;
-      
       const trendData = generateTrendData(
         preset,
-        dataPoints,
+        pointsToGenerate,
       );
       
       set({ chartData: trendData, selectedPreset: preset });

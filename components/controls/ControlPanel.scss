@@ -95,6 +95,18 @@
         min-width: 0; // Prevents flex items from overflowing
       }
 
+      .control-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        
+        .help-text {
+          font-size: 0.7rem;
+          color: #666;
+          text-align: center;
+        }
+      }
+
       label {
         width: fit-content;
         font-size: 0.8rem;
@@ -117,6 +129,48 @@
         input::-webkit-inner-spin-button {
           -webkit-appearance: none;
           margin: 0;
+        }
+      }
+
+      .number-input-group {
+        display: flex;
+        flex-direction: row;
+        gap: 0.2rem;
+        align-items: center;
+
+        input {
+          flex: 1;
+          min-width: 0;
+          height: 1.5rem;
+          margin: 0;
+          padding: 0.1rem 0.3rem;
+          text-align: center;
+        }
+        
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        
+        .number-controls {
+          display: flex;
+          flex-direction: column;
+          
+          button {
+            height: 0.8rem;
+            width: 1.2rem;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+            }
+          }
         }
       }
 

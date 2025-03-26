@@ -7,6 +7,18 @@ const DataSection = () => {
   const selectedPreset = useDataStore(state => state.selectedPreset);
   const setSelectedPreset = useDataStore(state => state.setSelectedPreset);
   const randomizeData = useDataStore(state => state.randomizeData);
+  const numDataPoints = useDataStore(state => state.numDataPoints);
+  const setNumDataPoints = useDataStore(state => state.setNumDataPoints);
+  const loadPresetData = useDataStore(state => state.loadPresetData);
+
+  const handleDataPointsChange = (value) => {
+    if (!isNaN(value) && value >= 3 && value <= 7) {
+      setNumDataPoints(value);
+      
+      // Regenerate data with new point count
+      loadPresetData(selectedPreset);
+    }
+  };
 
   return (
     <div className="section">
@@ -15,7 +27,7 @@ const DataSection = () => {
         <div className="dropdown-group">
           <select 
             value={selectedPreset}
-            onChange={(e) => setSelectedPreset(e.target.value)}
+            onChange={(e) => loadPresetData(e.target.value)}
           >
             {Object.entries(sampleDataSets).map(([key, data]) => (
               <option key={key} value={key}>
@@ -30,6 +42,33 @@ const DataSection = () => {
             >
             Randomize
           </button>
+        </div>
+        
+        <div className="control-item">
+          <label htmlFor="num-data-points">Number of Data Points</label>
+          <div className="number-input-group">
+            <input
+              id="num-data-points"
+              type="number"
+              min="3"
+              max="7"
+              value={numDataPoints}
+              onChange={(e) => handleDataPointsChange(parseInt(e.target.value))}
+            />
+            <div className="number-controls">
+              <button 
+                onClick={() => numDataPoints < 7 && handleDataPointsChange(numDataPoints + 1)}
+                disabled={numDataPoints >= 7}
+              >+</button>
+              <button 
+                onClick={() => numDataPoints > 3 && handleDataPointsChange(numDataPoints - 1)}
+                disabled={numDataPoints <= 3}
+              >-</button>
+            </div>
+          </div>
+          <div className="help-text">
+            Range: 3-7 points
+          </div>
         </div>
       </div>
     </div>

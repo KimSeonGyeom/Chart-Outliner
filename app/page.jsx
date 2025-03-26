@@ -26,12 +26,24 @@ export default function Home() {
     setExportOption('exportFileName', fileName);
     
     if (chartRef && chartRef.current) {
+      // Download regular chart
       downloadChart(
         chartRef, 
         fileName, 
         exportFileType
       ).catch(error => {
         console.error('Error exporting chart:', error);
+      });
+      
+      // Download filled version with modified filename
+      downloadChart(
+        chartRef, 
+        `${fileName}-filled`, 
+        exportFileType,
+        true,  // asOutlines (default)
+        true   // forceFill (new parameter)
+      ).catch(error => {
+        console.error('Error exporting filled chart:', error);
       });
     }
   };

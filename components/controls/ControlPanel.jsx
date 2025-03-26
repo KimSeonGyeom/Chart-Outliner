@@ -45,7 +45,7 @@ const SharedControls = () => {
       <DomainSection />
       <StrokePatternSection /> 
       <FillSection />
-      <TransformControls />
+      {/* <TransformControls /> */}
     </div>
   );
 };
