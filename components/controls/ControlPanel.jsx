@@ -9,6 +9,7 @@ import DataSection from './shared/DataSection.jsx';
 import LineCurveSection from './line/LineCurveSection.jsx';
 import LinePointsSection from './line/LinePointsSection.jsx';
 import BarPaddingSection from './bar/BarPaddingSection.jsx';
+import BarShapeSection from './bar/BarShapeSection.jsx';
 import './ControlPanel.scss';
 import { useSharedStore } from '../store/sharedStore.js';
 
@@ -17,6 +18,7 @@ const BarControls = () => {
   return (
     <div className="chart-specific-controls">
       <BarPaddingSection />
+      <BarShapeSection />
     </div>
   );
 };

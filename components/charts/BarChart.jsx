@@ -30,6 +30,7 @@ const BarChart = () => {
   
   // Get chart-specific settings
   const barPadding = useChartStore((state) => state.barPadding);
+  const barShape = useChartStore((state) => state.barShape);
   
   // Other state
   const svgRef = useRef(null);
@@ -103,6 +104,26 @@ const BarChart = () => {
     }
   };
 
+  // Create a path for the bar shape
+  const createBarShape = (x, y, width, height, shape) => {
+    switch (shape) {
+      case 'triangle':
+        return `M ${x},${y+height} L ${x+width/2},${y} L ${x+width},${y+height} Z`;
+      case 'diamond':
+        return `M ${x+width/2},${y} L ${x+width},${y+height/2} L ${x+width/2},${y+height} L ${x},${y+height/2} Z`;
+      case 'oval':
+        // For oval, we'll use ellipse element instead, return null here
+        return null;
+      case 'trapezoid':
+        const indent = width * 0.2;
+        return `M ${x+indent},${y} L ${x+width-indent},${y} L ${x+width},${y+height} L ${x},${y+height} Z`;
+      case 'rectangle':
+      default:
+        // For rectangle, we'll use rect element, return null here
+        return null;
+    }
+  };
+
   // Update chart function to incorporate new features
   useEffect(() => {
     if (!svgRef.current || !chartData || chartData.length === 0) return;
@@ -155,24 +176,60 @@ const BarChart = () => {
         .call(d3.axisLeft(y));
     }
     
-    // Add bars with updated stroke style
-    const bars = g.selectAll('.bar')
-      .data(chartData)
-      .enter()
-      .append('rect')
-      .attr('class', 'bar')
-      .attr('x', d => x(String(d.x)) ?? 0)
-      .attr('y', d => y(d.y))
-      .attr('width', x.bandwidth())
-      .attr('height', d => innerHeight - y(d.y))
-      .attr('fill', d => fill ? '#000' : 'transparent')
-      .attr('stroke', strokeWidth > 0 ? strokeColor : 'none')
-      .attr('stroke-width', strokeWidth)
-      .attr('stroke-dasharray', getStrokeDashArray(strokePattern))
-      .attr('stroke-linecap', strokeStyle);
+    // Add bars with different shapes
+    if (barShape === 'rectangle') {
+      // Default rectangle bars
+      g.selectAll('.bar')
+        .data(chartData)
+        .enter()
+        .append('rect')
+        .attr('class', 'bar')
+        .attr('x', d => x(String(d.x)) ?? 0)
+        .attr('y', d => y(d.y))
+        .attr('width', x.bandwidth())
+        .attr('height', d => innerHeight - y(d.y))
+        .attr('fill', d => fill ? '#000' : 'transparent')
+        .attr('stroke', strokeWidth > 0 ? strokeColor : 'none')
+        .attr('stroke-width', strokeWidth)
+        .attr('stroke-dasharray', getStrokeDashArray(strokePattern))
+        .attr('stroke-linecap', strokeStyle);
+    } else if (barShape === 'oval') {
+      // Oval/ellipse bars
+      g.selectAll('.bar')
+        .data(chartData)
+        .enter()
+        .append('ellipse')
+        .attr('class', 'bar')
+        .attr('cx', d => (x(String(d.x)) ?? 0) + x.bandwidth() / 2)
+        .attr('cy', d => y(d.y) + (innerHeight - y(d.y)) / 2)
+        .attr('rx', x.bandwidth() / 2)
+        .attr('ry', d => (innerHeight - y(d.y)) / 2)
+        .attr('fill', d => fill ? '#000' : 'transparent')
+        .attr('stroke', strokeWidth > 0 ? strokeColor : 'none')
+        .attr('stroke-width', strokeWidth)
+        .attr('stroke-dasharray', getStrokeDashArray(strokePattern));
+    } else {
+      // Custom shape bars using paths
+      g.selectAll('.bar')
+        .data(chartData)
+        .enter()
+        .append('path')
+        .attr('class', 'bar')
+        .attr('d', d => {
+          const xPos = x(String(d.x)) ?? 0;
+          const yPos = y(d.y);
+          const barWidth = x.bandwidth();
+          const barHeight = innerHeight - y(d.y);
+          return createBarShape(xPos, yPos, barWidth, barHeight, barShape);
+        })
+        .attr('fill', d => fill ? '#000' : 'transparent')
+        .attr('stroke', strokeWidth > 0 ? strokeColor : 'none')
+        .attr('stroke-width', strokeWidth)
+        .attr('stroke-dasharray', getStrokeDashArray(strokePattern));
+    }
     
   }, [chartData, chartWidth, chartHeight, 
-      barPadding, fill, fillPattern, strokePattern,
+      barPadding, barShape, fill, fillPattern, strokePattern,
       showXAxis, showYAxis, yDomainMin, yDomainMax, dashArray, strokeWidth, fillZoomLevel, strokeColor, 
       innerWidth, innerHeight]);
 

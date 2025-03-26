@@ -9,6 +9,7 @@ export const useChartStore = create()((set, get) => ({
   // Bar chart settings
   barPadding: 0.2,
   selectedTemplate: 'rectangle',
+  barShape: 'rectangle',
   
   // Line chart settings
   curveType: 'linear',
