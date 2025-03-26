@@ -553,7 +553,7 @@ export const downloadChartAsSVG = async (
 export const downloadChart = async (
   chartRef,
   fileName,
-  fileType, // 'png', 'jpg', or 'svg'
+  fileType, // 'png' or 'svg'
   asOutlines = true,
   forceFill = false
 ) => {

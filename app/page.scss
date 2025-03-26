@@ -86,6 +86,233 @@ header {
       }
     }
 
+    // AI Prompt Generator Section
+    .ai-section {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background-color: #f5f7fa;
+      border-radius: 6px;
+      border: 1px solid #dde4ed;
+      
+      .ai-section-title {
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: 0.8rem;
+        color: #333;
+      }
+      
+      // Intention field styles
+      .intention-field {
+        margin-bottom: 1rem;
+        
+        label {
+          display: block;
+          font-size: 0.9rem;
+          margin-bottom: 0.5rem;
+          color: #555;
+        }
+        
+        .intention-input {
+          width: 100%;
+          padding: 0.5rem;
+          border: 1px solid #dde4ed;
+          border-radius: 4px;
+          font-size: 0.9rem;
+          transition: border-color 0.2s ease;
+          
+          &:focus {
+            outline: none;
+            border-color: #7b68ee;
+            box-shadow: 0 0 0 2px rgba(123, 104, 238, 0.1);
+          }
+          
+          &::placeholder {
+            color: #aaa;
+            font-style: italic;
+          }
+        }
+      }
+      
+      // Examples section styles
+      .examples-section {
+        margin-bottom: 1rem;
+        
+        .examples-toggle {
+          background-color: #f0f0f0;
+          border: 1px solid #dde4ed;
+          border-radius: 4px;
+          padding: 0.4rem 0.8rem;
+          font-size: 0.85rem;
+          color: #555;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: block;
+          width: 100%;
+          text-align: left;
+          margin-bottom: 0.5rem;
+          
+          &:hover {
+            background-color: #e8e8e8;
+          }
+          
+          &:focus {
+            outline: none;
+            border-color: #7b68ee;
+          }
+          
+          &::before {
+            content: '▼ ';
+            font-size: 0.7rem;
+            margin-right: 0.5rem;
+          }
+        }
+        
+        .examples-container {
+          background-color: white;
+          border: 1px solid #dde4ed;
+          border-radius: 4px;
+          padding: 1rem;
+          margin-bottom: 1rem;
+          
+          .examples-heading {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.8rem;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+          }
+          
+          .examples-note {
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+          }
+          
+          .examples-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            
+            .example-item {
+              background-color: #f9f9f9;
+              border-radius: 4px;
+              padding: 0.8rem;
+              border-left: 3px solid #7b68ee;
+              
+              .example-text {
+                font-size: 0.85rem;
+                line-height: 1.4;
+                margin-bottom: 0.8rem;
+                color: #333;
+                max-height: 100px;
+                overflow-y: auto;
+              }
+              
+              .copy-example-button {
+                background-color: #7b68ee;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+                cursor: pointer;
+                transition: background-color 0.2s ease;
+                
+                &:hover {
+                  background-color: #6a5acd;
+                }
+                
+                &:active {
+                  background-color: #5040b0;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      .ai-generate-button {
+        background-color: #7b68ee;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.4rem 1rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        margin-bottom: 1rem;
+        
+        &:hover {
+          background-color: #6a5acd;
+        }
+        
+        &:active {
+          background-color: #5040b0;
+        }
+        
+        &:disabled {
+          background-color: #b3addb;
+          cursor: not-allowed;
+        }
+      }
+      
+      .api-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 0.75rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+        border: 1px solid #f5c6cb;
+        font-size: 0.9rem;
+        
+        p {
+          margin: 0;
+          line-height: 1.4;
+        }
+      }
+      
+      .ai-prompt-container {
+        background-color: white;
+        border-radius: 4px;
+        border: 1px solid #dde4ed;
+        padding: 0.5rem;
+        
+        .ai-prompt-text {
+          width: 100%;
+          min-height: 100px;
+          padding: 0.5rem;
+          border: 1px solid #e0e0e0;
+          border-radius: 4px;
+          font-size: 0.9rem;
+          font-family: inherit;
+          resize: vertical;
+          margin-bottom: 0.5rem;
+        }
+        
+        .ai-copy-button {
+          background-color: #4caf50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          padding: 0.3rem 0.8rem;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+          
+          &:hover {
+            background-color: #388e3c;
+          }
+          
+          &:active {
+            background-color: #2e7d32;
+          }
+        }
+      }
+    }
+
     .chart-wrapper {
       width: 100%;
       background-color: #ffffff;
