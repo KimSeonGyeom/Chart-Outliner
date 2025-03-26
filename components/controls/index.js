@@ -13,6 +13,7 @@ export { default as AxisSection } from './shared/AxisSection.jsx';
 export { default as DomainSection } from './shared/DomainSection.jsx';
 export { default as StrokePatternSection } from './shared/StrokePatternSection.jsx';
 export { default as DataSection } from './shared/DataSection.jsx'; 
+export { default as TransformControls } from './shared/TransformControls.jsx';
 
 // Export bar chart sections
 export { default as BarAppearanceSection } from './bar/BarPaddingSection.jsx';

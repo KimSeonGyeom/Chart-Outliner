@@ -10,6 +10,7 @@ import LineCurveSection from './line/LineCurveSection.jsx';
 import LinePointsSection from './line/LinePointsSection.jsx';
 import BarPaddingSection from './bar/BarPaddingSection.jsx';
 import BarShapeSection from './bar/BarShapeSection.jsx';
+import TransformControls from './shared/TransformControls.jsx';
 import './ControlPanel.scss';
 import { useSharedStore } from '../store/sharedStore.js';
 
@@ -44,6 +45,7 @@ const SharedControls = () => {
       <DomainSection />
       <StrokePatternSection /> 
       <FillSection />
+      <TransformControls />
     </div>
   );
 };

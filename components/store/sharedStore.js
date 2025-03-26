@@ -35,8 +35,38 @@ export const useSharedStore = create()((set) => ({
   strokeStyle: 'normal',
   dashArray: '6,4',
   
+  // Transformation settings
+  transformationType: 'none',
+  translationX: 0,
+  translationY: 0,
+  scaleX: 1,
+  scaleY: 1,
+  rotation: 0,
+  skewX: 0,
+  skewY: 0,
+  perspective: 800,
+  distortionType: 'turbulence',
+  distortionAmount: 10,
+  distortionCenterX: 0.5,
+  distortionCenterY: 0.5,
+  
   // Actions
   setChartType: (type) => set({ chartType: type }),
+  
+  // Transformation actions
+  setTransformationType: (type) => set({ transformationType: type }),
+  setTranslationX: (value) => set({ translationX: value }),
+  setTranslationY: (value) => set({ translationY: value }),
+  setScaleX: (value) => set({ scaleX: value }),
+  setScaleY: (value) => set({ scaleY: value }),
+  setRotation: (value) => set({ rotation: value }),
+  setSkewX: (value) => set({ skewX: value }),
+  setSkewY: (value) => set({ skewY: value }),
+  setPerspective: (value) => set({ perspective: value }),
+  setDistortionType: (type) => set({ distortionType: type }),
+  setDistortionAmount: (value) => set({ distortionAmount: value }),
+  setDistortionCenterX: (value) => set({ distortionCenterX: value }),
+  setDistortionCenterY: (value) => set({ distortionCenterY: value }),
   
   // Update any individual setting
   updateSetting: (key, value) => set((state) => ({
