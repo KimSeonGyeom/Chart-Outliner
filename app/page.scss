@@ -292,6 +292,56 @@ header {
           margin-bottom: 0.5rem;
         }
         
+        // Prompt list styles
+        .selected-prompt-list {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 0.5rem 0;
+          
+          .prompt-item {
+            padding: 0.75rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            
+            &:hover {
+              background-color: #f9f9f9;
+              border-color: #d0d0d0;
+            }
+            
+            &.selected {
+              background-color: #f0f7ff;
+              border-color: #7b68ee;
+              border-left-width: 3px;
+            }
+            
+            .prompt-content {
+              font-size: 0.9rem;
+              line-height: 1.4;
+              color: #333;
+              
+              .prompt-text {
+                margin-bottom: 0.5rem;
+                font-weight: 500;
+              }
+              
+              .prompt-detail {
+                font-size: 0.85rem;
+                color: #555;
+                font-style: italic;
+                
+                .reason-label {
+                  font-weight: 600;
+                  font-style: normal;
+                  color: #444;
+                }
+              }
+            }
+          }
+        }
+        
         .ai-copy-button {
           background-color: #4caf50;
           color: white;

@@ -17,6 +17,8 @@ export default function ChartControls({ chartRef }) {
   
   // OpenAI states
   const [aiPrompt, setAiPrompt] = useState('');
+  const [parsedPrompts, setParsedPrompts] = useState(null);
+  const [selectedPrompt, setSelectedPrompt] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [intention, setIntention] = useState('');
   const [apiError, setApiError] = useState('');
@@ -56,6 +58,8 @@ export default function ChartControls({ chartRef }) {
       setIsGenerating(true);
       setApiError(''); // Clear any previous errors
       setAiPrompt(''); // Clear previous prompt
+      setParsedPrompts(null); // Clear parsed prompts
+      setSelectedPrompt(null); // Clear selected prompt
       
       // Convert chart to image data URL
       if (chartRef && chartRef.current) {
@@ -123,13 +127,30 @@ export default function ChartControls({ chartRef }) {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ imageData }),
+          body: JSON.stringify({ imageData, intention }),
         });
         
         const data = await response.json();
         
         if (data.success) {
-          setAiPrompt(data.content);
+          setAiPrompt(JSON.stringify(data.content, null, 2)); // Display pretty JSON in textarea
+          try {
+            console.log('API response:', data.content);
+            
+            // Check if the content is already an object
+            if (data.content && typeof data.content === 'object') {
+              setParsedPrompts(data.content);
+            } else if (typeof data.content === 'string') {
+              // Try to parse it if it's a string
+              const promptsObject = JSON.parse(data.content);
+              setParsedPrompts(promptsObject);
+            } else {
+              throw new Error("Invalid response format");
+            }
+          } catch (parseError) {
+            console.error('Error parsing prompt JSON:', parseError);
+            setApiError(`Error parsing response: ${parseError.message}`);
+          }
         } else {
           setApiError(data.error || 'Failed to generate prompt');
         }
@@ -139,6 +160,18 @@ export default function ChartControls({ chartRef }) {
       setApiError(`Error: ${error.message}`);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Handle prompt selection
+  const handlePromptSelect = (promptKey) => {
+    setSelectedPrompt(promptKey);
+  };
+
+  // Handle copy to clipboard
+  const handleCopyPrompt = () => {
+    if (selectedPrompt && parsedPrompts) {
+      navigator.clipboard.writeText(parsedPrompts[selectedPrompt].prompt);
     }
   };
 
@@ -206,7 +239,54 @@ export default function ChartControls({ chartRef }) {
           </div>
         )}
         
-        {aiPrompt && (
+        {parsedPrompts ? (
+          <div className="ai-prompt-container">
+            <ul className="initial-prompt-list">
+              {
+                parsedPrompts["initial_metaphors"].map((value, index) => (
+                  <li 
+                    key={index} 
+                    className={`prompt-item ${selectedPrompt === index ? 'selected' : ''}`}
+                    onClick={() => handlePromptSelect(index)}
+                  >
+                    Initial Metaphor-{index + 1}: {value["metaphorical object for the chart's marks"]}
+                  </li>
+                ))
+              }
+            </ul>
+            <ul className="selected-prompt-list">
+              {parsedPrompts["selected_metaphors"].map((value, index) => (
+                <li
+                  key={index}
+                  className={`prompt-item ${selectedPrompt === index ? 'selected' : ''}`}
+                  onClick={() => handlePromptSelect(index)}
+                >
+                  <div className="prompt-content">
+                    <div className="prompt-text">{value.prompt}</div>
+                    <div className="prompt-detail">
+                      <span className="detail-label">Selected Metaphor:</span> {value["metaphorical object for the chart's marks"]}
+                    </div>
+                    <div className="prompt-detail">
+                      <span className="detail-label">Reason_Marks:</span> {value["reason why this metaphor is fit for the chart's marks"]}
+                    </div>
+                    <div className="prompt-detail">
+                      <span className="detail-label">Reason_Intent:</span> {value["reason why this metaphor is fit for the author's intent"]}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            
+            {selectedPrompt && (
+              <button 
+                className="ai-copy-button"
+                onClick={handleCopyPrompt}
+              >
+                Copy to Clipboard
+              </button>
+            )}
+          </div>
+        ) : aiPrompt ? (
           <div className="ai-prompt-container">
             <textarea 
               className="ai-prompt-text" 
@@ -222,7 +302,7 @@ export default function ChartControls({ chartRef }) {
               Copy to Clipboard
             </button>
           </div>
-        )}
+        ) : null}
       </div>
       
       {/* Chart display */}
