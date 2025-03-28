@@ -25,6 +25,7 @@ export default function ChartControls({ chartRef }) {
   const [selectedPrompt, setSelectedPrompt] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [visualInterpretation, setVisualInterpretation] = useState('');
 
   // Handle export button click
   const handleExport = () => {
@@ -55,6 +56,72 @@ export default function ChartControls({ chartRef }) {
     }
   };
 
+  // Function to convert chart SVG to image data
+  const getChartImageData = async (chartRef) => {
+    if (!chartRef || !chartRef.current) {
+      throw new Error('Chart reference is not available');
+    }
+    
+    const svgElement = chartRef.current.querySelector('svg');
+    if (!svgElement) {
+      throw new Error('SVG element not found in chart');
+    }
+    
+    // Get SVG dimensions
+    const svgWidth = svgElement.getAttribute('width') || svgElement.clientWidth || 512;
+    const svgHeight = svgElement.getAttribute('height') || svgElement.clientHeight || 512;
+    console.log('SVG dimensions:', svgWidth, svgHeight);
+    
+    // Clone SVG to avoid modifying the original
+    const svgClone = svgElement.cloneNode(true);
+    
+    // Ensure SVG has proper dimensions and a white background
+    svgClone.setAttribute('width', svgWidth);
+    svgClone.setAttribute('height', svgHeight);
+    
+    // Add a white background rectangle
+    const backgroundRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    backgroundRect.setAttribute('width', '100%');
+    backgroundRect.setAttribute('height', '100%');
+    backgroundRect.setAttribute('fill', 'white');
+    svgClone.insertBefore(backgroundRect, svgClone.firstChild);
+    
+    // Serialize the modified SVG
+    const svgData = new XMLSerializer().serializeToString(svgClone);
+    
+    // Create a canvas with proper dimensions
+    const canvas = document.createElement('canvas');
+    canvas.width = svgWidth;
+    canvas.height = svgHeight;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw white background first
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Create a data URL from the SVG
+    const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+    const DOMURL = window.URL || window.webkitURL || window;
+    const url = DOMURL.createObjectURL(svgBlob);
+    
+    // Create a new image and load the SVG into it
+    const img = new Image();
+    
+    // Wait for image to load
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('Failed to load SVG image'));
+      img.src = url;
+    });
+    
+    // Draw image to canvas
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    DOMURL.revokeObjectURL(url);
+    
+    // Return base64 image data
+    return canvas.toDataURL('image/png', 1.0).split(',')[1];
+  };
+
   // Handle AI prompt generation
   const generateAIPrompt = async () => {
     try {
@@ -64,102 +131,74 @@ export default function ChartControls({ chartRef }) {
       setParsedPrompts(null); // Clear parsed prompts
       setSelectedPrompt(null); // Clear selected prompt
       
-      // Convert chart to image data URL
-      if (chartRef && chartRef.current) {
-        const svgElement = chartRef.current.querySelector('svg');
-        if (!svgElement) {
-          throw new Error('SVG element not found in chart');
-        }
-        
-        // Get SVG dimensions
-        const svgWidth = svgElement.getAttribute('width') || svgElement.clientWidth || 600;
-        const svgHeight = svgElement.getAttribute('height') || svgElement.clientHeight || 400;
-        
-        // Clone SVG to avoid modifying the original
-        const svgClone = svgElement.cloneNode(true);
-        
-        // Ensure SVG has proper dimensions and a white background
-        svgClone.setAttribute('width', svgWidth);
-        svgClone.setAttribute('height', svgHeight);
-        
-        // Add a white background rectangle
-        const backgroundRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        backgroundRect.setAttribute('width', '100%');
-        backgroundRect.setAttribute('height', '100%');
-        backgroundRect.setAttribute('fill', 'white');
-        svgClone.insertBefore(backgroundRect, svgClone.firstChild);
-        
-        // Serialize the modified SVG
-        const svgData = new XMLSerializer().serializeToString(svgClone);
-        
-        // Create a canvas with proper dimensions
-        const canvas = document.createElement('canvas');
-        canvas.width = svgWidth;
-        canvas.height = svgHeight;
-        const ctx = canvas.getContext('2d');
-        
-        // Draw white background first
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Create a data URL from the SVG
-        const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
-        const DOMURL = window.URL || window.webkitURL || window;
-        const url = DOMURL.createObjectURL(svgBlob);
-        
-        // Create a new image and load the SVG into it
-        const img = new Image();
-        
-        // Wait for image to load
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = () => reject(new Error('Failed to load SVG image'));
-          img.src = url;
-        });
-        
-        // Draw image to canvas
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        DOMURL.revokeObjectURL(url);
-        
-        // Get base64 image data with quality parameter
-        const imageData = canvas.toDataURL('image/png', 1.0).split(',')[1];
-        
-        // Call our API route
-        const response = await fetch('/api/generate-prompt', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ imageData, subject, authorIntention }),
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          setAiPrompt(JSON.stringify(data.content, null, 2)); // Display pretty JSON in textarea
-          try {
-            console.log('API response:', data.content);
-            
-            // Check if the content is already an object
-            if (data.content && typeof data.content === 'object') {
-              setParsedPrompts(data.content);
-            } else if (typeof data.content === 'string') {
-              // Try to parse it if it's a string
-              const promptsObject = JSON.parse(data.content);
-              setParsedPrompts(promptsObject);
-            } else {
-              throw new Error("Invalid response format");
-            }
-          } catch (parseError) {
-            console.error('Error parsing prompt JSON:', parseError);
-            setApiError(`Error parsing response: ${parseError.message}`);
+      const imageData = await getChartImageData(chartRef);
+      
+      const response = await fetch('/api/generate-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageData, subject, authorIntention }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setAiPrompt(JSON.stringify(data.content, null, 2)); // Display pretty JSON in textarea
+        try {
+          console.log('API response:', data.content);
+          
+          // Check if the content is already an object
+          if (data.content && typeof data.content === 'object') {
+            setParsedPrompts(data.content);
+          } else if (typeof data.content === 'string') {
+            // Try to parse it if it's a string
+            const promptsObject = JSON.parse(data.content);
+            setParsedPrompts(promptsObject);
+          } else {
+            throw new Error("Invalid response format");
           }
-        } else {
-          setApiError(data.error || 'Failed to generate prompt');
+        } catch (parseError) {
+          console.error('Error parsing prompt JSON:', parseError);
+          setApiError(`Error parsing response: ${parseError.message}`);
         }
+      } else {
+        setApiError(data.error || 'Failed to generate prompt');
       }
     } catch (error) {
       console.error('Error generating AI prompt:', error);
+      setApiError(`Error: ${error.message}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateInterpretation = async () => {
+    try {
+      setIsGenerating(true);
+      setApiError('');
+      setVisualInterpretation('');
+      
+      const imageData = await getChartImageData(chartRef);
+
+      const response = await fetch('/api/generate-interpretation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageData, subject }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setVisualInterpretation(data.interpretation);
+        console.log('API response:', data);
+      } else {
+        setApiError(data.error || 'Failed to generate interpretation');
+      }
+    } catch (error) {
+      console.error('Error generating visual interpretation:', error);
       setApiError(`Error: ${error.message}`);
     } finally {
       setIsGenerating(false);
@@ -230,10 +269,23 @@ export default function ChartControls({ chartRef }) {
         >
           {isGenerating ? 'Generating...' : 'Generate Sketch Smudge Prompt'}
         </button>
-        
+
+        <button
+          className="ai-generate-button"
+          onClick={generateInterpretation}
+          disabled={isGenerating}
+        >
+          {isGenerating ? 'Generating...' : 'Visual Interpretation'}
+        </button>
         {apiError && (
           <div className="api-error">
             <p>{apiError}</p>
+          </div>
+        )}
+
+        {visualInterpretation && (
+          <div className="visual-interpretation">
+            <p>{visualInterpretation}</p>
           </div>
         )}
         
@@ -311,4 +363,4 @@ export default function ChartControls({ chartRef }) {
       </div>
     </div>
   );
-} 
+}
