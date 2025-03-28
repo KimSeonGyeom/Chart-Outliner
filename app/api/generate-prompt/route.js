@@ -28,38 +28,47 @@ const examplePrompts = `
 // Define the schema for a single metaphor
 const SingleMetaphorSchema = z.object({
   "metaphorical object for the chart's marks": z.string(),
-  "reason why this metaphor is fit for the chart's marks": z.string(),
+  "reason why this metaphor is fit for the chart's subject": z.string(),
   "reason why this metaphor is fit for the author's intent": z.string(),
   prompt: z.string(),
 });
 
 // Define the schema for the response format using the single metaphor schema
 const MetaphorsSchema = z.object({
+  author_intention: z.string(),
+  data_subject: z.string(),
   initial_metaphors: z.array(SingleMetaphorSchema),
   selected_metaphors: z.array(SingleMetaphorSchema),
 });
 
 export async function POST(request) {
   try {
-    const { imageData, authorIntention } = await request.json();
+    const { imageData, subject, authorIntention } = await request.json();
 
     const system_role = `
       You are a data visualization expert.
-      You are given an author's intention of generating a pictorial chart and an original image of a chart which is a starting point for the pictorial chart.
-      Your job is to generate 4 prompts that will be used to generate pictorial representations of the chart's marks using the FLUX.1.dev API.
+      Your job is to generate three prompts that will be used to generate pictorial chart using the FLUX.1.dev API.
+      You are given three inputs: 
+      (1) an author's intention of generating a pictorial chart (what feeling the author wants to convey),
+      (2) a data subject of the chart (what the data is about),
+      (3) an original image of a chart which is a starting point for the pictorial chart.
     `;
     const system_prompt_constraints = `
       Each prompt should start with "Sketch Smudge, a sketch of [metaphorical description for the chart's marks]" and be no more than 60 words.
     `;
     const system_metaphor_direction = `
-      Regarding the metaphor, look at the chart's marks and try to figure out what they are looking like.
-      For example, if the chart is a bar chart, the metaphor could be "bushes planted on clay pots" or "ancient Roman style pillars".
-      First, generate 10 metaphors.
-      Among your ideas, select the most appropriate four metaphors which help the readers to understand the author's intention.
+      Regarding the metaphor, try to figure out which metaphor is closely related to the author's intention and the data's subject and trend.
+      For example, if the data is about "cost of living" and the trend is increasing, the metaphor could be "a house", "a money bag" or "an apratment and a ladder reaching the window".
+      In addition to this, if the author's intention is to warn about the cost of living, "a house" can be "an evil house" or "a money bag" can be "a money bag with a monstrous mouth".
+
+      First, generate six metaphors.
+      Among your ideas, select the most appropriate three metaphors which help the readers to understand the author's intention.
       Please be creative and use your imagination. Do not repeat the examples given.
     `;
     const system_prompt_examples = `
-      Following examples describe the main metaphrical visual elements, and extra details to make it more realistic, so the FLUX.1.dev API can understand the context and generate the final output more acceptable:
+      Please describe the main metaphorical objects, and extra details to make it more realistic, so the FLUX.1.dev API can understand the context and generate the final output more acceptable.
+      While detailing the extras, please do not specify non-main elements and leave the background as white.
+      Followings are example prompts:
       ${examplePrompts}
     `;
 
@@ -82,6 +91,8 @@ export async function POST(request) {
           content: [
             { type: 'text', text: "Here is the author's intention of generating a pictorial chart:" },
             { type: 'text', text: `"${authorIntention}"` },
+            { type: 'text', text: "Here is the data subject of the chart:" },
+            { type: 'text', text: `"${subject}"` },
             { type: 'text', text: "Here is the original image of the chart:" },
             {
               type: 'image_url',

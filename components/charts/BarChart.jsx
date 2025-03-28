@@ -9,7 +9,8 @@ import { useChartStore } from '../store/chartStore';
 
 const BarChart = () => {
   // Get data and settings from stores
-  const chartData = useDataStore((state) => state.chartData);
+  const chartData = useDataStore((state) => state.chartData.data);
+  const subject = useDataStore((state) => state.chartData.subject);
   
   // Get shared settings
   const chartWidth = useSharedStore((state) => state.width);

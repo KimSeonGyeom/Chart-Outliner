@@ -17,7 +17,7 @@ const LineAppearanceSection = () => {
         >
           <option value="cardinal">Cardinal</option>
           <option value="basis">Basis</option>
-          <option value="natural">Natural</option>
+          <option value="step">Step</option>
           <option value="monotone">Monotone</option>
           <option value="catmullRom">Catmull-Rom</option>
           <option value="linear">Linear</option>

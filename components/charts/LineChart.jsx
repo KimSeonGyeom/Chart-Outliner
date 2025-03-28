@@ -9,7 +9,8 @@ import { useChartStore } from '../store/chartStore';
 
 const LineChart = () => {
   // Get data and settings from stores
-  const chartData = useDataStore((state) => state.chartData);
+  const chartData = useDataStore((state) => state.chartData.data);
+  const subject = useDataStore((state) => state.chartData.subject);
   
   // Get shared settings
   const chartWidth = useSharedStore((state) => state.width);
@@ -396,8 +397,8 @@ const LineChart = () => {
           return d3.curveCardinal.tension(curveTension);
         case 'basis':
           return d3.curveBasis;
-        case 'natural':
-          return d3.curveNatural;
+        case 'step':
+          return d3.curveStep;
         case 'monotone':
           return d3.curveMonotoneX;
         case 'catmullRom':

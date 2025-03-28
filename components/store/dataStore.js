@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 // Data dataLabels for random generation
-export const dataLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export const dataLabels = ['2020', '2021', '2022', '2023', '2024', '2025', '2026'];
 
 // Generate a new dataset with a specific trend
 export const generateTrendData = (
@@ -57,47 +57,61 @@ export const generateTrendData = (
       break;
   }
   
-  return data;
+  return {
+    subject: 'cost of living',
+    data: data,
+  };
 };
 
 // Sample datasets for charts
 export const sampleDataSets = {
-  basic: [
-    { x: 'Jan', y: 30 },
-    { x: 'Feb', y: 50 },
-    { x: 'Mar', y: 20 },
-    { x: 'Apr', y: 40 },
-    { x: 'May', y: 70 },
-    { x: 'Jun', y: 60 },
-    { x: 'Jul', y: 80 },
-  ],
-  rising: [
-    { x: 'Jan', y: 10 },
-    { x: 'Feb', y: 20 },
-    { x: 'Mar', y: 35 },
-    { x: 'Apr', y: 45 },
-    { x: 'May', y: 60 },
-    { x: 'Jun', y: 80 },
-    { x: 'Jul', y: 95 },
-  ],
-  falling: [
-    { x: 'Jan', y: 90 },
-    { x: 'Feb', y: 80 },
-    { x: 'Mar', y: 65 },
-    { x: 'Apr', y: 50 },
-    { x: 'May', y: 35 },
-    { x: 'Jun', y: 20 },
-    { x: 'Jul', y: 10 },
-  ],
-  wave: [
-    { x: 'Jan', y: 50 },
-    { x: 'Feb', y: 80 },
-    { x: 'Mar', y: 30 },
-    { x: 'Apr', y: 90 },
-    { x: 'May', y: 20 },
-    { x: 'Jun', y: 70 },
-    { x: 'Jul', y: 40 },
-  ],
+  basic: {
+    subject: 'cost of living',
+    data: [
+    { x: '2020', y: 30 },
+    { x: '2021', y: 50 },
+    { x: '2022', y: 20 },
+    { x: '2023', y: 40 },
+    { x: '2024', y: 70 },
+    { x: '2025', y: 60 },
+    { x: '2026', y: 80 },
+  ]},
+  rising: {
+    subject: 'cost of living',
+    data: [
+    { x: '2020', y: 10 },
+    { x: '2021', y: 20 },
+    { x: '2022', y: 35 },
+    { x: '2023', y: 45 },
+    { x: '2024', y: 60 },
+    { x: '2025', y: 80 },
+    { x: '2026', y: 95 },
+    ]
+  },
+  falling: {
+    subject: 'cost of living',
+    data: [
+    { x: '2020', y: 90 },
+    { x: '2021', y: 80 },
+    { x: '2022', y: 65 },
+    { x: '2023', y: 50 },
+    { x: '2024', y: 35 },
+    { x: '2025', y: 20 },
+    { x: '2026', y: 10 },
+    ]
+  },
+  wave: {
+    subject: 'cost of living',
+    data: [
+    { x: '2020', y: 50 },
+    { x: '2021', y: 80 },
+    { x: '2022', y: 30 },
+    { x: '2023', y: 90 },
+    { x: '2024', y: 20 },
+    { x: '2025', y: 70 },
+    { x: '2026', y: 40 },
+    ]
+  },
   // Add trend datasets
   exponential: generateTrendData('exponential'),
   logarithmic: generateTrendData('logarithmic'),
@@ -115,100 +129,38 @@ export const generateRandomData = (numPoints) => {
     });
   }
   
-  return newData;
+  return {
+    subject: 'cost of living',
+    data: newData,
+  };
 };
 
 // Adjust data set to match the desired number of points
 export const adjustDataSetSize = (dataset, numPoints) => {
-  if (dataset.length === numPoints) {
+  if (dataset.data.length === numPoints) {
     return dataset; // No adjustment needed
   }
   
-  // If we need to trim data points
-  if (dataset.length > numPoints) {
-    // Keep first and last points for trend consistency, and sample points in between
-    if (numPoints < 3) {
-      return dataset.slice(0, numPoints);
-    }
-    
-    const result = [dataset[0]]; // Always include the first point
-    
-    // Calculate how many internal points to keep
-    const internalPoints = numPoints - 2;
-    const step = (dataset.length - 2) / internalPoints;
-    
-    // Add internal points at approximately even intervals
-    for (let i = 1; i <= internalPoints; i++) {
-      const index = Math.min(Math.floor(i * step) + 1, dataset.length - 2);
-      result.push(dataset[index]);
-    }
-    
-    result.push(dataset[dataset.length - 1]); // Always include the last point
-    return result;
-  }
-  
-  // If we need to add data points
-  if (dataset.length < numPoints) {
-    // Clone the original dataset
-    const result = [...dataset];
-    
-    // Extend the data by interpolating between existing points
-    while (result.length < numPoints) {
-      const newData = [];
-      
-      // Keep all existing points
-      for (let i = 0; i < result.length; i++) {
-        newData.push(result[i]);
-        
-        // Add an interpolated point between each existing pair of points
-        if (i < result.length - 1 && result.length < numPoints) {
-          const currentX = result[i].x;
-          const nextX = result[i + 1].x;
-          const currentY = result[i].y;
-          const nextY = result[i + 1].y;
-          
-          // Simple linear interpolation for y values
-          const interpolatedY = Math.floor((currentY + nextY) / 2);
-          
-          // For x values, use the month labels
-          const currentIndex = dataLabels.indexOf(currentX);
-          let interpolatedIndex = (currentIndex + 1) % dataLabels.length;
-          
-          // Make sure the interpolated x doesn't already exist
-          while (newData.some(d => d.x === dataLabels[interpolatedIndex])) {
-            interpolatedIndex = (interpolatedIndex + 1) % dataLabels.length;
-          }
-          
-          newData.push({
-            x: dataLabels[interpolatedIndex],
-            y: interpolatedY
-          });
-        }
-      }
-      
-      // Break if we couldn't add any new points
-      if (newData.length === result.length) break;
-      
-      result.length = 0;
-      result.push(...newData);
-    }
-    
-    // Trim if we added too many points
-    return result.slice(0, numPoints);
-  }
-  
-  return dataset;
+  // Create a copy of the dataset and take the last numPoints
+  return {
+    subject: dataset.subject,
+    data: dataset.data.length > numPoints 
+      ? dataset.data.slice(dataset.data.length - numPoints) 
+      : dataset.data.slice(0, numPoints)
+  };
 };
 
 // Create the data store with only data-related properties
 export const useDataStore = create()((set, get) => ({
   // Data properties
   chartData: sampleDataSets.basic,
+  authorIntention: 'null',
   selectedPreset: 'basic',
   numDataPoints: 5, // Default number of data points
   
   // Data actions
   setChartData: (data) => set({ chartData: data }),
+  setAuthorIntention: (intention) => set({ authorIntention: intention }),
   setSelectedPreset: (preset) => {
     const { numDataPoints } = get();
     // Ensure we're within our min/max bounds
@@ -231,7 +183,7 @@ export const useDataStore = create()((set, get) => ({
     // For fixed presets, adjust their size to match numDataPoints
     if (preset in sampleDataSets) {
       const originalData = sampleDataSets[preset];
-      console.log(`Loading ${preset} preset: adjusting from ${originalData.length} to ${pointsToGenerate} points`);
+      console.log(`Loading ${preset} preset: adjusting from ${originalData.data.length} to ${pointsToGenerate} points`);
       const adjustedData = adjustDataSetSize(originalData, pointsToGenerate);
       
       set({ 
@@ -272,7 +224,7 @@ export const useDataStore = create()((set, get) => ({
     
     if (preset in sampleDataSets) {
       const originalData = sampleDataSets[preset];
-      console.log(`Loading ${preset} preset: adjusting from ${originalData.length} to ${pointsToGenerate} points`);
+      console.log(`Loading ${preset} preset: adjusting from ${originalData.data.length} to ${pointsToGenerate} points`);
       const adjustedData = adjustDataSetSize(originalData, pointsToGenerate);
       
       set({ 

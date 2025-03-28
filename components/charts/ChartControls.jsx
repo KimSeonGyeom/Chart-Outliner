@@ -5,6 +5,7 @@ import BarChart from './BarChart.jsx';
 import LineChart from './LineChart.jsx';
 import { useSharedStore } from '../store/sharedStore.js';
 import { useChartStore } from '../store/chartStore.js';
+import { useDataStore } from '../store/dataStore.js';
 import { 
   ControlPanel,
   downloadChart
@@ -12,6 +13,9 @@ import {
 
 export default function ChartControls({ chartRef }) {
   const chartType = useSharedStore(state => state.chartType);
+  const subject = useDataStore(state => state.chartData.subject);
+  const authorIntention = useDataStore(state => state.authorIntention);
+  const setAuthorIntention = useDataStore(state => state.setAuthorIntention);
   const exportFileType = useChartStore(state => state.exportFileType);
   const setExportOption = useChartStore(state => state.setExportOption);
   
@@ -20,7 +24,6 @@ export default function ChartControls({ chartRef }) {
   const [parsedPrompts, setParsedPrompts] = useState(null);
   const [selectedPrompt, setSelectedPrompt] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [intention, setIntention] = useState('');
   const [apiError, setApiError] = useState('');
 
   // Handle export button click
@@ -127,7 +130,7 @@ export default function ChartControls({ chartRef }) {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ imageData, intention }),
+          body: JSON.stringify({ imageData, subject, authorIntention }),
         });
         
         const data = await response.json();
@@ -161,11 +164,6 @@ export default function ChartControls({ chartRef }) {
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  // Handle prompt selection
-  const handlePromptSelect = (promptKey) => {
-    setSelectedPrompt(promptKey);
   };
 
   // Handle copy to clipboard
@@ -218,8 +216,8 @@ export default function ChartControls({ chartRef }) {
           <input
             id="intention-input"
             type="text"
-            value={intention}
-            onChange={(e) => setIntention(e.target.value)}
+            value={authorIntention}
+            onChange={(e) => setAuthorIntention(e.target.value)}
             placeholder="E.g., 'Artistic hand-drawn sketch', 'Minimalist line art', etc."
             className="intention-input"
           />
@@ -241,13 +239,15 @@ export default function ChartControls({ chartRef }) {
         
         {parsedPrompts ? (
           <div className="ai-prompt-container">
+            <div className="data-subject">Data Subject: {parsedPrompts["data_subject"]}</div>
+            <div className="author-intention">Author's Intention: {parsedPrompts["author_intention"]}</div>
             <ul className="initial-prompt-list">
               {
                 parsedPrompts["initial_metaphors"].map((value, index) => (
                   <li 
                     key={index} 
                     className={`prompt-item ${selectedPrompt === index ? 'selected' : ''}`}
-                    onClick={() => handlePromptSelect(index)}
+                    onClick={() => setSelectedPrompt(index)}
                   >
                     Initial Metaphor-{index + 1}: {value["metaphorical object for the chart's marks"]}
                   </li>
@@ -259,7 +259,7 @@ export default function ChartControls({ chartRef }) {
                 <li
                   key={index}
                   className={`prompt-item ${selectedPrompt === index ? 'selected' : ''}`}
-                  onClick={() => handlePromptSelect(index)}
+                  onClick={() => setSelectedPrompt(index)}
                 >
                   <div className="prompt-content">
                     <div className="prompt-text">{value.prompt}</div>
@@ -267,7 +267,7 @@ export default function ChartControls({ chartRef }) {
                       <span className="detail-label">Selected Metaphor:</span> {value["metaphorical object for the chart's marks"]}
                     </div>
                     <div className="prompt-detail">
-                      <span className="detail-label">Reason_Marks:</span> {value["reason why this metaphor is fit for the chart's marks"]}
+                      <span className="detail-label">Reason_Subject:</span> {value["reason why this metaphor is fit for the chart's subject"]}
                     </div>
                     <div className="prompt-detail">
                       <span className="detail-label">Reason_Intent:</span> {value["reason why this metaphor is fit for the author's intent"]}
