@@ -28,8 +28,10 @@ const examplePrompts = `
 // Define the schema for a single metaphor
 const SingleMetaphorSchema = z.object({
   "metaphorical object for the chart's marks": z.string(),
-  "reason why this metaphor is fit for the chart's subject": z.string(),
+  "reason why this metaphor is fit for the visual interpretation(data trend)": z.string(),
+  "reason why this metaphor is fit for the chart's subject(not data trend)": z.string(),
   "reason why this metaphor is fit for the author's intent": z.string(),
+  "reason why this metaphor is fit for the marks' outline": z.string(),
   prompt: z.string(),
 });
 
@@ -37,34 +39,47 @@ const SingleMetaphorSchema = z.object({
 const MetaphorsSchema = z.object({
   author_intention: z.string(),
   data_subject: z.string(),
+  visual_interpretation: z.string(),
   initial_metaphors: z.array(SingleMetaphorSchema),
   selected_metaphors: z.array(SingleMetaphorSchema),
 });
 
 export async function POST(request) {
   try {
-    const { imageData, subject, authorIntention } = await request.json();
+    const { imageData, subject, authorIntention, visualInterpretation } = await request.json();
 
     const system_role = `
       You are a data visualization expert.
       Your job is to generate three prompts that will be used to generate pictorial chart using the FLUX.1.dev API.
-      You are given three inputs: 
-      (1) an author's intention of generating a pictorial chart (what feeling the author wants to convey),
-      (2) a data subject of the chart (what the data is about),
-      (3) an original image of a chart which is a starting point for the pictorial chart.
+      You are given four inputs: 
+      (1) a visual interpretation of the data trend,
+      (2) an author's intention of generating a pictorial chart (what feeling the author wants to convey),
+      (3) a data subject of the chart (what the data is about),
+      (4) an original image of a chart which is a starting point for the pictorial chart.
     `;
     const system_prompt_constraints = `
       Each prompt should start with "Sketch Smudge, a sketch of [metaphorical description for the chart's marks]" and be no more than 60 words.
     `;
     const system_metaphor_direction = `
-      Regarding the metaphor, try to figure out which metaphor is closely related to the author's intention and the data's subject and trend.
+      Regarding the metaphor, try to figure out which metaphor is closely related to the visual interpretation, the author's intention and the data's subject and trend.
       For example, if the data is about "cost of living" and the trend is increasing, the metaphor could be "a house", "a money bag" or "an apratment and a ladder reaching the window".
       In addition to this, if the author's intention is to warn about the cost of living, "a house" can be "an evil house" or "a money bag" can be "a money bag with a monstrous mouth".
 
       First, generate six metaphors.
       Among your ideas, select the most appropriate three metaphors which help the readers to understand the author's intention.
-      Please be creative and use your imagination. Do not repeat the examples given.
+      Please be creative and use your imagination.
     `;
+    const system_adapt_mark = `
+      After exploring candidate metaphors, please look at the chart image and it's marks' outline.
+      The final image must include the outline as part of their shape or details.
+      Then, for each of your metaphor, please follow the steps below.
+      (1) If the mark's outline looks similar to common shape of the metaphor, please specify details for filling up.
+      For example, bar mark's shape looks like the metaphor "apartment". Then, Prompt should specify extra components like "window", "door", "roof", etc.
+      (2) If they are not similar, please think how to make the metaphor more applicable to the mark.
+      For example, triangle shaped bar mark doesn't look like the metaphor "apartment". Then, we can consider them as "an entrance" of "apartment". In this case, the prompt should specify like "an apartment having an entrance with a triangular top".
+      For another example, if the mark is a line chart and we set the metaphor as "apartment", we can consider them as "Stair railing" of "apartment". In this case, the prompt should specify like "an apartment having a staircase with a railing".
+      (3) If these approaches can't connect the metaphor to the mark, please think of new metaphor.
+    `
     const system_prompt_examples = `
       Please describe the main metaphorical objects, and extra details to make it more realistic, so the FLUX.1.dev API can understand the context and generate the final output more acceptable.
       While detailing the extras, please do not specify non-main elements and leave the background as white.
@@ -81,6 +96,7 @@ export async function POST(request) {
             ${system_role}
             ${system_prompt_constraints}
             ${system_metaphor_direction}
+            ${system_adapt_mark}
             
             For each prompt, please provide a detailed description of visual elements of the metaphor.
             ${system_prompt_examples}

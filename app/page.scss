@@ -328,6 +328,9 @@ header {
               }
               
               .prompt-detail {
+                display: flex;
+                flex-direction: column;
+                gap: 0.2rem;
                 font-size: 0.85rem;
                 color: #555;
                 font-style: italic;

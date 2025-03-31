@@ -9,7 +9,7 @@ import { useDataStore } from '../store/dataStore.js';
 import { 
   ControlPanel,
   downloadChart
-} from '../controls';
+} from '../controls/index.js';
 
 export default function ChartControls({ chartRef }) {
   const chartType = useSharedStore(state => state.chartType);
@@ -25,7 +25,6 @@ export default function ChartControls({ chartRef }) {
   const [selectedPrompt, setSelectedPrompt] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [apiError, setApiError] = useState('');
-  const [visualInterpretation, setVisualInterpretation] = useState('');
 
   // Handle export button click
   const handleExport = () => {
@@ -130,75 +129,60 @@ export default function ChartControls({ chartRef }) {
       setAiPrompt(''); // Clear previous prompt
       setParsedPrompts(null); // Clear parsed prompts
       setSelectedPrompt(null); // Clear selected prompt
-      
-      const imageData = await getChartImageData(chartRef);
-      
-      const response = await fetch('/api/generate-prompt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ imageData, subject, authorIntention }),
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setAiPrompt(JSON.stringify(data.content, null, 2)); // Display pretty JSON in textarea
-        try {
-          console.log('API response:', data.content);
-          
-          // Check if the content is already an object
-          if (data.content && typeof data.content === 'object') {
-            setParsedPrompts(data.content);
-          } else if (typeof data.content === 'string') {
-            // Try to parse it if it's a string
-            const promptsObject = JSON.parse(data.content);
-            setParsedPrompts(promptsObject);
-          } else {
-            throw new Error("Invalid response format");
-          }
-        } catch (parseError) {
-          console.error('Error parsing prompt JSON:', parseError);
-          setApiError(`Error parsing response: ${parseError.message}`);
-        }
-      } else {
-        setApiError(data.error || 'Failed to generate prompt');
-      }
-    } catch (error) {
-      console.error('Error generating AI prompt:', error);
-      setApiError(`Error: ${error.message}`);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
-  const generateInterpretation = async () => {
-    try {
-      setIsGenerating(true);
-      setApiError('');
-      setVisualInterpretation('');
-      
       const imageData = await getChartImageData(chartRef);
 
-      const response = await fetch('/api/generate-interpretation', {
+      const response_interpretation = await fetch('/api/generate-interpretation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ imageData, subject }),
       });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setVisualInterpretation(data.interpretation);
-        console.log('API response:', data);
+      const data_interpretation = await response_interpretation.json();
+      const visualInterpretation = data_interpretation.content.interpretation;
+      console.log('Visual Interpretation:', visualInterpretation);
+
+      if (data_interpretation.success) {
+
+        // Call our API route
+        const response = await fetch('/api/generate-prompt', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ imageData, subject, authorIntention, visualInterpretation }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          setAiPrompt(JSON.stringify(data.content, null, 2)); // Display pretty JSON in textarea
+          try {
+            console.log('API response:', data.content);
+            
+            // Check if the content is already an object
+            if (data.content && typeof data.content === 'object') {
+              setParsedPrompts(data.content);
+            } else if (typeof data.content === 'string') {
+              // Try to parse it if it's a string
+              const promptsObject = JSON.parse(data.content);
+              setParsedPrompts(promptsObject);
+            } else {
+              throw new Error("Invalid response format");
+            }
+          } catch (parseError) {
+            console.error('Error parsing prompt JSON:', parseError);
+            setApiError(`Error parsing response: ${parseError.message}`);
+          }
+        } else {
+          setApiError('Error generating prompt');
+        }
       } else {
-        setApiError(data.error || 'Failed to generate interpretation');
+        setApiError('Error generating interpretation');
       }
     } catch (error) {
-      console.error('Error generating visual interpretation:', error);
+      console.error('Error generating AI prompt:', error);
       setApiError(`Error: ${error.message}`);
     } finally {
       setIsGenerating(false);
@@ -269,23 +253,10 @@ export default function ChartControls({ chartRef }) {
         >
           {isGenerating ? 'Generating...' : 'Generate Sketch Smudge Prompt'}
         </button>
-
-        <button
-          className="ai-generate-button"
-          onClick={generateInterpretation}
-          disabled={isGenerating}
-        >
-          {isGenerating ? 'Generating...' : 'Visual Interpretation'}
-        </button>
+        
         {apiError && (
           <div className="api-error">
             <p>{apiError}</p>
-          </div>
-        )}
-
-        {visualInterpretation && (
-          <div className="visual-interpretation">
-            <p>{visualInterpretation}</p>
           </div>
         )}
         
@@ -293,6 +264,7 @@ export default function ChartControls({ chartRef }) {
           <div className="ai-prompt-container">
             <div className="data-subject">Data Subject: {parsedPrompts["data_subject"]}</div>
             <div className="author-intention">Author's Intention: {parsedPrompts["author_intention"]}</div>
+            <div className="visual-interpretation">Visual Interpretation: {parsedPrompts["visual_interpretation"]}</div>
             <ul className="initial-prompt-list">
               {
                 parsedPrompts["initial_metaphors"].map((value, index) => (
@@ -316,13 +288,13 @@ export default function ChartControls({ chartRef }) {
                   <div className="prompt-content">
                     <div className="prompt-text">{value.prompt}</div>
                     <div className="prompt-detail">
-                      <span className="detail-label">Selected Metaphor:</span> {value["metaphorical object for the chart's marks"]}
+                      <span className="detail-label">Selected Metaphor: {value["metaphorical object for the chart's marks"]}</span>
                     </div>
                     <div className="prompt-detail">
-                      <span className="detail-label">Reason_Subject:</span> {value["reason why this metaphor is fit for the chart's subject"]}
-                    </div>
-                    <div className="prompt-detail">
-                      <span className="detail-label">Reason_Intent:</span> {value["reason why this metaphor is fit for the author's intent"]}
+                      <span className="detail-label">Reason_Interpretation: {value["reason why this metaphor is fit for the visual interpretation(data trend)"]}</span>
+                      <span className="detail-label">Reason_Subject: {value["reason why this metaphor is fit for the chart's subject(not data trend)"]}</span>
+                      <span className="detail-label">Reason_Intent: {value["reason why this metaphor is fit for the author's intent"]}</span>
+                      <span className="detail-label">Reason_Outline: {value["reason why this metaphor is fit for the marks' outline"]}</span>
                     </div>
                   </div>
                 </li>
@@ -363,4 +335,4 @@ export default function ChartControls({ chartRef }) {
       </div>
     </div>
   );
-}
+} 

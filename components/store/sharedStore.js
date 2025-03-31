@@ -30,7 +30,7 @@ export const useSharedStore = create()((set) => ({
   
   // Stroke settings
   strokePattern: 'solid',
-  strokeWidth: 2,
+  strokeWidth: 1,
   strokeColor: '#000',
   strokeStyle: 'normal',
   dashArray: '6,4',
