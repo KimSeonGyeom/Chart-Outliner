@@ -65,7 +65,7 @@ export async function POST(request) {
       For example, if the data is about "cost of living" and the trend is increasing, the metaphor could be "a house", "a money bag" or "an apratment and a ladder reaching the window".
       In addition to this, if the author's intention is to warn about the cost of living, "a house" can be "an evil house" or "a money bag" can be "a money bag with a monstrous mouth".
 
-      First, generate six metaphors.
+      First, generate four metaphors.
       Among your ideas, select the most appropriate three metaphors which help the readers to understand the author's intention.
       Please be creative and use your imagination.
     `;

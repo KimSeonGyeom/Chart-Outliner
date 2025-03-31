@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import BarChart from './BarChart.jsx';
 import LineChart from './LineChart.jsx';
 import { useSharedStore } from '../store/sharedStore.js';
 import { useChartStore } from '../store/chartStore.js';
 import { useDataStore } from '../store/dataStore.js';
+import { useCostStore } from '../store/costStore.js';
+import { useAiStore, METAPHOR_PROPS } from '../store/aiStore.js';
 import { 
   ControlPanel,
   downloadChart
@@ -19,13 +21,32 @@ export default function ChartControls({ chartRef }) {
   const exportFileType = useChartStore(state => state.exportFileType);
   const setExportOption = useChartStore(state => state.setExportOption);
   
-  // OpenAI states
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [parsedPrompts, setParsedPrompts] = useState(null);
-  const [selectedPrompt, setSelectedPrompt] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [apiError, setApiError] = useState('');
-
+  // Cost tracking
+  const addApiCall = useCostStore(state => state.addApiCall);
+  
+  // AI states from aiStore
+  const aiPrompt = useAiStore(state => state.aiPrompt);
+  const parsedPrompts = useAiStore(state => state.parsedPrompts);
+  const selectedPrompt = useAiStore(state => state.selectedPrompt);
+  const isGenerating = useAiStore(state => state.isGenerating);
+  const apiError = useAiStore(state => state.apiError);
+  const generatedImages = useAiStore(state => state.generatedImages);
+  const isGeneratingImage = useAiStore(state => state.isGeneratingImage);
+  const currentlyGeneratingIndex = useAiStore(state => state.currentlyGeneratingIndex);
+  const chartImageData = useAiStore(state => state.chartImageData);
+  
+  // AI actions from aiStore
+  const setAiPrompt = useAiStore(state => state.setAiPrompt);
+  const setParsedPrompts = useAiStore(state => state.setParsedPrompts);
+  const setSelectedPrompt = useAiStore(state => state.setSelectedPrompt);
+  const setIsGenerating = useAiStore(state => state.setIsGenerating);
+  const setApiError = useAiStore(state => state.setApiError);
+  const setGeneratedImageUrl = useAiStore(state => state.setGeneratedImageUrl);
+  const setIsGeneratingImage = useAiStore(state => state.setIsGeneratingImage);
+  const setCurrentlyGeneratingIndex = useAiStore(state => state.setCurrentlyGeneratingIndex);
+  const setChartImageData = useAiStore(state => state.setChartImageData);
+  const resetAiStates = useAiStore(state => state.resetAiStates);
+  
   // Handle export button click
   const handleExport = () => {
     // Generate a filename with timestamp
@@ -117,8 +138,10 @@ export default function ChartControls({ chartRef }) {
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     DOMURL.revokeObjectURL(url);
     
-    // Return base64 image data
-    return canvas.toDataURL('image/png', 1.0).split(',')[1];
+    // Get base64 image data and store it
+    const base64Data = canvas.toDataURL('image/png', 1.0).split(',')[1];
+    setChartImageData(base64Data);
+    return base64Data;
   };
 
   // Handle AI prompt generation
@@ -130,6 +153,7 @@ export default function ChartControls({ chartRef }) {
       setParsedPrompts(null); // Clear parsed prompts
       setSelectedPrompt(null); // Clear selected prompt
 
+      // Get and store chart image data
       const imageData = await getChartImageData(chartRef);
 
       const response_interpretation = await fetch('/api/generate-interpretation', {
@@ -142,19 +166,24 @@ export default function ChartControls({ chartRef }) {
       const data_interpretation = await response_interpretation.json();
       const visualInterpretation = data_interpretation.content.interpretation;
       console.log('Visual Interpretation:', visualInterpretation);
+      
+      // Track interpretation API call
+      addApiCall('interpretation');
 
       if (data_interpretation.success) {
-
-        // Call our API route
-        const response = await fetch('/api/generate-prompt', {
+        // Call our metaphors API route instead of prompt
+        const response = await fetch('/api/generate-metaphors', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ imageData, subject, authorIntention, visualInterpretation }),
+          body: JSON.stringify({ subject, authorIntention, visualInterpretation }),
         });
         
         const data = await response.json();
+        
+        // Track metaphors API call
+        addApiCall('metaphors');
         
         if (data.success) {
           setAiPrompt(JSON.stringify(data.content, null, 2)); // Display pretty JSON in textarea
@@ -172,27 +201,68 @@ export default function ChartControls({ chartRef }) {
               throw new Error("Invalid response format");
             }
           } catch (parseError) {
-            console.error('Error parsing prompt JSON:', parseError);
+            console.error('Error parsing metaphors JSON:', parseError);
             setApiError(`Error parsing response: ${parseError.message}`);
           }
         } else {
-          setApiError('Error generating prompt');
+          setApiError('Error generating metaphors');
         }
       } else {
         setApiError('Error generating interpretation');
       }
     } catch (error) {
-      console.error('Error generating AI prompt:', error);
+      console.error('Error generating AI metaphors:', error);
       setApiError(`Error: ${error.message}`);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Handle copy to clipboard
-  const handleCopyPrompt = () => {
-    if (selectedPrompt && parsedPrompts) {
-      navigator.clipboard.writeText(parsedPrompts[selectedPrompt].prompt);
+  // Function to generate image from selected prompt
+  const generateImage = async (index) => {
+    if (!parsedPrompts || !parsedPrompts.metaphors || !parsedPrompts.metaphors[index]) return;
+    
+    setCurrentlyGeneratingIndex(index);
+    setIsGeneratingImage(true);
+    setApiError('');
+    
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: parsedPrompts.metaphors[index][METAPHOR_PROPS.OBJECT]
+        }),
+      });
+      
+      const data = await response.json();
+      
+      // Track image API call
+      addApiCall('image');
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to generate image');
+      }
+      
+      setGeneratedImageUrl(index, data.imageUrl);
+    } catch (error) {
+      setApiError(error.message);
+    } finally {
+      setIsGeneratingImage(false);
+      setCurrentlyGeneratingIndex(null);
+    }
+  };
+
+  // Generate all images
+  const generateAllImages = async () => {
+    if (!parsedPrompts || !parsedPrompts.metaphors) return;
+    
+    setApiError('');
+    
+    for (let i = 0; i < parsedPrompts.metaphors.length; i++) {
+      await generateImage(i);
     }
   };
 
@@ -229,9 +299,14 @@ export default function ChartControls({ chartRef }) {
         </button>
       </div>
       
+      {/* Chart display */}
+      <div className="chart-display" ref={chartRef}>
+        {chartType === 'bar' ? <BarChart /> : <LineChart />}
+      </div>
+
       {/* AI Prompt Generation */}
       <div className="ai-section">
-        <div className="ai-section-title">AI Prompt Generator for FLUX.1.dev</div>
+        <div className="ai-section-title">AI Image Generator</div>
         
         {/* Intention field */}
         <div className="intention-field">
@@ -251,7 +326,7 @@ export default function ChartControls({ chartRef }) {
           onClick={generateAIPrompt}
           disabled={isGenerating}
         >
-          {isGenerating ? 'Generating...' : 'Generate Sketch Smudge Prompt'}
+          {isGenerating ? 'Generating...' : 'Generate Metaphors'}
         </button>
         
         {apiError && (
@@ -265,49 +340,78 @@ export default function ChartControls({ chartRef }) {
             <div className="data-subject">Data Subject: {parsedPrompts["data_subject"]}</div>
             <div className="author-intention">Author's Intention: {parsedPrompts["author_intention"]}</div>
             <div className="visual-interpretation">Visual Interpretation: {parsedPrompts["visual_interpretation"]}</div>
-            <ul className="initial-prompt-list">
-              {
-                parsedPrompts["initial_metaphors"].map((value, index) => (
-                  <li 
-                    key={index} 
-                    className={`prompt-item ${selectedPrompt === index ? 'selected' : ''}`}
-                    onClick={() => setSelectedPrompt(index)}
-                  >
-                    Initial Metaphor-{index + 1}: {value["metaphorical object for the chart's marks"]}
-                  </li>
-                ))
-              }
-            </ul>
-            <ul className="selected-prompt-list">
-              {parsedPrompts["selected_metaphors"].map((value, index) => (
-                <li
+            
+            <button 
+              className="generate-all-images-button"
+              onClick={generateAllImages}
+              disabled={isGeneratingImage}
+            >
+              Generate All Images
+            </button>
+            
+            <div className="metaphors-gallery">
+              {parsedPrompts["metaphors"].map((metaphor, index) => (
+                <div
                   key={index}
-                  className={`prompt-item ${selectedPrompt === index ? 'selected' : ''}`}
+                  className={`metaphor-card ${selectedPrompt === index ? 'selected' : ''}`}
                   onClick={() => setSelectedPrompt(index)}
                 >
-                  <div className="prompt-content">
-                    <div className="prompt-text">{value.prompt}</div>
-                    <div className="prompt-detail">
-                      <span className="detail-label">Selected Metaphor: {value["metaphorical object for the chart's marks"]}</span>
+                  <div className="metaphor-content">
+                    <div className="metaphor-text">Metaphor {index + 1}: {metaphor[METAPHOR_PROPS.OBJECT]}</div>
+                    <div className="metaphor-detail">
+                      <div className="detail-label">
+                        <strong>Data Trend:</strong> {metaphor[METAPHOR_PROPS.DATA_TREND_REASON]}
+                      </div>
+                      <div className="detail-label">
+                        <strong>Subject:</strong> {metaphor[METAPHOR_PROPS.SUBJECT_REASON]}
+                      </div>
+                      <div className="detail-label">
+                        <strong>Author's Intent:</strong> {metaphor[METAPHOR_PROPS.INTENT_REASON]}
+                      </div>
                     </div>
-                    <div className="prompt-detail">
-                      <span className="detail-label">Reason_Interpretation: {value["reason why this metaphor is fit for the visual interpretation(data trend)"]}</span>
-                      <span className="detail-label">Reason_Subject: {value["reason why this metaphor is fit for the chart's subject(not data trend)"]}</span>
-                      <span className="detail-label">Reason_Intent: {value["reason why this metaphor is fit for the author's intent"]}</span>
-                      <span className="detail-label">Reason_Outline: {value["reason why this metaphor is fit for the marks' outline"]}</span>
+                    
+                    <div className="metaphor-image-container">
+                      {generatedImages[index] ? (
+                        <img 
+                          src={generatedImages[index]} 
+                          alt={`Generated image for metaphor ${index + 1}`}
+                          className="metaphor-image"
+                        />
+                      ) : (
+                        <div className="image-placeholder">
+                          <button
+                            className="generate-image-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              generateImage(index);
+                            }}
+                            disabled={currentlyGeneratingIndex === index}
+                          >
+                            {currentlyGeneratingIndex === index ? 'Generating...' : 'Generate Image'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
             
-            {selectedPrompt && (
-              <button 
-                className="ai-copy-button"
-                onClick={handleCopyPrompt}
-              >
-                Copy to Clipboard
-              </button>
+            {selectedPrompt !== null && (
+              <div className="prompt-actions">
+                <button 
+                  className="ai-copy-button"
+                  onClick={() => {
+                    if (parsedPrompts && parsedPrompts.metaphors && parsedPrompts.metaphors[selectedPrompt]) {
+                      navigator.clipboard.writeText(
+                        parsedPrompts.metaphors[selectedPrompt][METAPHOR_PROPS.OBJECT]
+                      );
+                    }
+                  }}
+                >
+                  Copy Selected Metaphor
+                </button>
+              </div>
             )}
           </div>
         ) : aiPrompt ? (
@@ -327,11 +431,6 @@ export default function ChartControls({ chartRef }) {
             </button>
           </div>
         ) : null}
-      </div>
-      
-      {/* Chart display */}
-      <div className="chart-display" ref={chartRef}>
-        {chartType === 'bar' ? <BarChart /> : <LineChart />}
       </div>
     </div>
   );
