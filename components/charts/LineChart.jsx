@@ -42,8 +42,6 @@ const LineChart = () => {
   const distortionAmount = useSharedStore((state) => state.distortionAmount);
   
   // Get chart-specific settings
-  const curveType = useChartStore((state) => state.curveType);
-  const curveTension = useChartStore((state) => state.curveTension);
   const showPoints = useChartStore((state) => state.showPoints);
   const pointRadius = useChartStore((state) => state.pointRadius);
   const pointShape = useChartStore((state) => state.pointShape);
@@ -390,32 +388,13 @@ const LineChart = () => {
       .nice()
       .range([innerHeight, 0]);
 
-    // Create line generator with specified curve
-    const getCurveFunction = (type) => {
-      switch (type) {
-        case 'cardinal':
-          return d3.curveCardinal.tension(curveTension);
-        case 'basis':
-          return d3.curveBasis;
-        case 'step':
-          return d3.curveStep;
-        case 'monotone':
-          return d3.curveMonotoneX;
-        case 'catmullRom':
-          return d3.curveCatmullRom.alpha(curveTension);
-        case 'linear':
-        default:
-          return d3.curveLinear;
-      }
-    };
-
     // Create a chart group for visualization that will have transformations applied
     const chartVisGroup = g.append('g').attr('class', 'chart-vis-group');
 
     const line = d3.line()
       .x(d => x(String(d.x)) || 0)
       .y(d => y(d.y))
-      .curve(getCurveFunction(curveType));
+      .curve(d3.curveLinear);
 
     // Add area if fill is enabled
     if (fill) {
@@ -423,7 +402,7 @@ const LineChart = () => {
         .x(d => x(String(d.x)) || 0)
         .y0(innerHeight)
         .y1(d => y(d.y))
-        .curve(getCurveFunction(curveType));
+        .curve(d3.curveLinear);
 
       chartVisGroup.append('path')
         .datum(chartData)
@@ -491,10 +470,9 @@ const LineChart = () => {
     chartRef.current = { g, x, y };
 
   }, [chartData, chartWidth, chartHeight, 
-      curveType, curveTension, strokeColor, fill, fillOpacity, fillPattern,
-      showPoints, pointRadius, pointShape, strokePattern, strokeWidth, dashArray,
-      showXAxis, showYAxis, yDomainMin, yDomainMax, fillZoomLevel, innerWidth, innerHeight,
-      transformationType, translationX, translationY, scaleX, scaleY, 
+      showPoints, pointRadius, pointShape, strokeColor, fill, fillOpacity, fillPattern,
+      showXAxis, showYAxis, yDomainMin, yDomainMax, dashArray, strokeWidth, fillZoomLevel, 
+      innerWidth, innerHeight, transformationType, translationX, translationY, scaleX, scaleY, 
       rotation, skewX, skewY, perspective, distortionType, distortionAmount]);
   
   // Effect to clean up when component unmounts

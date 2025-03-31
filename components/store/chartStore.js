@@ -8,21 +8,15 @@ export const useChartStore = create((set) => ({
   
   // Bar chart settings
   barPadding: 0.2,
-  barShape: 'rectangle',
   
   // Line chart settings
-  curveType: 'linear',
-  curveTension: 0.5,
   showPoints: true,
   pointRadius: 5,
   pointShape: 'circle',
   
   // Actions
   setBarPadding: (padding) => set({ barPadding: padding }),
-  setBarShape: (shape) => set({ barShape: shape }),
   
-  setCurveType: (type) => set({ curveType: type }),
-  setCurveTension: (tension) => set({ curveTension: tension }),
   setShowPoints: (show) => set({ showPoints: show }),
   setPointRadius: (radius) => set({ pointRadius: radius }),
   setPointShape: (shape) => set({ pointShape: shape }),

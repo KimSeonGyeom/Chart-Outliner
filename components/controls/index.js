@@ -17,6 +17,3 @@ export { default as TransformControls } from './shared/TransformControls.jsx';
 
 // Export bar chart sections
 export { default as BarAppearanceSection } from './bar/BarPaddingSection.jsx';
-
-// Export line chart sections
-export { default as LineAppearanceSection } from './line/LineCurveSection.jsx';

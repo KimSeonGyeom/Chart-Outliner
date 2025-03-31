@@ -10,18 +10,10 @@ const strokePatternOptions = [
   { value: 'custom', label: 'Custom' }
 ];
 
-const strokeStyleOptions = [
-  { value: 'normal', label: 'Normal' },
-  { value: 'brush', label: 'Brush' },
-  { value: 'sketch', label: 'Sketch' },
-  { value: 'rough', label: 'Rough' }
-];
-
 const StrokePatternSection = () => {
   // Get stroke settings from shared store
   const strokePattern = useSharedStore(state => state.strokePattern);
   const strokeWidth = useSharedStore(state => state.strokeWidth);
-  const strokeStyle = useSharedStore(state => state.strokeStyle);
   const dashArray = useSharedStore(state => state.dashArray);
   const updateSetting = useSharedStore(state => state.updateSetting);
 
@@ -38,7 +30,6 @@ const StrokePatternSection = () => {
         <label htmlFor="stroke-visibility-checkbox">Show outline</label>
       </div>
       <div className="control-items-column">
-
         {strokeWidth > 0 && (
           <div className="input-group">
             <label>Width (px)</label>
@@ -51,22 +42,6 @@ const StrokePatternSection = () => {
               onChange={(e) => updateSetting('strokeWidth', parseFloat(e.target.value))}
               className="number-input"
             />
-          </div>
-        )}
-        {strokeWidth > 0 && (
-          <div className="dropdown-group">
-            <label>Style</label>
-            <select 
-              value={strokeStyle}
-              onChange={(e) => updateSetting('strokeStyle', e.target.value)}
-              className="dropdown-select"
-            >
-              {strokeStyleOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
           </div>
         )}
         {strokeWidth > 0 && (

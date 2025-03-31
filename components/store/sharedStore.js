@@ -32,7 +32,6 @@ export const useSharedStore = create()((set) => ({
   strokePattern: 'solid',
   strokeWidth: 1,
   strokeColor: '#000',
-  strokeStyle: 'normal',
   dashArray: '6,4',
   
   // Transformation settings

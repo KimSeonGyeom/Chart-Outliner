@@ -26,7 +26,6 @@ const BarChart = () => {
   const strokePattern = useSharedStore((state) => state.strokePattern);
   const strokeWidth = useSharedStore((state) => state.strokeWidth);
   const strokeColor = useSharedStore((state) => state.strokeColor);
-  const strokeStyle = useSharedStore((state) => state.strokeStyle);
   const dashArray = useSharedStore((state) => state.dashArray);
   
   // Get transformation settings
@@ -44,7 +43,6 @@ const BarChart = () => {
   
   // Get chart-specific settings
   const barPadding = useChartStore((state) => state.barPadding);
-  const barShape = useChartStore((state) => state.barShape);
   
   // Other state
   const svgRef = useRef(null);
@@ -118,26 +116,6 @@ const BarChart = () => {
     }
   };
 
-  // Create a path for the bar shape
-  const createBarShape = (x, y, width, height, shape) => {
-    switch (shape) {
-      case 'triangle':
-        return `M ${x},${y+height} L ${x+width/2},${y} L ${x+width},${y+height} Z`;
-      case 'diamond':
-        return `M ${x+width/2},${y} L ${x+width},${y+height/2} L ${x+width/2},${y+height} L ${x},${y+height/2} Z`;
-      case 'oval':
-        // For oval, we'll use ellipse element instead, return null here
-        return null;
-      case 'trapezoid':
-        const indent = width * 0.2;
-        return `M ${x+indent},${y} L ${x+width-indent},${y} L ${x+width},${y+height} L ${x},${y+height} Z`;
-      case 'rectangle':
-      default:
-        // For rectangle, we'll use rect element, return null here
-        return null;
-    }
-  };
-
   // Function to apply transformation to chart elements
   const applyTransformation = (selection) => {
     if (!transformationType || transformationType === 'none') return selection;
@@ -185,17 +163,17 @@ const BarChart = () => {
             const filter = defs.append('filter')
               .attr('id', 'distortionFilter');
               
-            filter.append('feTurbulence')
-              .attr('type', 'fractalNoise')
-              .attr('baseFrequency', '0.01 0.05')
-              .attr('numOctaves', '1')
-              .attr('seed', '3');
-              
-            filter.append('feDisplacementMap')
-              .attr('in', 'SourceGraphic')
-              .attr('scale', distortionAmount || 10)
-              .attr('xChannelSelector', 'R')
-              .attr('yChannelSelector', 'G');
+              filter.append('feTurbulence')
+                .attr('type', 'fractalNoise')
+                .attr('baseFrequency', '0.01 0.05')
+                .attr('numOctaves', '1')
+                .attr('seed', '3');
+                
+                filter.append('feDisplacementMap')
+                  .attr('in', 'SourceGraphic')
+                  .attr('scale', distortionAmount || 10)
+                  .attr('xChannelSelector', 'R')
+                  .attr('yChannelSelector', 'G');
           } else if (distortionType === 'barrel' || distortionType === 'pincushion') {
             // Create barrel or pincushion distortion
             const filter = defs.append('filter')
@@ -381,63 +359,26 @@ const BarChart = () => {
     // Create a chart group for bars that will have transformations applied
     const barsGroup = g.append('g').attr('class', 'bars-group');
     
-    // Add bars with different shapes
-    if (barShape === 'rectangle') {
-      // Default rectangle bars
-      barsGroup.selectAll('.bar')
-        .data(chartData)
-        .enter()
-        .append('rect')
-        .attr('class', 'bar')
-        .attr('x', d => x(String(d.x)) ?? 0)
-        .attr('y', d => y(d.y))
-        .attr('width', x.bandwidth())
-        .attr('height', d => innerHeight - y(d.y))
-        .attr('fill', d => fill ? '#000' : 'transparent')
-        .attr('stroke', strokeWidth > 0 ? strokeColor : 'none')
-        .attr('stroke-width', strokeWidth)
-        .attr('stroke-dasharray', getStrokeDashArray(strokePattern))
-        .attr('stroke-linecap', strokeStyle);
-    } else if (barShape === 'oval') {
-      // Oval/ellipse bars
-      barsGroup.selectAll('.bar')
-        .data(chartData)
-        .enter()
-        .append('ellipse')
-        .attr('class', 'bar')
-        .attr('cx', d => (x(String(d.x)) ?? 0) + x.bandwidth() / 2)
-        .attr('cy', d => y(d.y) + (innerHeight - y(d.y)) / 2)
-        .attr('rx', x.bandwidth() / 2)
-        .attr('ry', d => (innerHeight - y(d.y)) / 2)
-        .attr('fill', d => fill ? '#000' : 'transparent')
-        .attr('stroke', strokeWidth > 0 ? strokeColor : 'none')
-        .attr('stroke-width', strokeWidth)
-        .attr('stroke-dasharray', getStrokeDashArray(strokePattern));
-    } else {
-      // Custom shape bars using paths
-      barsGroup.selectAll('.bar')
-        .data(chartData)
-        .enter()
-        .append('path')
-        .attr('class', 'bar')
-        .attr('d', d => {
-          const xPos = x(String(d.x)) ?? 0;
-          const yPos = y(d.y);
-          const barWidth = x.bandwidth();
-          const barHeight = innerHeight - y(d.y);
-          return createBarShape(xPos, yPos, barWidth, barHeight, barShape);
-        })
-        .attr('fill', d => fill ? '#000' : 'transparent')
-        .attr('stroke', strokeWidth > 0 ? strokeColor : 'none')
-        .attr('stroke-width', strokeWidth)
-        .attr('stroke-dasharray', getStrokeDashArray(strokePattern));
-    }
+    // Add rectangle bars
+    barsGroup.selectAll('.bar')
+      .data(chartData)
+      .enter()
+      .append('rect')
+      .attr('class', 'bar')
+      .attr('x', d => x(String(d.x)) ?? 0)
+      .attr('y', d => y(d.y))
+      .attr('width', x.bandwidth())
+      .attr('height', d => innerHeight - y(d.y))
+      .attr('fill', d => fill ? '#000' : 'transparent')
+      .attr('stroke', strokeWidth > 0 ? strokeColor : 'none')
+      .attr('stroke-width', strokeWidth)
+      .attr('stroke-dasharray', getStrokeDashArray(strokePattern));
     
     // Apply transformations to the bars group
     applyTransformation(barsGroup);
     
   }, [chartData, chartWidth, chartHeight, 
-      barPadding, barShape, fill, fillPattern, strokePattern,
+      barPadding, fill, fillPattern, strokePattern,
       showXAxis, showYAxis, yDomainMin, yDomainMax, dashArray, strokeWidth, fillZoomLevel, strokeColor, 
       innerWidth, innerHeight, transformationType, translationX, translationY, scaleX, scaleY, 
       rotation, skewX, skewY, perspective, distortionType, distortionAmount]);
