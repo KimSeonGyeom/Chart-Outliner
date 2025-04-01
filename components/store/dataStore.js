@@ -125,7 +125,7 @@ export const generateRandomData = (numPoints) => {
   for (let i = 0; i < numPoints; i++) {
     newData.push({
       x: dataLabels[i % dataLabels.length],
-      y: Math.floor(Math.random() * 100) // Random value between 0-100
+      y: Math.floor(Math.random() * 60) + 40 // Random value between 40-100
     });
   }
   
