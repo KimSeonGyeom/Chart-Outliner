@@ -35,12 +35,12 @@ const SharedControls = () => {
   return (
     <div className="shared-controls">
       <ChartTypeSelector />
-      <DimensionsSection />
+      {/* <DimensionsSection /> */}
       <DataSection />
       <AxisSection />
       <DomainSection />
-      <StrokePatternSection /> 
-      <FillSection />
+      {/* <StrokePatternSection />  */}
+      {/* <FillSection /> */}
       {/* <TransformControls /> */}
     </div>
   );

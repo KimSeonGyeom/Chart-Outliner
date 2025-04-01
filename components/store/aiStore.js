@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 
 /**
+ * Constants for application settings
+ */
+export const AI_CONSTANTS = {
+  NUM_METAPHORS: 4, // The fixed number of metaphor slots/placeholders to display
+};
+
+/**
  * Constants for metaphor property names
  * These ensure consistency between the API responses and component rendering
  */

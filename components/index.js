@@ -15,7 +15,6 @@ export { useChartStore } from './store/chartStore';
 export { useDataStore } from './store/dataStore';
 export { useUIStore } from './store/uiStore';
 export { useSharedStore } from './store/sharedStore';
-export { useCostStore } from './store/costStore';
 export * from './store/storeUtils';
 
 // Types
