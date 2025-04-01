@@ -50,10 +50,9 @@ export async function POST(request) {
       Please consider below points:
       - The conventional appearance of the metaphor should be tall as the bars in the chart(e.g., select a tree rather than a moss for green metaphor).
       - The metaphor should be a single object(e.g., a house) or a single grouped objects(e.g., a single stack of coins).
-      - The metaphor should be located in the center of the image.
-      - The image should be a front view of the metaphor.
+      - Please do not use word that reminds multiple objects (e.g., skyscrapper).
 
-      To sum up, please name the metaphor starting with "a front view of a vertically long single [object]".
+      To sum up, please name the metaphor starting with "a single [object]".
     `;
 
     const response = await openai.beta.chat.completions.parse({

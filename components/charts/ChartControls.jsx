@@ -225,6 +225,17 @@ export default function ChartControls({ chartRef }) {
     setCurrentlyGeneratingIndex(index);
     setIsGeneratingImage(true);
     setApiError('');
+
+    const prompt = parsedPrompts.metaphors[index][METAPHOR_PROPS.OBJECT];
+    // prompt should include "orthogonal drawing"
+    const sketch_prompt = " in the style of a hand-drawn orthogonal drawing";
+    // prompt should include "front view"
+    const front_prompt = "A front view of";
+    // // prompt should include "no shadow and no gloss"
+    const shadow_prompt = ", no shadow and no gloss";
+    // prompt should include "no background"
+    const bg_prompt = ", solid white background";
+
     
     try {
       const response = await fetch('/api/generate-image', {
@@ -233,7 +244,7 @@ export default function ChartControls({ chartRef }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: parsedPrompts.metaphors[index][METAPHOR_PROPS.OBJECT]
+          prompt: front_prompt + prompt + sketch_prompt + bg_prompt + shadow_prompt
         }),
       });
       
@@ -252,6 +263,47 @@ export default function ChartControls({ chartRef }) {
     } finally {
       setIsGeneratingImage(false);
       setCurrentlyGeneratingIndex(null);
+    }
+  };
+
+  // Function to process chart with Canny edge detection and denoising
+  const processChartCannyEdges = async () => {
+    try {
+      setIsGenerating(true);
+      setApiError(''); // Clear any previous errors
+      
+      // Get chart image data
+      const imageData = await getChartImageData(chartRef);
+      
+      // Call the Flask backend to process the chart image
+      const response = await fetch('http://localhost:5000/api/process-chart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageData }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to process chart image');
+      }
+      
+      // Display the processed images or use them as needed
+      // You can create a state to store these and display them in the UI
+      console.log('Processed chart images:', data);
+      
+      // Optional: display the canny image in a new tab/window
+      const cannyImageUrl = `data:image/png;base64,${data.canny_image}`;
+      window.open(cannyImageUrl, '_blank');
+      
+      return data;
+    } catch (error) {
+      console.error('Error processing chart image:', error);
+      setApiError(`Error: ${error.message}`);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -296,6 +348,9 @@ export default function ChartControls({ chartRef }) {
         </div>
         <button className="export-button" onClick={handleExport}>
           Export
+        </button>
+        <button className="process-button" onClick={processChartCannyEdges}>
+          Process Canny Edges
         </button>
       </div>
       

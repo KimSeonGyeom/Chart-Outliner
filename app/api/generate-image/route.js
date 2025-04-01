@@ -19,8 +19,9 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         prompt: prompt,
+        model: "dall-e-3",
         n: 1,
-        size: "512x512",
+        size: "1024x1024",
       }),
     });
 
