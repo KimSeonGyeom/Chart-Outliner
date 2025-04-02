@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useRef } from 'react';
 import BarChart from './BarChart.jsx';
 import LineChart from './LineChart.jsx';
 import { useSharedStore } from '../store/sharedStore.js';
@@ -11,27 +10,25 @@ import { downloadChart } from '../controls/index.js';
 
 export default function ChartControls({ chartRef }) {
   const chartType = useSharedStore(state => state.chartType);
-  const subject = useDataStore(state => state.chartData.subject);
   const authorIntention = useDataStore(state => state.authorIntention);
   const setAuthorIntention = useDataStore(state => state.setAuthorIntention);
+  const chartData = useDataStore(state => state.chartData);
+  const dataSubject = chartData.subject;
   const exportFileType = useChartStore(state => state.exportFileType);
   const setExportOption = useChartStore(state => state.setExportOption);
   
   // AI states from aiStore
-  const aiPrompt = useAiStore(state => state.aiPrompt);
-  const parsedPrompts = useAiStore(state => state.parsedPrompts);
-  const selectedPrompt = useAiStore(state => state.selectedPrompt);
+  const metaphors = useAiStore(state => state.metaphors);
   const isGenerating = useAiStore(state => state.isGenerating);
-  const apiError = useAiStore(state => state.apiError);
-  
+  const visualInterpretation = useDataStore(state => state.visualInterpretation);
+
   // AI actions from aiStore
-  const setAiPrompt = useAiStore(state => state.setAiPrompt);
-  const setParsedPrompts = useAiStore(state => state.setParsedPrompts);
-  const setSelectedPrompt = useAiStore(state => state.setSelectedPrompt);
+  const setMetaphors = useAiStore(state => state.setMetaphors);
   const setIsGenerating = useAiStore(state => state.setIsGenerating);
-  const setApiError = useAiStore(state => state.setApiError);
   const setChartImageData = useAiStore(state => state.setChartImageData);
-  
+  const setVisualInterpretation = useDataStore(state => state.setVisualInterpretation);
+
+
   // Handle export button click
   const handleExport = () => {
     // Generate a filename with timestamp
@@ -130,74 +127,65 @@ export default function ChartControls({ chartRef }) {
   };
 
   // Handle AI prompt generation
-  const generateAIPrompt = async () => {
+  const generateMetaphors = async () => {
     try {
       setIsGenerating(true);
-      setApiError(''); // Clear any previous errors
-      setAiPrompt(''); // Clear previous prompt
-      setParsedPrompts(null); // Clear parsed prompts
-      setSelectedPrompt(null); // Clear selected prompt
 
       // Get and store chart image data
       const imageData = await getChartImageData(chartRef);
 
-      const response_interpretation = await fetch('/api/generate-interpretation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ imageData, subject }),
-      });
-      const data_interpretation = await response_interpretation.json();
-      const visualInterpretation = data_interpretation.content.interpretation;
-      console.log('Visual Interpretation:', visualInterpretation);
-      
-      // Track interpretation API call
-      addApiCall('interpretation');
-
-      if (data_interpretation.success) {
-        // Call our metaphors API route instead of prompt
-        const response = await fetch('/api/generate-metaphors', {
+      try {
+        const response_interpretation = await fetch('/api/generate-interpretation', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ subject, authorIntention, visualInterpretation }),
+          body: JSON.stringify({ imageData, dataSubject }),
         });
         
-        const data = await response.json();
-        
-        // Track metaphors API call
-        addApiCall('metaphors');
-        
-        if (data.success) {
-          setAiPrompt(JSON.stringify(data.content, null, 2)); // Display pretty JSON in textarea
-          try {
-            console.log('API response:', data.content);
-            
-            // Check if the content is already an object
-            if (data.content && typeof data.content === 'object') {
-              setParsedPrompts(data.content);
-            } else if (typeof data.content === 'string') {
-              // Try to parse it if it's a string
-              const promptsObject = JSON.parse(data.content);
-              setParsedPrompts(promptsObject);
-            } else {
-              throw new Error("Invalid response format");
-            }
-          } catch (parseError) {
-            console.error('Error parsing metaphors JSON:', parseError);
-            setApiError(`Error parsing response: ${parseError.message}`);
-          }
-        } else {
-          setApiError('Error generating metaphors');
+        if (!response_interpretation.ok) {
+          const errorData = await response_interpretation.text();
+          console.error('Error response from interpretation API:', errorData);
+          throw new Error(`Interpretation API error: ${response_interpretation.status}`);
         }
-      } else {
-        setApiError('Error generating interpretation');
+        
+        const data_interpretation = await response_interpretation.json();
+        
+        if (!data_interpretation.success) {
+          throw new Error('Failed to generate interpretation');
+        }
+        
+        setVisualInterpretation(data_interpretation.content.interpretation);
+        console.log('Visual Interpretation:', visualInterpretation);
+        
+        // Call our metaphors API route
+        const response = await fetch('/api/generate-metaphor', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ authorIntention, dataSubject, visualInterpretation }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error('Error response from metaphors API:', errorData);
+          throw new Error(`Metaphors API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error('Failed to generate metaphors');
+        }
+
+        console.log('Data:', data);
+        setMetaphors(data.content.metaphors);
+
+      } catch (error) {
+        console.error('API error:', error);
       }
     } catch (error) {
-      console.error('Error generating AI metaphors:', error);
-      setApiError(`Error: ${error.message}`);
+      console.error('Error generating metaphors:', error);
     } finally {
       setIsGenerating(false);
     }
@@ -207,7 +195,6 @@ export default function ChartControls({ chartRef }) {
   const processChartCannyEdges = async () => {
     try {
       setIsGenerating(true);
-      setApiError(''); // Clear any previous errors
       
       // Get chart image data
       const imageData = await getChartImageData(chartRef);
@@ -238,7 +225,6 @@ export default function ChartControls({ chartRef }) {
       return data;
     } catch (error) {
       console.error('Error processing chart image:', error);
-      setApiError(`Error: ${error.message}`);
     } finally {
       setIsGenerating(false);
     }
@@ -304,133 +290,53 @@ export default function ChartControls({ chartRef }) {
         
         <button 
           className="ai-generate-button" 
-          onClick={generateAIPrompt}
+          onClick={generateMetaphors}
           disabled={isGenerating}
         >
-          {isGenerating ? 'Generating...' : 'Generate Metaphors'}
+          {isGenerating ? 'Processing...' : 'Generate Metaphors with Matching Templates'}
         </button>
         
-        {apiError && (
-          <div className="api-error">
-            <p>{apiError}</p>
+        <div className="ai-prompt-container">
+          <div className="data-subject">
+            <span className="data-label">Data Subject:</span> 
+            <span className="data-value">{dataSubject || "No data subject yet"}</span>
           </div>
-        )}
-        
-        {parsedPrompts ? (
-          <div className="ai-prompt-container">
-            <div className="data-subject">
-              <span className="data-label">Data Subject:</span> 
-              <span className="data-value">{parsedPrompts["data_subject"]}</span>
-            </div>
-            <div className="author-intention">
-              <span className="data-label">Author's Intention:</span> 
-              <span className="data-value">{parsedPrompts["author_intention"]}</span>
-            </div>
-            <div className="visual-interpretation">
-              <span className="data-label">Visual Interpretation:</span> 
-              <span className="data-value">{parsedPrompts["visual_interpretation"]}</span>
-            </div>
-            
-            <div className="metaphors-gallery">
-              {/* Placeholder or actual metaphors depending on what is available */}
-              {Array(AI_CONSTANTS.NUM_METAPHORS).fill().map((_, index) => {
-                const metaphor = parsedPrompts["metaphors"] && index < parsedPrompts["metaphors"].length 
-                  ? parsedPrompts["metaphors"][index]
-                  : null;
-                
-                return (
-                  <div
-                    key={index}
-                    className={`metaphor-card ${selectedPrompt === index ? 'selected' : ''} ${!metaphor ? 'placeholder' : ''}`}
-                    onClick={() => metaphor && setSelectedPrompt(index)}
-                  >
-                    <div className="metaphor-content">
-                      <div className="metaphor-text">
-                        Metaphor {index + 1}: {metaphor ? metaphor[METAPHOR_PROPS.OBJECT] : 'No metaphor generated'}
-                      </div>
-                      {metaphor && (
-                        <div className="metaphor-detail">
-                          <div className="detail-label">
-                            <strong>Data Trend:</strong> {metaphor[METAPHOR_PROPS.DATA_TREND_REASON]}
-                          </div>
-                          <div className="detail-label">
-                            <strong>Subject:</strong> {metaphor[METAPHOR_PROPS.SUBJECT_REASON]}
-                          </div>
-                          <div className="detail-label">
-                            <strong>Author's Intent:</strong> {metaphor[METAPHOR_PROPS.INTENT_REASON]}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            
-            {selectedPrompt !== null && parsedPrompts["metaphors"] && selectedPrompt < parsedPrompts["metaphors"].length && (
-              <div className="prompt-actions">
-                <button 
-                  className="ai-copy-button"
-                  onClick={() => {
-                    if (parsedPrompts && parsedPrompts.metaphors && parsedPrompts.metaphors[selectedPrompt]) {
-                      navigator.clipboard.writeText(
-                        parsedPrompts.metaphors[selectedPrompt][METAPHOR_PROPS.OBJECT]
-                      );
-                    }
-                  }}
-                >
-                  Copy Selected Metaphor
-                </button>
-              </div>
-            )}
+          <div className="author-intention">
+            <span className="data-label">Author's Intention:</span> 
+            <span className="data-value">{authorIntention || 'No intention set'}</span>
           </div>
-        ) : aiPrompt ? (
-          <div className="ai-prompt-container">
-            <textarea 
-              className="ai-prompt-text" 
-              value={aiPrompt} 
-              readOnly
-            />
-            <button 
-              className="ai-copy-button"
-              onClick={() => {
-                navigator.clipboard.writeText(aiPrompt);
-              }}
-            >
-              Copy to Clipboard
-            </button>
+          <div className="visual-interpretation">
+            <span className="data-label">Visual Interpretation:</span> 
+            <span className="data-value">{visualInterpretation || "No interpretation yet"}</span>
           </div>
-        ) : (
-          <div className="ai-prompt-container">
-            <div className="data-subject">
-              <span className="data-label">Data Subject:</span> 
-              <span className="data-value">{parsedPrompts ? parsedPrompts["data_subject"] : "No data subject yet"}</span>
-            </div>
-            <div className="author-intention">
-              <span className="data-label">Author's Intention:</span> 
-              <span className="data-value">{authorIntention || 'No intention set'}</span>
-            </div>
-            <div className="visual-interpretation">
-              <span className="data-label">Visual Interpretation:</span> 
-              <span className="data-value">{parsedPrompts ? parsedPrompts["visual_interpretation"] : "No interpretation yet"}</span>
-            </div>
-            
-            <div className="metaphors-gallery">
-              {Array(AI_CONSTANTS.NUM_METAPHORS).fill().map((_, index) => (
-                <div
-                  key={index}
-                  className="metaphor-card placeholder"
-                >
-                  <div className="metaphor-content">
-                    <div className="metaphor-text">
-                      Metaphor {index + 1}: Search metaphors to see
-                    </div>
+          
+          <div className="metaphors-gallery">
+            {metaphors.length==0 && Array(AI_CONSTANTS.NUM_METAPHORS).fill().map((_, index) => (
+              <div
+                key={index}
+                className="metaphor-card placeholder"
+              >
+                <div className="metaphor-content">
+                  <div className="metaphor-text">
+                    Metaphor {index + 1}: Search metaphors to see
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+            {metaphors.length>0 && metaphors.map((metaphor, index) => (
+              <div
+                key={index}
+                className="metaphor-card"
+              >
+                <div className="metaphor-content">
+                  <div className="metaphor-text">
+                    {metaphor["metaphorical object"]}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

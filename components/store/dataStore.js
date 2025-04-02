@@ -154,12 +154,14 @@ export const adjustDataSetSize = (dataset, numPoints) => {
 export const useDataStore = create()((set, get) => ({
   // Data properties
   chartData: sampleDataSets.basic,
+  visualInterpretation: 'null',
   authorIntention: 'null',
   selectedPreset: 'basic',
   numDataPoints: 5, // Default number of data points
   
   // Data actions
   setChartData: (data) => set({ chartData: data }),
+  setVisualInterpretation: (interpretation) => set({ visualInterpretation: interpretation }),
   setAuthorIntention: (intention) => set({ authorIntention: intention }),
   setSelectedPreset: (preset) => {
     const { numDataPoints } = get();
