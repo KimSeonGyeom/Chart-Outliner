@@ -13,7 +13,6 @@ const SingleMetaphorSchema = z.object({
   "reason why this metaphor is fit for the visual interpretation(data trend)": z.string(),
   "reason why this metaphor is fit for the chart's subject(not data trend)": z.string(),
   "reason why this metaphor is fit for the author's intent": z.string(),
-  prompt: z.string(),
 });
 
 // Define the schema for the response format using the single metaphor schema

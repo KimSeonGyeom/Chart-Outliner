@@ -320,6 +320,15 @@ export default function ChartControls({ chartRef }) {
                   <div className="metaphor-text">
                     Metaphor {index + 1}: Search metaphors to see
                   </div>
+                  <div className="metaphor-text">
+                    Reason why this metaphor is fit for the visual interpretation(data trend): Search metaphors to see
+                  </div>
+                  <div className="metaphor-text">
+                    Reason why this metaphor is fit for the chart's subject(not data trend): Search metaphors to see
+                  </div>
+                  <div className="metaphor-text">
+                    Reason why this metaphor is fit for the author's intent: Search metaphors to see
+                  </div>
                 </div>
               </div>
             ))}
@@ -331,6 +340,15 @@ export default function ChartControls({ chartRef }) {
                 <div className="metaphor-content">
                   <div className="metaphor-text">
                     {metaphor["metaphorical object"]}
+                  </div>
+                  <div className="metaphor-text">
+                    {metaphor["reason why this metaphor is fit for the visual interpretation(data trend)"]}
+                  </div>
+                  <div className="metaphor-text">
+                    {metaphor["reason why this metaphor is fit for the chart's subject(not data trend)"]}
+                  </div>
+                  <div className="metaphor-text">
+                    {metaphor["reason why this metaphor is fit for the author's intent"]}
                   </div>
                 </div>
               </div>
