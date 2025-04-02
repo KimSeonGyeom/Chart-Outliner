@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 # Import image processing utilities
 from utils.image_processor import process_image, process_chart_image
+# Import similarity utility
+from utils.similarity import find_most_similar_template
 
 # Load environment variables
 load_dotenv()
@@ -46,6 +48,23 @@ def handle_process_chart():
         
         # Process the chart image
         result = process_chart_image(data['imageData'])
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/find-similar-template', methods=['POST'])
+def handle_find_similar_template():
+    """Find the most similar template based on metaphor text"""
+    try:
+        data = request.get_json()
+        if not data or 'metaphorText' not in data:
+            return jsonify({"error": "No metaphor text provided"}), 400
+        
+        # Path to templates directory - adjust as needed based on your project structure
+        templates_dir = '../public/templates'
+        
+        # Find the most similar template
+        result = find_most_similar_template(data['metaphorText'], templates_dir)
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

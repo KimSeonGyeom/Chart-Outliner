@@ -7,6 +7,7 @@ import { useChartStore } from '../store/chartStore.js';
 import { useDataStore } from '../store/dataStore.js';
 import { useAiStore, METAPHOR_PROPS, AI_CONSTANTS } from '../store/aiStore.js';
 import { downloadChart } from '../controls/index.js';
+import React from 'react';
 
 export default function ChartControls({ chartRef }) {
   const chartType = useSharedStore(state => state.chartType);
@@ -28,6 +29,9 @@ export default function ChartControls({ chartRef }) {
   const setChartImageData = useAiStore(state => state.setChartImageData);
   const setVisualInterpretation = useDataStore(state => state.setVisualInterpretation);
 
+  // Add state for selected template
+  const [selectedTemplate, setSelectedTemplate] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   // Handle export button click
   const handleExport = () => {
@@ -230,6 +234,44 @@ export default function ChartControls({ chartRef }) {
     }
   };
 
+  // Function to handle metaphor card click
+  const handleMetaphorClick = async (metaphor) => {
+    try {
+      setIsLoading(true);
+      
+      // Get the metaphorical object text
+      const metaphorText = metaphor["metaphorical object"];
+      
+      // Call the backend API to find similar template
+      const response = await fetch('http://localhost:5000/api/find-similar-template', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ metaphorText }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to find similar template');
+      }
+      
+      const data = await response.json();
+      
+      // Set the selected template
+      setSelectedTemplate({
+        filename: data.template_filename,
+        name: data.template_name,
+        score: data.similarity_score
+      });
+      
+      console.log('Selected template:', data);
+    } catch (error) {
+      console.error('Error finding similar template:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="chart-section">
       <div className="section-title">Current Chart</div>
@@ -310,6 +352,18 @@ export default function ChartControls({ chartRef }) {
             <span className="data-value">{visualInterpretation || "No interpretation yet"}</span>
           </div>
           
+          {/* Display selected template */}
+          {selectedTemplate && (
+            <div className="selected-template">
+              <h3>Selected Template: {selectedTemplate.name} (Score: {selectedTemplate.score.toFixed(2)})</h3>
+              <img 
+                src={`/templates/${selectedTemplate.filename}`} 
+                alt={selectedTemplate.name}
+                style={{ maxWidth: '100%', maxHeight: '300px' }}
+              />
+            </div>
+          )}
+          
           <div className="metaphors-gallery">
             {metaphors.length==0 && Array(AI_CONSTANTS.NUM_METAPHORS).fill().map((_, index) => (
               <div
@@ -336,6 +390,8 @@ export default function ChartControls({ chartRef }) {
               <div
                 key={index}
                 className="metaphor-card"
+                onClick={() => handleMetaphorClick(metaphor)}
+                style={{ cursor: 'pointer' }}
               >
                 <div className="metaphor-content">
                   <div className="metaphor-text">
@@ -354,6 +410,12 @@ export default function ChartControls({ chartRef }) {
               </div>
             ))}
           </div>
+          
+          {isLoading && (
+            <div className="loading-message">
+              Finding the most similar template...
+            </div>
+          )}
         </div>
       </div>
     </div>
