@@ -32,6 +32,16 @@ export default function ChartControls({ chartRef }) {
   // Add state for selected template
   const [selectedTemplate, setSelectedTemplate] = React.useState(null);
   const [isLoading, setIsLoading] = React.useState(false);
+  // Add state for expanded metaphors
+  const [expandedMetaphors, setExpandedMetaphors] = React.useState({});
+
+  // Toggle expansion of a metaphor
+  const toggleMetaphorExpansion = (index) => {
+    setExpandedMetaphors(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
 
   // Handle export button click
   const handleExport = () => {
@@ -198,39 +208,50 @@ export default function ChartControls({ chartRef }) {
   // Function to process chart with Canny edge detection and denoising
   const processChartCannyEdges = async () => {
     try {
-      setIsGenerating(true);
+      setIsLoading(true);
       
-      // Get chart image data
-      const imageData = await getChartImageData(chartRef);
+      // Check if there's a selected template
+      if (!selectedTemplate) {
+        alert('Please select a template first');
+        setIsLoading(false);
+        return;
+      }
       
-      // Call the Flask backend to process the chart image
-      const response = await fetch('http://localhost:5000/api/process-chart', {
+      // Get the template filename
+      const templateFilename = selectedTemplate.filename;
+      
+      // Call the Flask backend to process the template image
+      const response = await fetch('http://localhost:5000/api/process-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ imageData }),
+        body: JSON.stringify({ templateFilename }),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to process template image');
+      }
       
       const data = await response.json();
       
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to process chart image');
-      }
-      
       // Display the processed images or use them as needed
-      // You can create a state to store these and display them in the UI
-      console.log('Processed chart images:', data);
+      console.log('Processed template images:', data);
       
-      // Optional: display the canny image in a new tab/window
-      const cannyImageUrl = `data:image/png;base64,${data.canny_image}`;
-      window.open(cannyImageUrl, '_blank');
+      // Create URLs for the processed images
+      const grayscaleImageUrl = `data:image/png;base64,${data.grayscale_image}`;
+      const edgeImageUrl = `data:image/png;base64,${data.edge_image}`;
+      
+      // Open the edge image in a new tab/window
+      window.open(edgeImageUrl, '_blank');
       
       return data;
     } catch (error) {
-      console.error('Error processing chart image:', error);
+      console.error('Error processing template image:', error);
+      alert('Error processing image: ' + error.message);
     } finally {
-      setIsGenerating(false);
+      setIsLoading(false);
     }
   };
 
@@ -254,8 +275,9 @@ export default function ChartControls({ chartRef }) {
       if (!response.ok) {
         throw new Error('Failed to find similar template');
       }
-      
+
       const data = await response.json();
+      console.log('Response:', response);
       
       // Set the selected template
       setSelectedTemplate({
@@ -302,9 +324,6 @@ export default function ChartControls({ chartRef }) {
         </div>
         <button className="export-button" onClick={handleExport}>
           Export
-        </button>
-        <button className="process-button" onClick={processChartCannyEdges}>
-          Process Canny Edges
         </button>
       </div>
       
@@ -356,6 +375,13 @@ export default function ChartControls({ chartRef }) {
           {selectedTemplate && (
             <div className="selected-template">
               <h3>Selected Template: {selectedTemplate.name} (Score: {selectedTemplate.score.toFixed(2)})</h3>
+              <button 
+                className="process-button" 
+                onClick={processChartCannyEdges}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Processing...' : 'Process Template with Canny'}
+              </button>
               <img 
                 src={`/templates/${selectedTemplate.filename}`} 
                 alt={selectedTemplate.name}
@@ -371,17 +397,11 @@ export default function ChartControls({ chartRef }) {
                 className="metaphor-card placeholder"
               >
                 <div className="metaphor-content">
-                  <div className="metaphor-text">
+                  <div className="metaphor-text metaphor-title">
                     Metaphor {index + 1}: Search metaphors to see
                   </div>
-                  <div className="metaphor-text">
-                    Reason why this metaphor is fit for the visual interpretation(data trend): Search metaphors to see
-                  </div>
-                  <div className="metaphor-text">
-                    Reason why this metaphor is fit for the chart's subject(not data trend): Search metaphors to see
-                  </div>
-                  <div className="metaphor-text">
-                    Reason why this metaphor is fit for the author's intent: Search metaphors to see
+                  <div className="metaphor-toggle">
+                    ► Show Details
                   </div>
                 </div>
               </div>
@@ -390,22 +410,36 @@ export default function ChartControls({ chartRef }) {
               <div
                 key={index}
                 className="metaphor-card"
-                onClick={() => handleMetaphorClick(metaphor)}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="metaphor-content">
-                  <div className="metaphor-text">
+                  <div 
+                    className="metaphor-text metaphor-title"
+                    onClick={() => handleMetaphorClick(metaphor)}
+                  >
                     {metaphor["metaphorical object"]}
                   </div>
-                  <div className="metaphor-text">
-                    {metaphor["reason why this metaphor is fit for the visual interpretation(data trend)"]}
+                  
+                  <div 
+                    className="metaphor-toggle"
+                    onClick={() => toggleMetaphorExpansion(index)}
+                  >
+                    {expandedMetaphors[index] ? '▼ Hide Details' : '► Show Details'}
                   </div>
-                  <div className="metaphor-text">
-                    {metaphor["reason why this metaphor is fit for the chart's subject(not data trend)"]}
-                  </div>
-                  <div className="metaphor-text">
-                    {metaphor["reason why this metaphor is fit for the author's intent"]}
-                  </div>
+                  
+                  {expandedMetaphors[index] && (
+                    <div className="metaphor-details">
+                      <div className="metaphor-text">
+                        <strong>Visual Interpretation:</strong> {metaphor["reason why this metaphor is fit for the visual interpretation(data trend)"]}
+                      </div>
+                      <div className="metaphor-text">
+                        <strong>Chart's Subject:</strong> {metaphor["reason why this metaphor is fit for the chart's subject(not data trend)"]}
+                      </div>
+                      <div className="metaphor-text">
+                        <strong>Author's Intent:</strong> {metaphor["reason why this metaphor is fit for the author's intent"]}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

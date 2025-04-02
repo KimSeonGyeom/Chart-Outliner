@@ -22,18 +22,17 @@ def get_template_names(templates_dir):
     
     return template_names
 
-def find_most_similar_template(metaphor_text, templates_dir):
+def find_most_similar_template(metaphor_text):
     """
     Find the most similar template to the metaphor text
     
     Args:
         metaphor_text (str): The metaphor text to compare against
-        templates_dir (str): Path to the templates directory
         
     Returns:
         dict: Contains the most similar template filename and similarity score
     """
-    template_names = get_template_names(templates_dir)
+    template_names = get_template_names("../public/templates")
     
     if not template_names:
         return {"error": "No templates found"}

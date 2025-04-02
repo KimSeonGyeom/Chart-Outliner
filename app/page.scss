@@ -287,6 +287,48 @@ header {
                 color: #333;
               }
               
+              // Add styles for metaphor title
+              .metaphor-title {
+                cursor: pointer;
+                font-weight: 600;
+                color: #226;
+                margin-bottom: 0.3rem;
+                
+                &:hover {
+                  text-decoration: underline;
+                }
+              }
+              
+              // Add styles for metaphor toggle button
+              .metaphor-toggle {
+                font-size: 0.8rem;
+                color: #666;
+                margin-bottom: 0.75rem;
+                cursor: pointer;
+                user-select: none;
+                
+                &:hover {
+                  color: #333;
+                }
+              }
+              
+              // Add styles for metaphor details
+              .metaphor-details {
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+                border-top: 1px solid #eee;
+                
+                .metaphor-text {
+                  margin-bottom: 0.7rem;
+                  font-size: 0.9rem;
+                  
+                  strong {
+                    color: #444;
+                    margin-right: 0.25rem;
+                  }
+                }
+              }
+              
               .metaphor-detail {
                 font-size: 0.85rem;
                 color: #555;

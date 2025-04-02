@@ -63,6 +63,11 @@ export const generateTrendData = (
   };
 };
 
+export const generateRandomSubject = () => {
+  const subjects = ['cost of living', 'population growth', 'number of children tourists', 'climate change', 'area of forest', 'lack of water', 'wine production', 'visits in historical sites'];
+  return subjects[Math.floor(Math.random() * subjects.length)];
+};
+
 // Sample datasets for charts
 export const sampleDataSets = {
   basic: {
@@ -130,7 +135,7 @@ export const generateRandomData = (numPoints) => {
   }
   
   return {
-    subject: 'cost of living',
+    subject: generateRandomSubject(),
     data: newData,
   };
 };

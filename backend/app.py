@@ -4,7 +4,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 
 # Import image processing utilities
-from utils.image_processor import process_image, process_chart_image
+from utils.image_processor import process_image
 # Import similarity utility
 from utils.similarity import find_most_similar_template
 
@@ -37,20 +37,6 @@ def handle_process_image():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/process-chart', methods=['POST'])
-def handle_process_chart():
-    """Process a chart image with Canny edge detection and denoising"""
-    try:
-        # Get base64 chart image data from request
-        data = request.get_json()
-        if not data or 'imageData' not in data:
-            return jsonify({"error": "No image data provided"}), 400
-        
-        # Process the chart image
-        result = process_chart_image(data['imageData'])
-        return jsonify(result), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/find-similar-template', methods=['POST'])
 def handle_find_similar_template():
@@ -60,11 +46,8 @@ def handle_find_similar_template():
         if not data or 'metaphorText' not in data:
             return jsonify({"error": "No metaphor text provided"}), 400
         
-        # Path to templates directory - adjust as needed based on your project structure
-        templates_dir = '../public/templates'
-        
         # Find the most similar template
-        result = find_most_similar_template(data['metaphorText'], templates_dir)
+        result = find_most_similar_template(data['metaphorText'])
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
