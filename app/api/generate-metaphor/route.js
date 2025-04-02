@@ -29,8 +29,8 @@ export async function POST(request) {
 
     const system_role = `
       You are a data visualization expert.
-      Your job is to generate four metaphors which will be used to generate pictorial chart.
-      You are given four inputs: 
+      Your job is to generate ten metaphors which will be used to generate pictorial chart.
+      You are given ten inputs: 
       (1) a visual interpretation of the data trend,
       (2) an author's intention of generating a pictorial chart (what feeling the author wants to convey),
       (3) a data subject of the chart (what the data is about),

@@ -49,6 +49,34 @@ header {
       border: 1px solid rgba(0, 0, 0, 0.32);
     }
     
+    // New styles for MetaphorGallery component
+    .metaphor-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+    
+    .template-preview {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .template-thumbnail {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .template-score {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #555;
+    }
+    
     .section-title {
       font-size: 1.2rem;
       font-weight: 600;
@@ -338,6 +366,110 @@ header {
                 
                 .detail-label {
                   margin-bottom: 0.5rem;
+                }
+              }
+            }
+          }
+        }
+        
+        // Metaphors list styles
+        .metaphors-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.2rem;
+          padding: 0.5rem;
+          margin: 1rem 0;
+          
+          .metaphor-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: row;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            
+            &:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }
+            
+            &.selected {
+              border-color: #7b68ee;
+              background-color: #f9f7ff;
+              box-shadow: 0 0 0 2px rgba(123, 104, 238, 0.2);
+            }
+            
+            &.placeholder {
+              background-color: #f9f9f9;
+              border-style: dashed;
+              opacity: 0.7;
+              cursor: default;
+              
+              &:hover {
+                transform: none;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+              }
+              
+              .metaphor-text {
+                color: #888;
+                font-style: italic;
+              }
+            }
+            
+            .metaphor-content {
+              display: flex;
+              flex-direction: row;
+              width: 100%;
+              
+              .metaphor-text {
+                font-weight: 500;
+                font-size: 0.95rem;
+                margin-bottom: 0.75rem;
+                color: #333;
+              }
+              
+              // Add styles for metaphor title
+              .metaphor-title {
+                cursor: pointer;
+                font-weight: 600;
+                color: #226;
+                margin-bottom: 0.3rem;
+                
+                &:hover {
+                  text-decoration: underline;
+                }
+              }
+              
+              // Add styles for metaphor toggle button
+              .metaphor-toggle {
+                font-size: 0.8rem;
+                color: #666;
+                margin-bottom: 0.75rem;
+                cursor: pointer;
+                user-select: none;
+                
+                &:hover {
+                  color: #333;
+                }
+              }
+              
+              // Add styles for metaphor details
+              .metaphor-details {
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+                border-top: 1px solid #eee;
+                
+                .metaphor-text {
+                  margin-bottom: 0.7rem;
+                  font-size: 0.9rem;
+                  
+                  strong {
+                    color: #444;
+                    margin-right: 0.25rem;
+                  }
                 }
               }
             }

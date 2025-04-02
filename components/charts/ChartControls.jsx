@@ -2,11 +2,11 @@
 
 import BarChart from './BarChart.jsx';
 import LineChart from './LineChart.jsx';
+import ExportSection from './ExportSection.jsx';
+import MetaphorGallery from './MetaphorGallery.jsx';
 import { useSharedStore } from '../store/sharedStore.js';
-import { useChartStore } from '../store/chartStore.js';
 import { useDataStore } from '../store/dataStore.js';
-import { useAiStore, METAPHOR_PROPS, AI_CONSTANTS } from '../store/aiStore.js';
-import { downloadChart } from '../controls/index.js';
+import { useAiStore } from '../store/aiStore.js';
 import React from 'react';
 
 export default function ChartControls({ chartRef }) {
@@ -15,62 +15,24 @@ export default function ChartControls({ chartRef }) {
   const setAuthorIntention = useDataStore(state => state.setAuthorIntention);
   const chartData = useDataStore(state => state.chartData);
   const dataSubject = chartData.subject;
-  const exportFileType = useChartStore(state => state.exportFileType);
-  const setExportOption = useChartStore(state => state.setExportOption);
   
   // AI states from aiStore
   const metaphors = useAiStore(state => state.metaphors);
   const isGenerating = useAiStore(state => state.isGenerating);
   const visualInterpretation = useDataStore(state => state.visualInterpretation);
+  const selectedTemplate = useAiStore(state => state.selectedTemplate);
+  const isLoading = useAiStore(state => state.isLoading);
+  const edgeImageData = useAiStore(state => state.edgeImageData);
 
   // AI actions from aiStore
   const setMetaphors = useAiStore(state => state.setMetaphors);
   const setIsGenerating = useAiStore(state => state.setIsGenerating);
   const setChartImageData = useAiStore(state => state.setChartImageData);
   const setVisualInterpretation = useDataStore(state => state.setVisualInterpretation);
+  const setIsLoading = useAiStore(state => state.setIsLoading);
 
-  // Add state for selected template
-  const [selectedTemplate, setSelectedTemplate] = React.useState(null);
-  const [isLoading, setIsLoading] = React.useState(false);
-  // Add state for expanded metaphors
-  const [expandedMetaphors, setExpandedMetaphors] = React.useState({});
-
-  // Toggle expansion of a metaphor
-  const toggleMetaphorExpansion = (index) => {
-    setExpandedMetaphors(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
-  };
-
-  // Handle export button click
-  const handleExport = () => {
-    // Generate a filename with timestamp
-    const fileName = `chart-outliner-${chartType}-chart-${Date.now()}`;
-    setExportOption('exportFileName', fileName);
-    
-    if (chartRef && chartRef.current) {
-      // Download regular chart
-      downloadChart(
-        chartRef, 
-        fileName, 
-        exportFileType
-      ).catch(error => {
-        console.error('Error exporting chart:', error);
-      });
-      
-      // Download filled version with modified filename
-      downloadChart(
-        chartRef, 
-        `${fileName}-filled`, 
-        exportFileType,
-        true,  // asOutlines (default)
-        true   // forceFill (new parameter)
-      ).catch(error => {
-        console.error('Error exporting filled chart:', error);
-      });
-    }
-  };
+  // Add ref for template image
+  const imgRef = React.useRef(null);
 
   // Function to convert chart SVG to image data
   const getChartImageData = async (chartRef) => {
@@ -193,10 +155,89 @@ export default function ChartControls({ chartRef }) {
         }
 
         console.log('Data:', data);
-        setMetaphors(data.content.metaphors);
-
+        
+        // Get the metaphors
+        const generatedMetaphors = data.content.metaphors;
+        
+        // Find best matching templates for all metaphors and add scores
+        setIsLoading(true);
+        const metaphorsWithTemplates = await Promise.all(
+          generatedMetaphors.map(async (metaphor) => {
+            try {
+              const metaphorText = metaphor["metaphorical object"];
+              const response = await fetch('http://localhost:5000/api/find-similar-template', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ metaphorText }),
+              });
+              
+              if (!response.ok) {
+                throw new Error('Failed to find similar template');
+              }
+              
+              const data = await response.json();
+              
+              // Add template info to the metaphor
+              return {
+                ...metaphor,
+                template: {
+                  filename: data.template_filename,
+                  name: data.template_name,
+                  score: data.similarity_score
+                }
+              };
+            } catch (error) {
+              console.error('Error finding template for metaphor:', error);
+              return metaphor; // Return original metaphor if match fails
+            }
+          })
+        );
+        
+        // Sort metaphors by template match score (highest first)
+        const sortedMetaphors = metaphorsWithTemplates
+          .filter(m => m.template && m.template.score) // Only include metaphors with valid scores
+          .sort((a, b) => b.template.score - a.template.score);
+        
+        // Add any metaphors without templates at the end
+        const metaphorsWithoutTemplates = metaphorsWithTemplates.filter(m => !m.template || !m.template.score);
+        const allSortedMetaphors = [...sortedMetaphors, ...metaphorsWithoutTemplates];
+        
+        // Update metaphors in store
+        setMetaphors(allSortedMetaphors);
+        
+        // If we have a top match, automatically select it
+        if (sortedMetaphors.length > 0) {
+          const topMatch = sortedMetaphors[0];
+          useAiStore.getState().setSelectedTemplate(topMatch.template);
+          
+          // Process the template image
+          try {
+            // Process the top matching template with Canny edge detection
+            const processResponse = await fetch('http://localhost:5000/api/process-template', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ template_filename: topMatch.template.filename }),
+            });
+            
+            if (processResponse.ok) {
+              const processData = await processResponse.json();
+              if (processData.edge_image) {
+                useAiStore.getState().setEdgeImageData(processData.edge_image);
+              }
+            }
+          } catch (processError) {
+            console.error('Error processing template image:', processError);
+          }
+        }
+        
       } catch (error) {
         console.error('API error:', error);
+      } finally {
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Error generating metaphors:', error);
@@ -205,127 +246,12 @@ export default function ChartControls({ chartRef }) {
     }
   };
 
-  // Function to process chart with Canny edge detection and denoising
-  const processChartCannyEdges = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Check if there's a selected template
-      if (!selectedTemplate) {
-        alert('Please select a template first');
-        setIsLoading(false);
-        return;
-      }
-      
-      // Get the template filename
-      const templateFilename = selectedTemplate.filename;
-      
-      // Call the Flask backend to process the template image
-      const response = await fetch('http://localhost:5000/api/process-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ templateFilename }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to process template image');
-      }
-      
-      const data = await response.json();
-      
-      // Display the processed images or use them as needed
-      console.log('Processed template images:', data);
-      
-      // Create URLs for the processed images
-      const grayscaleImageUrl = `data:image/png;base64,${data.grayscale_image}`;
-      const edgeImageUrl = `data:image/png;base64,${data.edge_image}`;
-      
-      // Open the edge image in a new tab/window
-      window.open(edgeImageUrl, '_blank');
-      
-      return data;
-    } catch (error) {
-      console.error('Error processing template image:', error);
-      alert('Error processing image: ' + error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Function to handle metaphor card click
-  const handleMetaphorClick = async (metaphor) => {
-    try {
-      setIsLoading(true);
-      
-      // Get the metaphorical object text
-      const metaphorText = metaphor["metaphorical object"];
-      
-      // Call the backend API to find similar template
-      const response = await fetch('http://localhost:5000/api/find-similar-template', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ metaphorText }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to find similar template');
-      }
-
-      const data = await response.json();
-      console.log('Response:', response);
-      
-      // Set the selected template
-      setSelectedTemplate({
-        filename: data.template_filename,
-        name: data.template_name,
-        score: data.similarity_score
-      });
-      
-      console.log('Selected template:', data);
-    } catch (error) {
-      console.error('Error finding similar template:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="chart-section">
       <div className="section-title">Current Chart</div>
       
       {/* Export options */}
-      <div className="export-section">
-        <div className="radio-group">
-          <input
-            type="radio"
-            id="png-option"
-            name="export-type"
-            value="png"
-            checked={exportFileType === 'png'}
-            onChange={() => setExportOption('exportFileType', 'png')}
-          />
-          <label htmlFor="png-option">PNG</label>
-        </div>
-        <div className="radio-group">
-          <input
-            type="radio" 
-            id="svg-option"
-            name="export-type"
-            value="svg"
-            checked={exportFileType === 'svg'}
-            onChange={() => setExportOption('exportFileType', 'svg')}
-          />
-          <label htmlFor="svg-option">SVG</label>
-        </div>
-        <button className="export-button" onClick={handleExport}>
-          Export
-        </button>
-      </div>
+      <ExportSection chartRef={chartRef} />
       
       {/* Chart display */}
       <div className="chart-display" ref={chartRef}>
@@ -375,79 +301,37 @@ export default function ChartControls({ chartRef }) {
           {selectedTemplate && (
             <div className="selected-template">
               <h3>Selected Template: {selectedTemplate.name} (Score: {selectedTemplate.score.toFixed(2)})</h3>
-              <button 
-                className="process-button" 
-                onClick={processChartCannyEdges}
-                disabled={isLoading}
-              >
-                {isLoading ? 'Processing...' : 'Process Template with Canny'}
-              </button>
-              <img 
-                src={`/templates/${selectedTemplate.filename}`} 
-                alt={selectedTemplate.name}
-                style={{ maxWidth: '100%', maxHeight: '300px' }}
-              />
+              
+              <div className="template-images" style={{ display: 'flex', flexDirection: 'row', gap: '20px', justifyContent: 'center' }}>
+                <div className="image-container">
+                  <h4>Original Template</h4>
+                  <img 
+                    src={`/templates/${selectedTemplate.filename}`} 
+                    alt={selectedTemplate.name}
+                    style={{ maxWidth: '100%', maxHeight: '300px' }}
+                    ref={imgRef}
+                  />
+                </div>
+                
+                {edgeImageData && (
+                  <div className="image-container">
+                    <h4>Canny Edge Detection</h4>
+                    <img 
+                      src={`data:image/png;base64,${edgeImageData}`}
+                      alt="Canny edge detection" 
+                      style={{ maxWidth: '100%', maxHeight: '300px' }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
           
-          <div className="metaphors-gallery">
-            {metaphors.length==0 && Array(AI_CONSTANTS.NUM_METAPHORS).fill().map((_, index) => (
-              <div
-                key={index}
-                className="metaphor-card placeholder"
-              >
-                <div className="metaphor-content">
-                  <div className="metaphor-text metaphor-title">
-                    Metaphor {index + 1}: Search metaphors to see
-                  </div>
-                  <div className="metaphor-toggle">
-                    ► Show Details
-                  </div>
-                </div>
-              </div>
-            ))}
-            {metaphors.length>0 && metaphors.map((metaphor, index) => (
-              <div
-                key={index}
-                className="metaphor-card"
-                style={{ cursor: 'pointer' }}
-              >
-                <div className="metaphor-content">
-                  <div 
-                    className="metaphor-text metaphor-title"
-                    onClick={() => handleMetaphorClick(metaphor)}
-                  >
-                    {metaphor["metaphorical object"]}
-                  </div>
-                  
-                  <div 
-                    className="metaphor-toggle"
-                    onClick={() => toggleMetaphorExpansion(index)}
-                  >
-                    {expandedMetaphors[index] ? '▼ Hide Details' : '► Show Details'}
-                  </div>
-                  
-                  {expandedMetaphors[index] && (
-                    <div className="metaphor-details">
-                      <div className="metaphor-text">
-                        <strong>Visual Interpretation:</strong> {metaphor["reason why this metaphor is fit for the visual interpretation(data trend)"]}
-                      </div>
-                      <div className="metaphor-text">
-                        <strong>Chart's Subject:</strong> {metaphor["reason why this metaphor is fit for the chart's subject(not data trend)"]}
-                      </div>
-                      <div className="metaphor-text">
-                        <strong>Author's Intent:</strong> {metaphor["reason why this metaphor is fit for the author's intent"]}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          <MetaphorGallery />
           
           {isLoading && (
             <div className="loading-message">
-              Finding the most similar template...
+              Processing template image...
             </div>
           )}
         </div>
