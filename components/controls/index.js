@@ -7,6 +7,9 @@ export { downloadChart, downloadChartAsImage, downloadChartAsSVG } from './downl
 export { default as ControlPanel, BarControls, LineControls, SharedControls } from './ControlPanel.jsx';
 export { default as ChartTypeSelector } from './shared/ChartTypeSelector.jsx';
 
+// Export AI section
+export { default as AIGenerationSection } from './AIGenerationSection.jsx';
+
 // Export shared sections
 export { default as DimensionsSection } from './shared/DimensionsSection.jsx';
 export { default as AxisSection } from './shared/AxisSection.jsx';

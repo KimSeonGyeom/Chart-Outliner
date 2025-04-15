@@ -38,7 +38,7 @@ header {
   gap: 16px;
 
   .chart-section {
-    width: 70%;
+    width: 50%;
 
     .chart-display {
       width: fit-content;
@@ -47,34 +47,6 @@ header {
       justify-self: center;
       border-radius: 4px;
       border: 1px solid rgba(0, 0, 0, 0.32);
-    }
-    
-    // New styles for MetaphorGallery component
-    .metaphor-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-    }
-    
-    .template-preview {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .template-thumbnail {
-      width: 60px;
-      height: 60px;
-      object-fit: contain;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    
-    .template-score {
-      font-size: 0.8rem;
-      font-weight: bold;
-      color: #555;
     }
     
     .section-title {
@@ -218,289 +190,6 @@ header {
           line-height: 1.4;
         }
       }
-      
-      .ai-prompt-container {
-        background-color: white;
-        border-radius: 4px;
-        border: 1px solid #dde4ed;
-        padding: 0.5rem;
-        
-        .ai-prompt-text {
-          width: 100%;
-          min-height: 100px;
-          padding: 0.5rem;
-          border: 1px solid #e0e0e0;
-          border-radius: 4px;
-          font-size: 0.9rem;
-          font-family: inherit;
-          resize: vertical;
-          margin-bottom: 0.5rem;
-        }
-        
-        // Data subject, author intention, and visual interpretation
-        .data-subject, .author-intention, .visual-interpretation {
-          margin-bottom: 0.5rem;
-          font-size: 0.9rem;
-          color: #333;
-          padding: 0.3rem 0;
-          display: flex;
-          align-items: flex-start;
-          
-          .data-label {
-            min-width: 150px;
-            font-weight: 500;
-            color: #555;
-            flex-shrink: 0;
-          }
-          
-          .data-value {
-            flex: 1;
-          }
-        }
-        
-        // Metaphors gallery styles
-        .metaphors-gallery {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-          gap: 1rem;
-          margin: 1rem 0;
-          
-          .metaphor-card {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            
-            &:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-            
-            &.selected {
-              border-color: #7b68ee;
-              background-color: #f9f7ff;
-              box-shadow: 0 0 0 2px rgba(123, 104, 238, 0.2);
-            }
-            
-            &.placeholder {
-              background-color: #f9f9f9;
-              border-style: dashed;
-              opacity: 0.7;
-              cursor: default;
-              
-              &:hover {
-                transform: none;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-              }
-              
-              .metaphor-text {
-                color: #888;
-                font-style: italic;
-              }
-            }
-            
-            .metaphor-content {
-              display: flex;
-              flex-direction: column;
-              height: 100%;
-              
-              .metaphor-text {
-                font-weight: 500;
-                font-size: 0.95rem;
-                margin-bottom: 0.75rem;
-                color: #333;
-              }
-              
-              // Add styles for metaphor title
-              .metaphor-title {
-                cursor: pointer;
-                font-weight: 600;
-                color: #226;
-                margin-bottom: 0.3rem;
-                
-                &:hover {
-                  text-decoration: underline;
-                }
-              }
-              
-              // Add styles for metaphor toggle button
-              .metaphor-toggle {
-                font-size: 0.8rem;
-                color: #666;
-                margin-bottom: 0.75rem;
-                cursor: pointer;
-                user-select: none;
-                
-                &:hover {
-                  color: #333;
-                }
-              }
-              
-              // Add styles for metaphor details
-              .metaphor-details {
-                margin-top: 0.5rem;
-                padding-top: 0.5rem;
-                border-top: 1px solid #eee;
-                
-                .metaphor-text {
-                  margin-bottom: 0.7rem;
-                  font-size: 0.9rem;
-                  
-                  strong {
-                    color: #444;
-                    margin-right: 0.25rem;
-                  }
-                }
-              }
-              
-              .metaphor-detail {
-                font-size: 0.85rem;
-                color: #555;
-                margin-bottom: 0.75rem;
-                line-height: 1.4;
-                flex-grow: 1;
-                
-                .detail-label {
-                  margin-bottom: 0.5rem;
-                }
-              }
-            }
-          }
-        }
-        
-        // Metaphors list styles
-        .metaphors-list {
-          display: flex;
-          flex-direction: column;
-          gap: 0.2rem;
-          padding: 0.5rem;
-          margin: 1rem 0;
-          
-          .metaphor-item {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 0.25rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            flex-direction: row;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            width: 100%;
-            
-            &:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            }
-            
-            &.selected {
-              border-color: #7b68ee;
-              background-color: #f9f7ff;
-              box-shadow: 0 0 0 2px rgba(123, 104, 238, 0.2);
-            }
-            
-            &.placeholder {
-              background-color: #f9f9f9;
-              border-style: dashed;
-              opacity: 0.7;
-              cursor: default;
-              
-              &:hover {
-                transform: none;
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-              }
-              
-              .metaphor-text {
-                color: #888;
-                font-style: italic;
-              }
-            }
-            
-            .metaphor-content {
-              display: flex;
-              flex-direction: row;
-              width: 100%;
-              
-              .metaphor-text {
-                font-weight: 500;
-                font-size: 0.95rem;
-                margin-bottom: 0.75rem;
-                color: #333;
-              }
-              
-              // Add styles for metaphor title
-              .metaphor-title {
-                cursor: pointer;
-                font-weight: 600;
-                color: #226;
-                margin-bottom: 0.3rem;
-                
-                &:hover {
-                  text-decoration: underline;
-                }
-              }
-              
-              // Add styles for metaphor toggle button
-              .metaphor-toggle {
-                font-size: 0.8rem;
-                color: #666;
-                margin-bottom: 0.75rem;
-                cursor: pointer;
-                user-select: none;
-                
-                &:hover {
-                  color: #333;
-                }
-              }
-              
-              // Add styles for metaphor details
-              .metaphor-details {
-                margin-top: 0.5rem;
-                padding-top: 0.5rem;
-                border-top: 1px solid #eee;
-                
-                .metaphor-text {
-                  margin-bottom: 0.7rem;
-                  font-size: 0.9rem;
-                  
-                  strong {
-                    color: #444;
-                    margin-right: 0.25rem;
-                  }
-                }
-              }
-            }
-          }
-        }
-        
-        .ai-copy-button {
-          background-color: #4caf50;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          padding: 0.3rem 0.8rem;
-          font-size: 0.8rem;
-          cursor: pointer;
-          transition: background-color 0.2s ease;
-          
-          &:hover {
-            background-color: #388e3c;
-          }
-          
-          &:active {
-            background-color: #2e7d32;
-          }
-        }
-
-        .prompt-actions {
-          display: flex;
-          gap: 0.5rem;
-          margin-top: 1rem;
-        }
-      }
     }
 
     .chart-wrapper {
@@ -512,6 +201,12 @@ header {
   }
 
   .control-section {
-    width: 30%;
+    width: 50%;
+    padding: 16px;
+    background-color: #f9f9fb;
+    border-radius: 8px;
+    border: 1px solid #e6e9ef;
+    overflow: auto;
+    max-height: calc(100vh - 100px);
   }
 } 

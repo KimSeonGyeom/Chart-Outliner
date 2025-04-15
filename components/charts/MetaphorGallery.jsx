@@ -12,6 +12,7 @@ export default function MetaphorGallery() {
   const setIsLoading = useAiStore(state => state.setIsLoading);
   const edgeImageData = useAiStore(state => state.edgeImageData);
   const setEdgeImageData = useAiStore(state => state.setEdgeImageData);
+  const setAllProcessedEdgeImages = useAiStore(state => state.setAllProcessedEdgeImages);
   
   // Add state for expanded metaphors
   const [expandedMetaphors, setExpandedMetaphors] = React.useState({});
@@ -46,6 +47,14 @@ export default function MetaphorGallery() {
       
       if (data.edge_image) {
         setEdgeImageData(data.edge_image);
+        
+        // Reset all processed edge images when selecting a new template
+        setAllProcessedEdgeImages({
+          threshold: null,
+          sparsification: null,
+          blur: null,
+          contour: null,
+        });
       }
     } catch (error) {
       console.error('Error processing template image:', error);
@@ -54,86 +63,49 @@ export default function MetaphorGallery() {
     }
   };
 
-  // Function to handle metaphor card click - select the template
-  const handleMetaphorClick = async (metaphor) => {
+  // Handle selecting a template
+  const handleSelectTemplate = (metaphor) => {
     if (metaphor.template) {
       // Set the selected template in the store
       useAiStore.getState().setSelectedTemplate(metaphor.template);
       
       // Process the template image
-      await processTemplateImage(metaphor.template);
+      processTemplateImage(metaphor.template);
     }
   };
   
   return (
     <div className="metaphors-list">
+      <h3>Generated Metaphors</h3>
       {metaphors.length > 0 && metaphors.map((metaphor, index) => (
         <div
           key={index}
           className="metaphor-item"
+          onClick={() => handleSelectTemplate(metaphor)}
           style={{ cursor: 'pointer' }}
         >
-          <div className="metaphor-content">
-            <div 
-              className="metaphor-text metaphor-title"
-              onClick={() => handleMetaphorClick(metaphor)}
-            >
+          <span>
+            <div className="template-score">
+              {metaphor.template.score > 0.5 ? <b>{metaphor.template.score.toFixed(2)}</b> : metaphor.template.score.toFixed(2)}
+            </div>
+            <div className="template-score">
               {metaphor["metaphorical object"]}
             </div>
-            
-            {metaphor.template && (
-              <div className="template-preview">
-                <img 
-                  src={`/templates/${metaphor.template.filename}`} 
-                  alt={metaphor.template.name}
-                  className="template-thumbnail"
-                  onClick={() => handleMetaphorClick(metaphor)}
-                />
-                <span className="template-score">
-                  {metaphor.template.score.toFixed(2)}
-                </span>
-              </div>
-            )}
-            
-            {/* <div 
-              className="metaphor-toggle"
-              onClick={() => toggleMetaphorExpansion(index)}
-            >
-              {expandedMetaphors[index] ? '▼ Hide Details' : '► Show Details'}
-            </div> */}
-            {/*             
-            {expandedMetaphors[index] && (
-              <div className="metaphor-details">
-                <div className="metaphor-text">
-                  <strong>Visual Interpretation:</strong> {metaphor["reason why this metaphor is fit for the visual interpretation(data trend)"]}
-                </div>
-                <div className="metaphor-text">
-                  <strong>Chart's Subject:</strong> {metaphor["reason why this metaphor is fit for the chart's subject(not data trend)"]}
-                </div>
-                <div className="metaphor-text">
-                  <strong>Author's Intent:</strong> {metaphor["reason why this metaphor is fit for the author's intent"]}
-                </div>
-                
-                {metaphor.template && (
-                  <div className="template-info">
-                    <strong>Matching Template:</strong> {metaphor.template.name}
-                    <img 
-                      src={`/templates/${metaphor.template.filename}`} 
-                      alt={metaphor.template.name}
-                      style={{ 
-                        maxWidth: '100%', 
-                        maxHeight: '150px', 
-                        display: 'block', 
-                        marginTop: '10px' 
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            )} */}
-          </div>
+          </span>
+          <img 
+            src={`/templates/${metaphor.template.filename}`} 
+            alt={metaphor.template.name}
+            height={"80px"}
+            className="template-thumbnail"
+          />
         </div>
       ))}
+      
+      {metaphors.length === 0 && (
+        <div className="no-metaphors">
+          No metaphors generated yet. Click the "Generate Metaphors" button above.
+        </div>
+      )}
     </div>
   );
 } 

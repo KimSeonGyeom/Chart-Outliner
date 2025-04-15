@@ -44,15 +44,20 @@ def process_image(file_stream):
         }
     }
 
-def process_template_image(template_filename):
+def process_template_image(template_filename, processing_params=None):
     """
-    Process a template image file with Canny edge detection
+    Process a template image file with Canny edge detection and additional processing techniques
     
     Args:
         template_filename: Filename of the template image in the public/templates directory
+        processing_params: Optional dict with parameters for different processing techniques
+            - threshold: Dict with lower and upper thresholds for Canny
+            - sparsification: Dict with drop rate
+            - blur: Dict with kernel size and sigma
+            - contour: Dict with epsilon parameter for approximation
     
     Returns:
-        dict: Results of image processing
+        dict: Results of image processing with various techniques
     """
     # Define all possible template paths
     current_dir = os.path.dirname(os.path.abspath(__file__))  # utils directory
@@ -93,23 +98,87 @@ def process_template_image(template_filename):
     # Apply Gaussian blur to reduce noise (optional step for better edge detection)
     blurred = cv2.GaussianBlur(gray_img, (5, 5), 0)
     
-    # Detect edges using Canny
+    # Default processing: detect edges using standard Canny
     edges = cv2.Canny(blurred, 50, 150)
     
-    # Convert processed images back to base64 for response
-    _, gray_buffer = cv2.imencode('.png', gray_img)
-    gray_base64 = base64.b64encode(gray_buffer).decode('utf-8')
-    
-    _, edge_buffer = cv2.imencode('.png', edges)
-    edge_base64 = base64.b64encode(edge_buffer).decode('utf-8')
-    
-    # Return processing results
-    return {
-        "grayscale_image": gray_base64,
-        "edge_image": edge_base64,
+    # Initialize result dictionary
+    result = {
+        "grayscale_image": None,
+        "edge_image": None,
         "dimensions": {
             "width": img.shape[1],
             "height": img.shape[0],
             "channels": img.shape[2] if len(img.shape) > 2 else 1
-        }
+        },
+        "processed_edges": {}
     }
+    
+    # If processing parameters are provided, apply different techniques
+    if processing_params:
+        # 1. Threshold adjustment for Canny
+        if 'threshold' in processing_params:
+            params = processing_params['threshold']
+            lower = params.get('lower', 50)
+            upper = params.get('upper', 150)
+            threshold_edges = cv2.Canny(blurred, lower, upper)
+            _, buffer = cv2.imencode('.png', threshold_edges)
+            result["processed_edges"]["threshold"] = base64.b64encode(buffer).decode('utf-8')
+        
+        # 2. Edge sparsification
+        if 'sparsification' in processing_params:
+            params = processing_params['sparsification']
+            drop_rate = params.get('drop_rate', 0.3)
+            
+            # Create random mask with specified drop rate
+            mask = np.random.rand(*edges.shape) > drop_rate
+            sparse_edges = np.where(mask, edges, 0).astype(np.uint8)
+            
+            _, buffer = cv2.imencode('.png', sparse_edges)
+            result["processed_edges"]["sparsification"] = base64.b64encode(buffer).decode('utf-8')
+        
+        # 3. Pre-smoothing with Gaussian blur
+        if 'blur' in processing_params:
+            params = processing_params['blur']
+            kernel_size = params.get('kernel_size', 5)
+            sigma = params.get('sigma', 1.0)
+            
+            # Ensure kernel size is odd
+            if kernel_size % 2 == 0:
+                kernel_size += 1
+            
+            # Apply Gaussian blur and then Canny
+            custom_blurred = cv2.GaussianBlur(gray_img, (kernel_size, kernel_size), sigma)
+            blur_edges = cv2.Canny(custom_blurred, 100, 200)
+            
+            _, buffer = cv2.imencode('.png', blur_edges)
+            result["processed_edges"]["blur"] = base64.b64encode(buffer).decode('utf-8')
+        
+        # 4. Contour simplification
+        if 'contour' in processing_params:
+            params = processing_params['contour']
+            epsilon_factor = params.get('epsilon_factor', 0.02)
+            
+            # Find contours from edge image
+            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            # Create a blank image for drawing simplified contours
+            contour_img = np.zeros_like(edges)
+            
+            # Simplify and draw each contour
+            for contour in contours:
+                # Calculate epsilon based on contour perimeter
+                epsilon = epsilon_factor * cv2.arcLength(contour, True)
+                approx = cv2.approxPolyDP(contour, epsilon, True)
+                cv2.drawContours(contour_img, [approx], 0, 255, 1)
+            
+            _, buffer = cv2.imencode('.png', contour_img)
+            result["processed_edges"]["contour"] = base64.b64encode(buffer).decode('utf-8')
+    
+    # Convert base images to base64
+    _, gray_buffer = cv2.imencode('.png', gray_img)
+    result["grayscale_image"] = base64.b64encode(gray_buffer).decode('utf-8')
+    
+    _, edge_buffer = cv2.imencode('.png', edges)
+    result["edge_image"] = base64.b64encode(edge_buffer).decode('utf-8')
+    
+    return result

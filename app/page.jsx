@@ -3,7 +3,8 @@
 import React, { useRef } from 'react';
 import { 
   ControlPanel,
-  downloadChart
+  downloadChart,
+  AIGenerationSection
 } from '../components/controls';
 import ChartControls from '../components/charts/ChartControls.jsx';
 import './page.scss';
@@ -23,11 +24,14 @@ export default function Home() {
 
       <div className="chart-layout">
         {/* Left side - Chart and chart-specific controls */}
-        <ChartControls chartRef={chartRef} />
+        <div className="chart-section">
+          <ControlPanel />
+          <ChartControls chartRef={chartRef} />
+        </div>
         
         {/* Right side - Control Panel */}
         <div className="control-section">
-          <ControlPanel />
+          <AIGenerationSection chartRef={chartRef} />
         </div>
       </div>
     </main>

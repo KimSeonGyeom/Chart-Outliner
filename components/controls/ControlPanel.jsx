@@ -34,7 +34,7 @@ const LineControls = () => {
 const SharedControls = () => {
   return (
     <div className="shared-controls">
-      <ChartTypeSelector />
+      {/* <ChartTypeSelector /> */}
       {/* <DimensionsSection /> */}
       <DataSection />
       <AxisSection />

@@ -16,7 +16,13 @@ export const useAiStore = create()((set, get) => ({
   isLoading: false,             // Loading state for async operations
   chartImageData: null,         // Base64 encoded chart image data
   edgeImageData: null,          // Base64 encoded Canny edge detection image
-  
+  edgeImageData_Processed: {    // Base64 encoded Canny edge detection image, processed with additional vision processing
+    // threshold: null,
+    sparsification: null,
+    blur: null,
+    contour: null,
+  }, 
+
   // Actions
   setMetaphors: (metaphors) => set({ metaphors }),
   setIsGenerating: (isGenerating) => set({ isGenerating }),
@@ -29,6 +35,21 @@ export const useAiStore = create()((set, get) => ({
   // Store the base64 encoded edge detection image data
   setEdgeImageData: (imageData) => set({ edgeImageData: imageData }),
   
+  // Store processed edge images
+  setProcessedEdgeImage: (type, imageData) => set(state => ({
+    edgeImageData_Processed: {
+      ...state.edgeImageData_Processed,
+      [type]: imageData
+    }
+  })),
+  
+  // Set all processed edge images at once
+  setAllProcessedEdgeImages: (processedImages) => set({
+    edgeImageData_Processed: {
+      ...processedImages
+    }
+  }),
+  
   // Reset all AI state to initial values
   resetAiStates: () => set({
     metaphors: [],
@@ -37,5 +58,11 @@ export const useAiStore = create()((set, get) => ({
     isLoading: false,
     chartImageData: null,
     edgeImageData: null,
+    edgeImageData_Processed: {
+      // threshold: null,
+      sparsification: null,
+      blur: null,
+      contour: null,
+    },
   }),
 })); 

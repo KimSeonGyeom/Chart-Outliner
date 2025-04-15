@@ -93,8 +93,11 @@ def handle_process_template():
         template_filename = data['template_filename']
         print(f"Processing template: {template_filename}")
         
-        # Process the template image
-        result = process_template_image(template_filename)
+        # Extract processing parameters if provided
+        processing_params = data.get('processing_params', None)
+        
+        # Process the template image with the specified processing parameters
+        result = process_template_image(template_filename, processing_params)
         return jsonify(result), 200
     except FileNotFoundError as e:
         print(f"File not found error: {str(e)}")
