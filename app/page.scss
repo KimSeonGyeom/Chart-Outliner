@@ -41,7 +41,7 @@ header {
     width: 50%;
 
     .chart-display {
-      width: fit-content;
+      width: 100%;
       height: fit-content;
       margin: 12px;
       justify-self: center;
@@ -98,92 +98,14 @@ header {
       }
     }
 
-    // AI Prompt Generator Section
-    .ai-section {
-      margin-bottom: 1.5rem;
-      padding: 1rem;
-      background-color: #f5f7fa;
-      border-radius: 6px;
-      border: 1px solid #dde4ed;
-      
-      .ai-section-title {
-        font-size: 1rem;
-        font-weight: 500;
-        margin-bottom: 0.8rem;
-        color: #333;
-      }
-      
-      // Intention field styles
-      .intention-field {
-        margin-bottom: 1rem;
-        
-        label {
-          display: block;
-          font-size: 0.9rem;
-          margin-bottom: 0.5rem;
-          color: #555;
-        }
-        
-        .intention-input {
-          width: 100%;
-          padding: 0.5rem;
-          border: 1px solid #dde4ed;
-          border-radius: 4px;
-          font-size: 0.9rem;
-          transition: border-color 0.2s ease;
-          
-          &:focus {
-            outline: none;
-            border-color: #7b68ee;
-            box-shadow: 0 0 0 2px rgba(123, 104, 238, 0.1);
-          }
-          
-          &::placeholder {
-            color: #aaa;
-            font-style: italic;
-          }
-        }
-      }
-      
-      .ai-generate-button {
-        background-color: #7b68ee;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 0.4rem 1rem;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-        margin-bottom: 1rem;
-        
-        &:hover {
-          background-color: #6a5acd;
-        }
-        
-        &:active {
-          background-color: #5040b0;
-        }
-        
-        &:disabled {
-          background-color: #b3addb;
-          cursor: not-allowed;
-        }
-      }
-      
-      .api-error {
-        background-color: #f8d7da;
-        color: #721c24;
-        padding: 0.75rem;
-        border-radius: 4px;
-        margin-bottom: 1rem;
-        border: 1px solid #f5c6cb;
-        font-size: 0.9rem;
-        
-        p {
-          margin: 0;
-          line-height: 1.4;
-        }
-      }
+    .chart-wrapper-container {
+      width: 100%;
+      overflow: auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 1rem;
+      z-index: 0;
     }
 
     .chart-wrapper {

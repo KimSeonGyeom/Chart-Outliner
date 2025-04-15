@@ -53,7 +53,8 @@ export default function AIGenerationSection({ chartRef }) {
       throw new Error('Chart reference is not available');
     }
     
-    const svgElement = chartRef.current.querySelector('svg');
+    // Use the originalSvgRef from the BarChart component
+    const svgElement = chartRef.current.originalSvgRef.current;
     if (!svgElement) {
       throw new Error('SVG element not found in chart');
     }

@@ -12,8 +12,8 @@ export default function ChartControls({ chartRef }) {
       <ExportSection chartRef={chartRef} />
       
       {/* Chart display */}
-      <div className="chart-display" ref={chartRef}>
-        <BarChart />
+      <div className="chart-display">
+        <BarChart ref={chartRef} />
       </div>
     </div>
   );
