@@ -16,6 +16,7 @@ export const useAiStore = create()((set, get) => ({
   isLoading: false,             // Loading state for async operations
   chartImageData: null,         // Base64 encoded chart image data
   edgeImageData: null,          // Base64 encoded Canny edge detection image
+  selectedEdgeImageData: null,  // Selected edge image data to use for bar chart pattern
   edgeImageData_Processed: {    // Base64 encoded Canny edge detection image, processed with additional vision processing
     // threshold: null,
     sparsification: null,
@@ -34,6 +35,9 @@ export const useAiStore = create()((set, get) => ({
   
   // Store the base64 encoded edge detection image data
   setEdgeImageData: (imageData) => set({ edgeImageData: imageData }),
+  
+  // Store the selected edge image data for the bar chart pattern
+  setSelectedEdgeImageData: (imageData) => set({ selectedEdgeImageData: imageData }),
   
   // Store processed edge images
   setProcessedEdgeImage: (type, imageData) => set(state => ({
@@ -58,6 +62,7 @@ export const useAiStore = create()((set, get) => ({
     isLoading: false,
     chartImageData: null,
     edgeImageData: null,
+    selectedEdgeImageData: null,
     edgeImageData_Processed: {
       // threshold: null,
       sparsification: null,

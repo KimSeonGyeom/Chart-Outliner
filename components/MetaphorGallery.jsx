@@ -8,7 +8,9 @@ export default function MetaphorGallery() {
   const isLoading = useAiStore(state => state.isLoading);
   const setIsLoading = useAiStore(state => state.setIsLoading);
   const edgeImageData = useAiStore(state => state.edgeImageData);
+  const selectedEdgeImageData = useAiStore(state => state.selectedEdgeImageData);
   const setEdgeImageData = useAiStore(state => state.setEdgeImageData);
+  const setSelectedEdgeImageData = useAiStore(state => state.setSelectedEdgeImageData);
   const setAllProcessedEdgeImages = useAiStore(state => state.setAllProcessedEdgeImages);
 
   // Function to process template image with Canny edge detection
@@ -57,6 +59,18 @@ export default function MetaphorGallery() {
       
       // Process the template image
       processTemplateImage(metaphor.template);
+    }
+  };
+  
+  // Handle selecting an edge image for bar chart pattern
+  const handleSelectEdgeImage = () => {
+    if (edgeImageData) {
+      // Toggle selection - if already selected, deselect it
+      if (selectedEdgeImageData === edgeImageData) {
+        setSelectedEdgeImageData(null);
+      } else {
+        setSelectedEdgeImageData(edgeImageData);
+      }
     }
   };
   

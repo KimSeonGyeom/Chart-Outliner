@@ -20,6 +20,7 @@ export default function AIGenerationSection({ chartRef }) {
   const isLoading = useAiStore(state => state.isLoading);
   const edgeImageData = useAiStore(state => state.edgeImageData);
   const processedEdgeImages = useAiStore(state => state.edgeImageData_Processed);
+  const selectedEdgeImageData = useAiStore(state => state.selectedEdgeImageData);
 
   // AI actions from aiStore
   const setMetaphors = useAiStore(state => state.setMetaphors);
@@ -30,6 +31,7 @@ export default function AIGenerationSection({ chartRef }) {
   const setEdgeImageData = useAiStore(state => state.setEdgeImageData);
   const setProcessedEdgeImage = useAiStore(state => state.setProcessedEdgeImage);
   const setAllProcessedEdgeImages = useAiStore(state => state.setAllProcessedEdgeImages);
+  const setSelectedEdgeImageData = useAiStore(state => state.setSelectedEdgeImageData);
 
   // Processing parameters state
   const [processingParams, setProcessingParams] = React.useState({
@@ -358,6 +360,16 @@ export default function AIGenerationSection({ chartRef }) {
     }
   };
 
+  // Handle selecting an edge image for bar chart pattern
+  const handleSelectEdgeImage = (imageData) => {
+    // Toggle selection - if already selected, deselect it
+    if (selectedEdgeImageData === imageData) {
+      setSelectedEdgeImageData(null);
+    } else {
+      setSelectedEdgeImageData(imageData);
+    }
+  };
+
   return (
     <div className="ai-section">
       <div className="ai-section-title">AI Image Generator</div>
@@ -419,7 +431,14 @@ export default function AIGenerationSection({ chartRef }) {
                   <img 
                     src={`data:image/png;base64,${edgeImageData}`}
                     alt="Canny edge detection" 
-                    style={{ maxWidth: '100%', maxHeight: '300px' }}
+                    style={{ 
+                      maxWidth: '100%', 
+                      maxHeight: '300px',
+                      cursor: selectedTechnique === '' ? 'pointer' : 'default',
+                      border: selectedEdgeImageData === edgeImageData ? '3px solid #4CAF50' : 'none'
+                    }}
+                    onClick={() => selectedTechnique === '' ? handleSelectEdgeImage(edgeImageData) : null}
+                    title={selectedTechnique === '' ? "Click to use this image in bar chart" : ""}
                   />
                 </div>
               )}
@@ -428,7 +447,6 @@ export default function AIGenerationSection({ chartRef }) {
             {/* Edge Processing Controls */}
             <div className="edge-processing-controls" style={{ marginTop: '20px' }}>
               <h3>Edge Processing Techniques</h3>
-              
               <div className="technique-selector" style={{ marginBottom: '15px' }}>
                 <label>Select Technique: </label>
                 <select 
@@ -459,6 +477,12 @@ export default function AIGenerationSection({ chartRef }) {
                   Apply All Techniques
                 </button>
               </div>
+              
+              {!selectedTechnique && (
+                <div style={{ marginBottom: '15px', color: '#666', fontStyle: 'italic' }}>
+                  When "None" is selected, click on any edge image to use it in the bar chart
+                </div>
+              )}
               
               {/* Parameters for each technique */}
               {selectedTechnique === 'sparsification' && (
@@ -547,7 +571,14 @@ export default function AIGenerationSection({ chartRef }) {
                           <img 
                             src={`data:image/png;base64,${imageData}`}
                             alt={`${technique} processing`} 
-                            style={{ maxWidth: '100%', maxHeight: '250px' }}
+                            style={{ 
+                              maxWidth: '100%', 
+                              maxHeight: '250px',
+                              cursor: 'pointer',
+                              border: selectedEdgeImageData === imageData ? '3px solid #4CAF50' : 'none'
+                            }}
+                            onClick={() => handleSelectEdgeImage(imageData)}
+                            title="Click to use this image in bar chart"
                           />
                         </div>
                       )

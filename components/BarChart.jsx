@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { useDataStore } from './store/dataStore';
 import { useChartStore } from './store/chartStore';
+import { useAiStore } from './store/aiStore';
 
 const BarChart = () => {
   // Get data and settings from stores
@@ -20,6 +21,10 @@ const BarChart = () => {
   
   // Get chart-specific settings
   const barPadding = useChartStore((state) => state.barPadding);
+  
+  // Get edge image data from aiStore - prioritize selected edge image if available
+  const edgeImageData = useAiStore((state) => state.edgeImageData);
+  const selectedEdgeImageData = useAiStore((state) => state.selectedEdgeImageData);
   
   // Other state
   const svgRef = useRef(null);
@@ -75,21 +80,54 @@ const BarChart = () => {
     // Create a chart group for bars that will have transformations applied
     const barsGroup = g.append('g').attr('class', 'bars-group');
     
-    // Add rectangle bars
-    barsGroup.selectAll('.bar')
-      .data(chartData)
-      .enter()
-      .append('rect')
-      .attr('class', 'bar')
-      .attr('x', d => x(String(d.x)) ?? 0)
-      .attr('y', d => y(d.y))
-      .attr('width', x.bandwidth())
-      .attr('height', d => innerHeight - y(d.y))
-      .attr('fill', d => 'transparent')
-      .attr('stroke', "black")
-      .attr('stroke-width', 1);
+    // Only use edge image pattern if specifically selected by user
+    const patternImageData = selectedEdgeImageData;
     
-  }, [chartData, chartWidth, chartHeight, barPadding, showXAxis, showYAxis, yDomainMin, yDomainMax, innerWidth, innerHeight]);
+    if (patternImageData) {
+      // Add bars with the edge image pattern
+      // First, define a pattern for the edge image
+      const defs = svg.append('defs');
+      defs.append('pattern')
+        .attr('id', 'edgeImagePattern')
+        .attr('patternUnits', 'userSpaceOnUse')
+        .attr('width', 100)
+        .attr('height', 100)
+        .append('image')
+        .attr('xlink:href', `data:image/png;base64,${patternImageData}`)
+        .attr('width', 100)
+        .attr('height', 100)
+        .attr('preserveAspectRatio', 'none');
+      
+      // Add rectangle bars with the pattern fill
+      barsGroup.selectAll('.bar')
+        .data(chartData)
+        .enter()
+        .append('rect')
+        .attr('class', 'bar')
+        .attr('x', d => x(String(d.x)) ?? 0)
+        .attr('y', d => y(d.y))
+        .attr('width', x.bandwidth())
+        .attr('height', d => innerHeight - y(d.y))
+        .attr('fill', 'url(#edgeImagePattern)')
+        .attr('stroke', "black")
+        .attr('stroke-width', 1);
+    } else {
+      // Add basic rectangle bars with transparent fill
+      barsGroup.selectAll('.bar')
+        .data(chartData)
+        .enter()
+        .append('rect')
+        .attr('class', 'bar')
+        .attr('x', d => x(String(d.x)) ?? 0)
+        .attr('y', d => y(d.y))
+        .attr('width', x.bandwidth())
+        .attr('height', d => innerHeight - y(d.y))
+        .attr('fill', 'transparent')
+        .attr('stroke', "black")
+        .attr('stroke-width', 1);
+    }
+    
+  }, [chartData, chartWidth, chartHeight, barPadding, showXAxis, showYAxis, yDomainMin, yDomainMax, innerWidth, innerHeight, selectedEdgeImageData]);
 
   // Effect to clean up when component unmounts
   useEffect(() => {
