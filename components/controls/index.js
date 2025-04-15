@@ -4,8 +4,7 @@
 export { downloadChart, downloadChartAsImage, downloadChartAsSVG } from './downloadUtils.js';
 
 // Export main control panel
-export { default as ControlPanel, BarControls, LineControls, SharedControls } from './ControlPanel.jsx';
-export { default as ChartTypeSelector } from './shared/ChartTypeSelector.jsx';
+export { default as ControlPanel, BarControls, SharedControls } from './ControlPanel.jsx';
 
 // Export AI section
 export { default as AIGenerationSection } from './AIGenerationSection.jsx';
