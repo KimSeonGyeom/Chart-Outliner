@@ -1,6 +1,5 @@
-import React from 'react';
-import { useDataStore } from '../../store/dataStore.js';
-import { sampleDataSets } from '../../store/dataStore.js';
+import { useDataStore } from './store/dataStore.js';
+import { sampleDataSets } from './store/dataStore.js';
 
 const DataSection = () => {
   // Get data settings from data store
@@ -65,9 +64,6 @@ const DataSection = () => {
                 disabled={numDataPoints <= 3}
               >-</button>
             </div>
-          </div>
-          <div className="help-text">
-            Range: 3-7 points
           </div>
         </div>
       </div>

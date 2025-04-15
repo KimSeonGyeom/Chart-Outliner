@@ -1,16 +1,14 @@
-import React from 'react';
-import { useSharedStore } from '../../store/sharedStore.js';
+import { useChartStore } from './store/chartStore.js';
 
 const AxisSection = () => {
   // Get axis options from shared store
-  const showXAxis = useSharedStore(state => state.showXAxis);
-  const showYAxis = useSharedStore(state => state.showYAxis);
-  const updateSetting = useSharedStore(state => state.updateSetting);
+  const showXAxis = useChartStore(state => state.showXAxis);
+  const showYAxis = useChartStore(state => state.showYAxis);
+  const updateSetting = useChartStore(state => state.updateSetting);
 
   return (
     <div className="section">
-      <div className="section-title">Axes & Grid</div>
-      
+      <div className="section-title">Axes & Grid</div>      
       <div className="control-items">
         <div className="checkbox-group">
           <input

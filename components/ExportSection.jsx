@@ -1,18 +1,15 @@
 "use client";
 
-import React from 'react';
-import { downloadChart } from '../controls/index.js';
-import { useChartStore } from '../store/chartStore.js';
-import { useSharedStore } from '../store/sharedStore.js';
+import { downloadChart } from './downloadUtils.js';
+import { useChartStore } from './store/chartStore.js';
 
 export default function ExportSection({ chartRef }) {
-  const chartType = useSharedStore(state => state.chartType);
   const exportFileType = useChartStore(state => state.exportFileType);
   const setExportOption = useChartStore(state => state.setExportOption);
 
   const handleExport = () => {
     // Generate a filename with timestamp
-    const fileName = `chart-outliner-${chartType}-chart-${Date.now()}`;
+    const fileName = `chart-outliner-${Date.now()}`;
     setExportOption('exportFileName', fileName);
     
     if (chartRef && chartRef.current) {

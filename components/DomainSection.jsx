@@ -1,11 +1,10 @@
-import React from 'react';
-import { useSharedStore } from '../../store/sharedStore.js';
+import { useChartStore } from './store/chartStore.js';
 
 const DomainSection = () => {
-  // Get domain options from shared store
-  const yDomainMin = useSharedStore(state => state.yDomainMin);
-  const yDomainMax = useSharedStore(state => state.yDomainMax);
-  const updateSetting = useSharedStore(state => state.updateSetting);
+  // Get domain options from chart store
+  const yDomainMin = useChartStore(state => state.yDomainMin);
+  const yDomainMax = useChartStore(state => state.yDomainMax);
+  const updateSetting = useChartStore(state => state.updateSetting);
 
   return (
     <div className="section">

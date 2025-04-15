@@ -9,17 +9,19 @@ export const useChartStore = create((set) => ({
   // Bar chart settings
   barPadding: 0.2,
   
-  // Line chart settings
-  showPoints: true,
-  pointRadius: 5,
-  pointShape: 'circle',
-  
+  // Dimensions
+  width: 512,
+  height: 512,
+
+  // Axis options
+  showXAxis: true,
+  showYAxis: true,
+  yDomainMin: undefined,
+  yDomainMax: undefined,
+
+
   // Actions
   setBarPadding: (padding) => set({ barPadding: padding }),
-  
-  setShowPoints: (show) => set({ showPoints: show }),
-  setPointRadius: (radius) => set({ pointRadius: radius }),
-  setPointShape: (shape) => set({ pointShape: shape }),
   
   // Chart-specific actions
   setExportOption: (key, value) => set((state) => ({

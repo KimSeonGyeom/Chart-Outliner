@@ -8,7 +8,6 @@ Chart Outliner is an interactive tool for creating, customizing, and saving SVG-
 - **Bar Chart**: Create customizable bar charts with responsive controls
 
 ### Chart Customization
-- **Dimensions**: Adjust width and height via draggable handles or input fields
 - **Appearance**: Customize colors, opacity, point display, and more
 - **Axes**: Toggle axis visibility and configure tick counts
 - **Special Features**: 

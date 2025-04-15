@@ -43,18 +43,6 @@ export const generateTrendData = (
         });
       }
       break;
-      
-    case 'sinusoidal':
-      for (let i = 0; i < numPoints; i++) {
-        // Sine wave= a * sin(b*x) + c
-        // Using a = 40, b = 2*π, c = 50
-        const x = i / (numPoints - 1);
-        data.push({
-          x: dataLabels[i % dataLabels.length],
-          y: Math.floor(40 * Math.sin(2 * Math.PI * x) + 50)
-        });
-      }
-      break;
   }
   
   return {
@@ -120,7 +108,6 @@ export const sampleDataSets = {
   // Add trend datasets
   exponential: generateTrendData('exponential'),
   logarithmic: generateTrendData('logarithmic'),
-  sinusoidal: generateTrendData('sinusoidal'),
 };
 
 // Generate random data for any chart type
@@ -174,7 +161,7 @@ export const useDataStore = create()((set, get) => ({
     const pointsToGenerate = Math.max(3, Math.min(8, numDataPoints));
     
     // For trend data presets that support variable length
-    if (['exponential', 'logarithmic', 'sinusoidal'].includes(preset)) {
+    if (['exponential', 'logarithmic'].includes(preset)) {
       const trendData = generateTrendData(
         preset,
         pointsToGenerate,
@@ -242,7 +229,7 @@ export const useDataStore = create()((set, get) => ({
     }
     
     // Handle trend data
-    if (['exponential', 'logarithmic', 'sinusoidal'].includes(preset)) {
+    if (['exponential', 'logarithmic'].includes(preset)) {
       const trendData = generateTrendData(
         preset,
         pointsToGenerate,

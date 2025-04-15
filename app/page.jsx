@@ -1,12 +1,9 @@
 "use client";
 
-import React, { useRef } from 'react';
-import { 
-  ControlPanel,
-  downloadChart,
-  AIGenerationSection
-} from '../components/controls';
-import ChartControls from '../components/charts/ChartControls.jsx';
+import { useRef } from 'react';
+import ControlPanel from '../components/ControlPanel.jsx';
+import AIGenerationSection from '../components/AIGenerationSection.jsx';
+import ChartControls from '../components/ChartControls.jsx';
 import './page.scss';
 
 export default function Home() {

@@ -1,10 +1,9 @@
 "use client";
 
 import React from 'react';
-import MetaphorGallery from '../charts/MetaphorGallery.jsx';
-import { useSharedStore } from '../store/sharedStore.js';
-import { useDataStore } from '../store/dataStore.js';
-import { useAiStore } from '../store/aiStore.js';
+import MetaphorGallery from './MetaphorGallery.jsx';
+import { useDataStore } from './store/dataStore.js';
+import { useAiStore } from './store/aiStore.js';
 import './AIGenerationSection.scss';
 
 export default function AIGenerationSection({ chartRef }) {

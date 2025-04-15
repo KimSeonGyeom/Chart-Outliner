@@ -1,9 +1,6 @@
 "use client";
 
-import React from 'react';
-import { useAiStore, AI_CONSTANTS } from '../store/aiStore.js';
-import { useSharedStore } from '../store/sharedStore.js';
-import { useDataStore } from '../store/dataStore.js';
+import { useAiStore } from './store/aiStore.js';
 
 export default function MetaphorGallery() {
   // Get metaphors from aiStore
@@ -13,17 +10,6 @@ export default function MetaphorGallery() {
   const edgeImageData = useAiStore(state => state.edgeImageData);
   const setEdgeImageData = useAiStore(state => state.setEdgeImageData);
   const setAllProcessedEdgeImages = useAiStore(state => state.setAllProcessedEdgeImages);
-  
-  // Add state for expanded metaphors
-  const [expandedMetaphors, setExpandedMetaphors] = React.useState({});
-  
-  // Toggle expansion of a metaphor
-  const toggleMetaphorExpansion = (index) => {
-    setExpandedMetaphors(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
-  };
 
   // Function to process template image with Canny edge detection
   const processTemplateImage = async (template) => {

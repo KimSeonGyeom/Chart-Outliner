@@ -1,5 +1,4 @@
-import React from 'react';
-import { useChartStore } from '../../store/chartStore.js';
+import { useChartStore } from './store/chartStore.js';
 
 const BarAppearanceSection = () => {
   // Use the chart store for bar padding
