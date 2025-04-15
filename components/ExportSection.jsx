@@ -79,11 +79,6 @@ export default function ExportSection({ chartRef }) {
         />
         <label htmlFor="svg-option">SVG</label>
       </div>
-      {selectedEdgeImageData && (
-        <div className="export-info">
-          <small>Both original and Canny edge versions will be exported</small>
-        </div>
-      )}
       <button className="export-button" onClick={handleExport}>
         Export
       </button>

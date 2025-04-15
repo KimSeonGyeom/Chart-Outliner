@@ -87,7 +87,7 @@ const BarChart = forwardRef((props, ref) => {
     // Create a chart group for bars
     const barsGroup = g.append('g').attr('class', 'bars-group');
     
-    // Add basic rectangle bars with transparent fill
+    // Add basic bars first
     barsGroup.selectAll('.bar')
       .data(chartData)
       .enter()
@@ -97,10 +97,10 @@ const BarChart = forwardRef((props, ref) => {
       .attr('y', d => y(d.y))
       .attr('width', x.bandwidth())
       .attr('height', d => innerHeight - y(d.y))
-      .attr('fill', 'transparent')
+      .attr('fill', 'white')
       .attr('stroke', "black")
       .attr('stroke-width', 1);
-      
+    
     return { x, y, g };
   };
   
@@ -147,21 +147,7 @@ const BarChart = forwardRef((props, ref) => {
     // Create a chart group for bars
     const barsGroup = g.append('g').attr('class', 'bars-group');
     
-    // Add bars with the edge image pattern
-    // First, define a pattern for the edge image
-    const defs = svg.append('defs');
-    defs.append('pattern')
-      .attr('id', 'edgeImagePattern')
-      .attr('patternUnits', 'userSpaceOnUse')
-      .attr('width', 100)
-      .attr('height', 100)
-      .append('image')
-      .attr('xlink:href', `data:image/png;base64,${selectedEdgeImageData}`)
-      .attr('width', 100)
-      .attr('height', 100)
-      .attr('preserveAspectRatio', 'none');
-    
-    // Add rectangle bars with the pattern fill
+    // Add basic bars
     barsGroup.selectAll('.bar')
       .data(chartData)
       .enter()
@@ -171,9 +157,45 @@ const BarChart = forwardRef((props, ref) => {
       .attr('y', d => y(d.y))
       .attr('width', x.bandwidth())
       .attr('height', d => innerHeight - y(d.y))
-      .attr('fill', 'url(#edgeImagePattern)')
+      .attr('fill', 'black')
       .attr('stroke', "black")
       .attr('stroke-width', 1);
+    
+    // Define fixed height for the edge images at the top and bottom of each bar
+    const edgeImageHeight = 40; // You can adjust this value as needed
+    
+    // Add edge images at the top and bottom of each bar
+    chartData.forEach((d, i) => {
+      const barWidth = x.bandwidth();
+      const barX = x(String(d.x)) ?? 0;
+      const barTopY = y(d.y);
+      const barHeight = innerHeight - y(d.y);
+      const barBottomY = innerHeight - Math.min(edgeImageHeight, barHeight);
+      
+      // Create a group for the bar's edge images
+      const imageGroup = g.append('g')
+        .attr('class', 'edge-image-group');
+      
+      // Add the edge image at the top with preserved aspect ratio
+      imageGroup.append('image')
+        .attr('class', 'top-edge-image')
+        .attr('x', barX)
+        .attr('y', barTopY)
+        .attr('width', barWidth)
+        .attr('height', Math.min(edgeImageHeight, barHeight))
+        .attr('xlink:href', `data:image/png;base64,${selectedEdgeImageData}`)
+        .attr('preserveAspectRatio', 'xMidYMin slice');
+      
+      // Add the edge image at the bottom with preserved aspect ratio
+      imageGroup.append('image')
+        .attr('class', 'bottom-edge-image')
+        .attr('x', barX)
+        .attr('y', barBottomY)
+        .attr('width', barWidth)
+        .attr('height', Math.min(edgeImageHeight, barHeight))
+        .attr('xlink:href', `data:image/png;base64,${selectedEdgeImageData}`)
+        .attr('preserveAspectRatio', 'xMidYMax slice'); // Position from bottom
+    });
   };
   
   // Update original chart
@@ -205,13 +227,13 @@ const BarChart = forwardRef((props, ref) => {
 
   return (
     <div className="chart-wrapper-container" style={{ position: 'relative' }} ref={chartRef}>
-      <div className="chart-wrapper" style={{ position: 'relative', width: chartWidth, height: chartHeight, marginBottom: '20px' }}>
+      <div className="chart-wrapper" style={{ position: 'relative', width: chartWidth, height: chartHeight }}>
         <svg ref={originalSvgRef} width={chartWidth} height={chartHeight}>
           {/* Original chart will be rendered by D3 */}
         </svg>
       </div>
       <div className="chart-wrapper" style={{ position: 'relative', width: chartWidth, height: chartHeight, display: selectedEdgeImageData ? 'block' : 'none' }}>
-        <svg ref={cannyEdgeSvgRef} width={chartWidth} height={chartHeight}>
+        <svg ref={cannyEdgeSvgRef} width={chartWidth} height={chartHeight} style={{ backgroundColor: 'black' }}>
           {/* Canny edge chart will be rendered by D3 */}
         </svg>
       </div>
