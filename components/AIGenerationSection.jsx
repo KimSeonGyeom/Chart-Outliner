@@ -10,8 +10,8 @@ export default function AIGenerationSection({ chartRef }) {
   const authorIntention = useDataStore(state => state.authorIntention);
   const setAuthorIntention = useDataStore(state => state.setAuthorIntention);
   const chartData = useDataStore(state => state.chartData);
-  const dataSubject = chartData.subject;
-  
+  const numberOfDataPoints = useDataStore(state => state.numDataPoints);
+
   // AI states from aiStore
   const metaphors = useAiStore(state => state.metaphors);
   const isGenerating = useAiStore(state => state.isGenerating);
@@ -231,7 +231,7 @@ export default function AIGenerationSection({ chartRef }) {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ imageData, dataSubject }),
+          body: JSON.stringify({ imageData }),
         });
         
         if (!response_interpretation.ok) {
@@ -250,12 +250,12 @@ export default function AIGenerationSection({ chartRef }) {
         console.log('Visual Interpretation:', visualInterpretation);
         
         // Call our metaphors API route
-        const response = await fetch('/api/generate-metaphor', {
+        const response = await fetch('/api/generate-prompt', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ authorIntention, dataSubject, visualInterpretation }),
+          body: JSON.stringify({ authorIntention, subject: chartData["subject"], visualInterpretation, numberOfDataPoints }),
         });
         
         if (!response.ok) {
@@ -399,7 +399,7 @@ export default function AIGenerationSection({ chartRef }) {
       <div className="ai-prompt-container">
         <div className="data-subject">
           <span className="data-label">Data Subject:</span> 
-          <span className="data-value">{dataSubject || "No data subject yet"}</span>
+          <span className="data-value">{chartData["subject"] || "No data subject yet"}</span>
         </div>
         <div className="author-intention">
           <span className="data-label">Author's Intention:</span> 

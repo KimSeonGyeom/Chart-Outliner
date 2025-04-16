@@ -91,6 +91,9 @@ export default function MetaphorGallery() {
             <div className="template-score">
               {metaphor["metaphorical object"]}
             </div>
+            <div className="template-score">
+              {metaphor["prompt"]}
+            </div>
           </span>
           <img 
             src={`/templates/${metaphor.template.filename}`} 

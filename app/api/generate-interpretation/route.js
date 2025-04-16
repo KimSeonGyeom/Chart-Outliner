@@ -15,7 +15,7 @@ const Schema = z.object({
 
 export async function POST(request) {
   try {
-    const { imageData, subject } = await request.json();
+    const { imageData } = await request.json();
 
     const system_role = `
       You are a data visualization expert.
@@ -38,10 +38,6 @@ export async function POST(request) {
         {
           role: 'user',
           content: [
-            {
-              type: 'text',
-              text: "This chart is about"+subject,
-            },
             {
               type: 'image_url',
               image_url: {

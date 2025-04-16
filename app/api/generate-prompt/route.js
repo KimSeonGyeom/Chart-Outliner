@@ -2,36 +2,27 @@ import OpenAI from 'openai';
 import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Example prompts
-// const examplePrompts = `
-//   "Sketch Smudge, A medium-sized sketch of a womans face is drawn on a white paper. The womans eyes are squinted and her lips are slightly parted. Her hair is long and wavy. She is wearing a brown jacket that is pulled up to her chest. Her neck is draped over her shoulders. She has a black collar around her neck. Her eyebrows are black and her hair is a dark brown color. There are blue circles on the paper behind her.",
-//   "Sketch Smudge, stylized charcoal sketch of a mans face is drawn on a dark gray background. The mans expression is intense, his eyebrows furrowed, and his lips set in a firm line. His hair is short and spiky, and he has a prominent jawline. He is wearing a leather jacket with visible texture and metallic details on the collar. The background is accented with streaks of white and black, giving the sketch a dramatic and gritty atmosphere.",
-//   "Sketch Smudge, A gray and white drawing of a womans head is depicted on a white canvas background. The womans face is facing the left side of the frame, her eyes are open and her lips are slightly parted. Her hair is long and cascades over her shoulders. She is wearing a gray knitted cap, and a white scarf around her neck. The background is a vibrant red, and the womans neck is adorned with a white design."
-// `;
-
 const examplePrompts = `
-  Example 1: "Sketch Smudge, A medium-sized sketch of ropes hanging on the wall using nails. The wall is made with wooden planks, and there is a small portrait of a macho man with mustache. The sketch is done with a style of Comics with Exagerated Expressions.",
-  Reason Why the Example 1 is good: Ropes hanging on the wall look like rectangles with thick strokes without fill. Also, nails made it understandable that the ropes are hanging on the wall.
-  
-  Example 2: "Sketch Smudge, A medium-sized sketch of a woman's hand stretching toward right bottom. She is pointing the diamond at the right bottom corner with her finger. The diamond is laying on the ground, with casted shodow on the floor. The sketch is done in a detailed, American Comics style.",
-  Reason Why the Example 2 is good: The line chart's data was falling trend of diamonds prices, which means that the line starts from the top left corner and goes to the bottom right corner. This leads to natural direction of the hand and finger. Also, the diamond at the right bottom corresponds to the subject of thedata.
-  
-  Example 3: "Sketch Smudge, A medium-sized sketch of bushes with fruits. As you go to the right, the bushes have fewer fruits and leaves, leaving only bare branches. Each bush's bottome is a clay pot, starting with a shallow branch without leaves. The sketch is done in a detailed, American Comics style.",
-  Reason Why the Example 3 is good: This was for bar charts. Selecting word "bushes" instead of "plants" made it more applicable to bar markers. Also, the bushes' bottom is clay pots, which specify the specific context of the entire metaphorical scene. Also, fewer fruits and leaves reflect the decreasing trend of the data, naturally liking with "bush" concept.
+  Example: "Hand drawn sketch style, four wine bottles with different heights. black-red colored wine bottles with different labels and punts",
+  Reason Why the Example is good: 
+    - This starts with "Hand drawn sketch style, " which is a constraint of our generation. 
+    - Also, it defines the number of wine bottles exactly. 
+    - Last, the color of the wine bottles is specified, which is an extra information about the main object(wine bottles), not the background or other objects.
 `
 
 // Define the schema for a single metaphor
 const SingleMetaphorSchema = z.object({
-  "metaphorical object for the chart's marks": z.string(),
+  "metaphorical object": z.string(),
   "reason why this metaphor is fit for the visual interpretation(data trend)": z.string(),
   "reason why this metaphor is fit for the chart's subject(not data trend)": z.string(),
   "reason why this metaphor is fit for the author's intent": z.string(),
-  "reason why this metaphor is fit for the marks' outline": z.string(),
   prompt: z.string(),
 });
 
@@ -40,49 +31,73 @@ const MetaphorsSchema = z.object({
   author_intention: z.string(),
   data_subject: z.string(),
   visual_interpretation: z.string(),
-  initial_metaphors: z.array(SingleMetaphorSchema),
-  selected_metaphors: z.array(SingleMetaphorSchema),
+  metaphors: z.array(SingleMetaphorSchema),
 });
+
+// Function to get template names from the public/templates directory
+function getTemplateNames() {
+  const templatesDir = path.join(process.cwd(), 'public', 'templates');
+  let templateNames = [];
+  
+  try {
+    if (fs.existsSync(templatesDir)) {
+      const files = fs.readdirSync(templatesDir);
+      templateNames = files
+        .filter(file => file.toLowerCase().endsWith('.png'))
+        .map(file => {
+          // Extract template name from filename (remove extension)
+          const templateName = path.basename(file, path.extname(file));
+          // Convert underscores to spaces
+          return templateName.replace(/_/g, ' ');
+        });
+    }
+  } catch (error) {
+    console.error('Error reading templates directory:', error);
+  }
+  
+  return templateNames;
+}
 
 export async function POST(request) {
   try {
-    const { imageData, subject, authorIntention, visualInterpretation } = await request.json();
-
+    // const { imageData, subject, authorIntention, visualInterpretation } = await request.json();
+    const { authorIntention, subject, visualInterpretation, numberOfDataPoints } = await request.json();
+    
+    // Get template names dynamically from public/templates directory
+    const templateNames = getTemplateNames();
+    console.log('templateNames', templateNames);
+    
+    // Format the template names as candidate metaphors
+    const candidateMetaphors = templateNames.length > 0
+      ? templateNames.map(name => `      - "${name}"`).join('\n')
+      : `None`;
+  
     const system_role = `
       You are a data visualization expert.
-      Your job is to generate three prompts that will be used to generate pictorial chart using the FLUX.1.dev API.
-      You are given four inputs: 
-      (1) a visual interpretation of the data trend,
+      Your job is to generate five prompts that will be used to generate pictorial chart using the FLUX.1.dev API.
+      You are given three inputs: 
+      (1) a data subject of the chart (what the data is about),
       (2) an author's intention of generating a pictorial chart (what feeling the author wants to convey),
-      (3) a data subject of the chart (what the data is about),
-      (4) an original image of a chart which is a starting point for the pictorial chart.
+      (3) a visual interpretation of the data trend,
     `;
-    const system_prompt_constraints = `
-      Each prompt should start with "Sketch Smudge, a sketch of [metaphorical description for the chart's marks]" and be no more than 60 words.
+    const system_metaphor_selection = `
+      Before generating prompts, try to figure out which metaphor is closely related to all three inputs: the visual interpretation, the author's intention and the data's subject and trend.
+      You have a set of candidate metaphors like below:
+      ${candidateMetaphors}
     `;
     const system_metaphor_direction = `
-      Regarding the metaphor, try to figure out which metaphor is closely related to the visual interpretation, the author's intention and the data's subject and trend.
-      For example, if the data is about "cost of living" and the trend is increasing, the metaphor could be "a house", "a money bag" or "an apratment and a ladder reaching the window".
+      For example, if the data is about "cost of living" and the trend is increasing, the metaphor could be "a house" or "a money bag".
       In addition to this, if the author's intention is to warn about the cost of living, "a house" can be "an evil house" or "a money bag" can be "a money bag with a monstrous mouth".
-
-      First, generate four metaphors.
-      Among your ideas, select the most appropriate three metaphors which help the readers to understand the author's intention.
-      Please be creative and use your imagination.
     `;
-    const system_adapt_mark = `
-      After exploring candidate metaphors, please look at the chart image and it's marks' outline.
-      The final image must include the outline as part of their shape or details.
-      Then, for each of your metaphor, please follow the steps below.
-      (1) If the mark's outline looks similar to common shape of the metaphor, please specify details for filling up.
-      For example, bar mark's shape looks like the metaphor "apartment". Then, Prompt should specify extra components like "window", "door", "roof", etc.
-      (2) If they are not similar, please think how to make the metaphor more applicable to the mark.
-      For example, triangle shaped bar mark doesn't look like the metaphor "apartment". Then, we can consider them as "an entrance" of "apartment". In this case, the prompt should specify like "an apartment having an entrance with a triangular top".
-      For another example, if the mark is a line chart and we set the metaphor as "apartment", we can consider them as "Stair railing" of "apartment". In this case, the prompt should specify like "an apartment having a staircase with a railing".
-      (3) If these approaches can't connect the metaphor to the mark, please think of new metaphor.
-    `
+    const system_prompt_constraints = `
+      First, select five different metaphors.
+      Then, follow the below constraints to generate prompts for each metaphor.
+      Each prompt should follow the format of "Hand drawn sketch style, ${numberOfDataPoints} [metaphor] [extra information about the metaphor]" and be no more than 60 words.
+    `;
     const system_prompt_examples = `
-      Please describe the main metaphorical objects, and extra details to make it more realistic, so the FLUX.1.dev API can understand the context and generate the final output more acceptable.
-      While detailing the extras, please do not specify non-main elements and leave the background as white.
+      Within the prompt, please describe extra information about the metaphor with details to make it easier to get a sense of the metaphor's appearance. 
+      depending on the data values, the metaphor's appearance might be different. for example, with population growth data, the metaphor can be an adult when the data is high, and the metaphor can be a child when the data is low.
+      This helps the FLUX.1.dev API to understand the context and generate the final output more clearly.
       Followings are example prompts:
       ${examplePrompts}
     `;
@@ -94,35 +109,32 @@ export async function POST(request) {
           role: 'system',
           content: `
             ${system_role}
+
+            ${system_metaphor_selection}
+
             ${system_prompt_constraints}
+
             ${system_metaphor_direction}
-            ${system_adapt_mark}
-            
-            For each prompt, please provide a detailed description of visual elements of the metaphor.
+
             ${system_prompt_examples}
           `,
         },
         {
           role: 'user',
           content: [
-            { type: 'text', text: "Here is the author's intention of generating a pictorial chart:" },
-            { type: 'text', text: `"${authorIntention}"` },
             { type: 'text', text: "Here is the data subject of the chart:" },
             { type: 'text', text: `"${subject}"` },
-            { type: 'text', text: "Here is the original image of the chart:" },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:image/png;base64,${imageData}`,
-              },
-            },
+            { type: 'text', text: "Here is the author's intention of generating a pictorial chart:" },
+            { type: 'text', text: `"${authorIntention}"` },
+            { type: 'text', text: "Here is the visual interpretation of the data trend:" },
+            { type: 'text', text: `"${visualInterpretation}"` },
           ],
         },
       ],
       response_format: zodResponseFormat(MetaphorsSchema, "metaphors"),
     });
-
-    console.log('Raw response:', response);
+    console.log('inputs', { subject, authorIntention, visualInterpretation, numberOfDataPoints });
+    console.log('Raw response:', response.choices[0].message.parsed);
 
     return NextResponse.json({ 
       success: true, 
