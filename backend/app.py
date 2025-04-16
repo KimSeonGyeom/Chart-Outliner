@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 
 # Import image processing utilities
 from utils.image_processor import process_image, process_template_image
-# Import similarity utility
-from utils.similarity import find_most_similar_template
 
 # Load environment variables
 load_dotenv()
@@ -108,21 +106,6 @@ def handle_process_template():
         print(f"Error processing template: {str(e)}")
         print(f"Traceback: {error_traceback}")
         return jsonify({"error": str(e), "traceback": error_traceback}), 500
-
-
-@app.route('/api/find-similar-template', methods=['POST'])
-def handle_find_similar_template():
-    """Find the most similar template based on metaphor text"""
-    try:
-        data = request.get_json()
-        if not data or 'metaphorText' not in data:
-            return jsonify({"error": "No metaphor text provided"}), 400
-        
-        # Find the most similar template
-        result = find_most_similar_template(data['metaphorText'])
-        return jsonify(result), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('FLASK_PORT', 5000))
