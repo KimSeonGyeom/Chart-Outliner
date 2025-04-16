@@ -12,7 +12,8 @@ export default function MetaphorGallery() {
   const setEdgeImageData = useAiStore(state => state.setEdgeImageData);
   const setSelectedEdgeImageData = useAiStore(state => state.setSelectedEdgeImageData);
   const setAllProcessedEdgeImages = useAiStore(state => state.setAllProcessedEdgeImages);
-
+  const processingParams = useAiStore(state => state.processingParams);
+  
   // Function to process template image with Canny edge detection
   const processTemplateImage = async (template) => {
     try {
@@ -23,7 +24,9 @@ export default function MetaphorGallery() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ template_filename: template.filename }),
+        body: JSON.stringify({ 
+          template_filename: `${template["metaphorical object"]}.png` 
+        }),
       });
       
       if (!response.ok) {
@@ -43,6 +46,9 @@ export default function MetaphorGallery() {
           blur: null,
           contour: null,
         });
+        
+        // After getting basic edge image, automatically process with all techniques
+        await processTemplateWithEdgeTechniques(template);
       }
     } catch (error) {
       console.error('Error processing template image:', error);
@@ -50,16 +56,55 @@ export default function MetaphorGallery() {
       setIsLoading(false);
     }
   };
+  
+  // Function to process template with all edge techniques
+  const processTemplateWithEdgeTechniques = async (template) => {
+    if (!template) return;
+    
+    try {
+      // Don't set loading again as we're already in a loading state
+      
+      // Process the template image with all edge techniques
+      const response = await fetch('http://localhost:5000/api/process-template', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          template_filename: `${template["metaphorical object"]}.png`,
+          processing_params: processingParams
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error('Error processing template image with techniques:', response.status);
+        return;
+      }
+      
+      const data = await response.json();
+      
+      // Update all processed edge images at once
+      if (data.processed_edges) {
+        setAllProcessedEdgeImages(data.processed_edges);
+      }
+    } catch (error) {
+      console.error('Error processing template with techniques:', error);
+    }
+  };
 
   // Handle selecting a template
   const handleSelectTemplate = (metaphor) => {
-    if (metaphor.template) {
-      // Set the selected template in the store
-      useAiStore.getState().setSelectedTemplate(metaphor.template);
-      
-      // Process the template image
-      processTemplateImage(metaphor.template);
-    }
+    // Create template object from metaphor data
+    const template = {
+      name: metaphor["metaphorical object"],
+      filename: `${metaphor["metaphorical object"]}.png`
+    };
+    
+    // Set the selected template in the store
+    useAiStore.getState().setSelectedTemplate(template);
+    
+    // Process the template image (this will also call processTemplateWithEdgeTechniques)
+    processTemplateImage(metaphor);
   };
   
   // Handle selecting an edge image for bar chart pattern
@@ -86,9 +131,6 @@ export default function MetaphorGallery() {
         >
           <span>
             <div className="template-score">
-              {metaphor.template.score > 0.5 ? <b>{metaphor.template.score.toFixed(2)}</b> : metaphor.template.score.toFixed(2)}
-            </div>
-            <div className="template-score">
               {metaphor["metaphorical object"]}
             </div>
             <div className="template-score">
@@ -96,8 +138,8 @@ export default function MetaphorGallery() {
             </div>
           </span>
           <img 
-            src={`/templates/${metaphor.template.filename}`} 
-            alt={metaphor.template.name}
+            src={`/templates/${metaphor["metaphorical object"]}.png`} 
+            alt={metaphor["metaphorical object"]}
             height={"80px"}
             className="template-thumbnail"
           />

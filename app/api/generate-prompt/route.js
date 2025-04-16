@@ -69,7 +69,7 @@ export async function POST(request) {
     
     // Format the template names as candidate metaphors
     const candidateMetaphors = templateNames.length > 0
-      ? templateNames.map(name => `      - "${name}"`).join('\n')
+      ? templateNames.map(name => `"${name}"`).join('\n')
       : `None`;
   
     const system_role = `
@@ -86,8 +86,8 @@ export async function POST(request) {
       ${candidateMetaphors}
     `;
     const system_metaphor_direction = `
-      For example, if the data is about "cost of living" and the trend is increasing, the metaphor could be "a house" or "a money bag".
-      In addition to this, if the author's intention is to warn about the cost of living, "a house" can be "an evil house" or "a money bag" can be "a money bag with a monstrous mouth".
+      When selecting metaphor, if the data is about "cost of living" and the trend is increasing, the metaphor could be "a house" or "stack of coins".
+      In addition to this, if the author's intention is to warn about the cost of living, "a house" can be "an evil house".
     `;
     const system_prompt_constraints = `
       First, select five different metaphors.
@@ -98,7 +98,7 @@ export async function POST(request) {
       Within the prompt, please describe extra information about the metaphor with details to make it easier to get a sense of the metaphor's appearance. 
       depending on the data values, the metaphor's appearance might be different. for example, with population growth data, the metaphor can be an adult when the data is high, and the metaphor can be a child when the data is low.
       This helps the FLUX.1.dev API to understand the context and generate the final output more clearly.
-      Followings are example prompts:
+      Following is an example prompt:
       ${examplePrompts}
     `;
 
@@ -133,12 +133,13 @@ export async function POST(request) {
       ],
       response_format: zodResponseFormat(MetaphorsSchema, "metaphors"),
     });
-    console.log('inputs', { subject, authorIntention, visualInterpretation, numberOfDataPoints });
-    console.log('Raw response:', response.choices[0].message.parsed);
-
-    return NextResponse.json({ 
+    
+    return NextResponse.json({  
       success: true, 
-      content: response.choices[0].message.parsed 
+      content: response.choices[0].message.parsed.metaphors.map(metaphor => ({
+        ...metaphor,
+        "metaphorical object": metaphor["metaphorical object"].replace(/\s+/g, '_')
+      }))
     });
   } catch (error) {
     console.error('Error in API route:', error);

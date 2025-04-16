@@ -7,7 +7,7 @@ export const useChartStore = create((set) => ({
   exportFileType: 'png',
   
   // Bar chart settings
-  barPadding: 0.2,
+  barPadding: 0.05,
   
   // Dimensions
   width: 512,

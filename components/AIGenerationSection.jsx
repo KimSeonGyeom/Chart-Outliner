@@ -21,6 +21,7 @@ export default function AIGenerationSection({ chartRef }) {
   const edgeImageData = useAiStore(state => state.edgeImageData);
   const processedEdgeImages = useAiStore(state => state.edgeImageData_Processed);
   const selectedEdgeImageData = useAiStore(state => state.selectedEdgeImageData);
+  const processingParams = useAiStore(state => state.processingParams);
 
   // AI actions from aiStore
   const setMetaphors = useAiStore(state => state.setMetaphors);
@@ -33,16 +34,8 @@ export default function AIGenerationSection({ chartRef }) {
   const setAllProcessedEdgeImages = useAiStore(state => state.setAllProcessedEdgeImages);
   const setSelectedEdgeImageData = useAiStore(state => state.setSelectedEdgeImageData);
 
-  // Processing parameters state
-  const [processingParams, setProcessingParams] = React.useState({
-    // threshold: { lower: 50, upper: 150 },
-    sparsification: { drop_rate: 0.7 },
-    blur: { kernel_size: 10, sigma: 2.0 },
-    contour: { epsilon_factor: 0.03 }
-  });
-
-  // Selected processing technique
-  const [selectedTechnique, setSelectedTechnique] = React.useState(null);
+  // Create array of technique names for easy reference
+  const edgeTechniques = ['sparsification', 'blur', 'contour'];
 
   // Add ref for template image
   const imgRef = React.useRef(null);
@@ -116,69 +109,21 @@ export default function AIGenerationSection({ chartRef }) {
     return base64Data;
   };
 
-  // Function to process template image with selected processing technique
-  const processTemplateWithTechnique = async () => {
-    if (!selectedTemplate) return;
+  // Function to process template with all edge techniques - this will be called automatically when template is selected
+  const processTemplateWithEdgeTechniques = async (template) => {
+    if (!template) return;
     
     try {
       setIsLoading(true);
       
-      // Create processing parameters object with only the selected technique
-      const selectedParams = {};
-      if (selectedTechnique) {
-        selectedParams[selectedTechnique] = processingParams[selectedTechnique];
-      }
-      
-      // Process the template image with the selected technique
+      // Process the template image with all edge techniques
       const response = await fetch('http://localhost:5000/api/process-template', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          template_filename: selectedTemplate.filename,
-          processing_params: selectedParams
-        }),
-      });
-      
-      if (!response.ok) {
-        console.error('Error processing template image:', response.status);
-        return;
-      }
-      
-      const data = await response.json();
-      
-      // Update edge image data
-      if (data.edge_image) {
-        setEdgeImageData(data.edge_image);
-      }
-      
-      // Update processed edge images
-      if (data.processed_edges && selectedTechnique) {
-        setProcessedEdgeImage(selectedTechnique, data.processed_edges[selectedTechnique]);
-      }
-    } catch (error) {
-      console.error('Error processing template image:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Function to process template image with all techniques at once
-  const processTemplateWithAllTechniques = async () => {
-    if (!selectedTemplate) return;
-    
-    try {
-      setIsLoading(true);
-      
-      // Process the template image with all techniques
-      const response = await fetch('http://localhost:5000/api/process-template', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          template_filename: selectedTemplate.filename,
+          template_filename: template.filename,
           processing_params: processingParams
         }),
       });
@@ -204,17 +149,6 @@ export default function AIGenerationSection({ chartRef }) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Handle parameter change
-  const handleParamChange = (technique, param, value) => {
-    setProcessingParams(prev => ({
-      ...prev,
-      [technique]: {
-        ...prev[technique],
-        [param]: value
-      }
-    }));
   };
 
   // Handle AI prompt generation
@@ -270,89 +204,11 @@ export default function AIGenerationSection({ chartRef }) {
         }
 
         console.log('Data:', data);
-        
-        // Get the metaphors
-        const generatedMetaphors = data.content.metaphors;
-        
-        // Find best matching templates for all metaphors and add scores
-        setIsLoading(true);
-        const metaphorsWithTemplates = await Promise.all(
-          generatedMetaphors.map(async (metaphor) => {
-            try {
-              const metaphorText = metaphor["metaphorical object"];
-              const response = await fetch('http://localhost:5000/api/find-similar-template', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ metaphorText }),
-              });
-              
-              if (!response.ok) {
-                throw new Error('Failed to find similar template');
-              }
-              
-              const data = await response.json();
-              
-              // Add template info to the metaphor
-              return {
-                ...metaphor,
-                template: {
-                  filename: data.template_filename,
-                  name: data.template_name,
-                  score: data.similarity_score
-                }
-              };
-            } catch (error) {
-              console.error('Error finding template for metaphor:', error);
-              return metaphor; // Return original metaphor if match fails
-            }
-          })
-        );
-        
-        // Sort metaphors by template match score (highest first)
-        const sortedMetaphors = metaphorsWithTemplates
-          .filter(m => m.template && m.template.score) // Only include metaphors with valid scores
-          .sort((a, b) => b.template.score - a.template.score);
-        
-        // Add any metaphors without templates at the end
-        const metaphorsWithoutTemplates = metaphorsWithTemplates.filter(m => !m.template || !m.template.score);
-        const allSortedMetaphors = [...sortedMetaphors, ...metaphorsWithoutTemplates];
-        
-        // Update metaphors in store
-        setMetaphors(allSortedMetaphors);
-        
-        // If we have a top match, automatically select it
-        if (sortedMetaphors.length > 0) {
-          const topMatch = sortedMetaphors[0];
-          useAiStore.getState().setSelectedTemplate(topMatch.template);
-          
-          // Process the template image
-          try {
-            // Process the top matching template with Canny edge detection
-            const processResponse = await fetch('http://localhost:5000/api/process-template', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ template_filename: topMatch.template.filename }),
-            });
-            
-            if (processResponse.ok) {
-              const processData = await processResponse.json();
-              if (processData.edge_image) {
-                useAiStore.getState().setEdgeImageData(processData.edge_image);
-              }
-            }
-          } catch (processError) {
-            console.error('Error processing template image:', processError);
-          }
-        }
-        
+        setMetaphors(data.content);
       } catch (error) {
-        console.error('API error:', error);
+        console.error('Error generating metaphors:', error);
       } finally {
-        setIsLoading(false);
+        setIsGenerating(false);
       }
     } catch (error) {
       console.error('Error generating metaphors:', error);
@@ -413,7 +269,7 @@ export default function AIGenerationSection({ chartRef }) {
         {/* Display selected template */}
         {selectedTemplate && (
           <div className="selected-template">
-            <h3>Selected Template: {selectedTemplate.name} (Score: {selectedTemplate.score.toFixed(2)})</h3>
+            <h3>Selected Template: {selectedTemplate.name}</h3>
             
             <div className="template-images" style={{ display: 'flex', flexDirection: 'row', gap: '20px', justifyContent: 'center' }}>
               <div className="image-container">
@@ -435,156 +291,44 @@ export default function AIGenerationSection({ chartRef }) {
                     style={{ 
                       maxWidth: '100%', 
                       maxHeight: '300px',
-                      cursor: selectedTechnique === '' ? 'pointer' : 'default',
+                      cursor: 'pointer',
                       border: selectedEdgeImageData === edgeImageData ? '3px solid #4CAF50' : 'none'
                     }}
-                    onClick={() => selectedTechnique === '' ? handleSelectEdgeImage(edgeImageData) : null}
-                    title={selectedTechnique === '' ? "Click to use this image in bar chart" : ""}
+                    onClick={() => handleSelectEdgeImage(edgeImageData)}
+                    title="Click to use this image in bar chart"
                   />
                 </div>
               )}
             </div>
             
-            {/* Edge Processing Controls */}
+            {/* Edge Processing Controls - Simplified */}
             <div className="edge-processing-controls" style={{ marginTop: '20px' }}>
               <h3>Edge Processing Techniques</h3>
-              <div className="technique-selector" style={{ marginBottom: '15px' }}>
-                <label>Select Technique: </label>
-                <select 
-                  value={selectedTechnique || ''} 
-                  onChange={(e) => setSelectedTechnique(e.target.value || null)}
-                  style={{ marginLeft: '10px', padding: '5px' }}
-                >
-                  <option value="">None</option>
-                  {/* <option value="threshold">Canny Threshold</option> */}
-                  <option value="sparsification">Edge Sparsification</option>
-                  <option value="blur">Gaussian Blur</option>
-                  <option value="contour">Contour Simplification</option>
-                </select>
-                
-                <button 
-                  onClick={processTemplateWithTechnique}
-                  disabled={!selectedTechnique || isLoading}
-                  style={{ marginLeft: '10px', padding: '5px 10px' }}
-                >
-                  Apply Selected Technique
-                </button>
-                
-                <button 
-                  onClick={processTemplateWithAllTechniques}
-                  disabled={isLoading}
-                  style={{ marginLeft: '10px', padding: '5px 10px' }}
-                >
-                  Apply All Techniques
-                </button>
+              
+              <div style={{ marginBottom: '15px', color: '#666', fontStyle: 'italic' }}>
+                Click on any edge image to use it in the bar chart
               </div>
               
-              {!selectedTechnique && (
-                <div style={{ marginBottom: '15px', color: '#666', fontStyle: 'italic' }}>
-                  When "None" is selected, click on any edge image to use it in the bar chart
-                </div>
-              )}
-              
-              {/* Parameters for each technique */}
-              {selectedTechnique === 'sparsification' && (
-                <div className="technique-params">
-                  <h4>Edge Sparsification</h4>
-                  <div>
-                    <label>Drop Rate: {processingParams.sparsification.drop_rate.toFixed(2)}</label>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="0.9" 
-                      step="0.05"
-                      value={processingParams.sparsification.drop_rate} 
-                      onChange={(e) => handleParamChange('sparsification', 'drop_rate', parseFloat(e.target.value))}
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {selectedTechnique === 'blur' && (
-                <div className="technique-params">
-                  <h4>Gaussian Blur</h4>
-                  <div style={{ display: 'flex', gap: '15px' }}>
-                    <div>
-                      <label>Kernel Size: {processingParams.blur.kernel_size}</label>
-                      <input 
-                        type="range" 
-                        min="3" 
-                        max="15" 
-                        step="1"
-                        value={processingParams.blur.kernel_size} 
-                        onChange={(e) => handleParamChange('blur', 'kernel_size', parseInt(e.target.value))}
-                      />
-                    </div>
-                    <div>
-                      <label>Sigma: {processingParams.blur.sigma.toFixed(1)}</label>
-                      <input 
-                        type="range" 
-                        min="0.5" 
-                        max="5" 
-                        step="0.5"
-                        value={processingParams.blur.sigma} 
-                        onChange={(e) => handleParamChange('blur', 'sigma', parseFloat(e.target.value))}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {selectedTechnique === 'contour' && (
-                <div className="technique-params">
-                  <h4>Contour Simplification</h4>
-                  <div>
-                    <label>Epsilon Factor: {processingParams.contour.epsilon_factor.toFixed(3)}</label>
-                    <input 
-                      type="range" 
-                      min="0.001" 
-                      max="0.1" 
-                      step="0.001"
-                      value={processingParams.contour.epsilon_factor} 
-                      onChange={(e) => handleParamChange('contour', 'epsilon_factor', parseFloat(e.target.value))}
-                    />
-                  </div>
-                </div>
-              )}
-              
               {/* Display processed images */}
-              <div className="processed-images" style={{ marginTop: '20px', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
-                {selectedTechnique && processedEdgeImages[selectedTechnique] && (
-                  <div className="image-container" style={{ flex: 1 }}>
-                    <h4>{selectedTechnique.charAt(0).toUpperCase() + selectedTechnique.slice(1)}</h4>
-                    <img 
-                      src={`data:image/png;base64,${processedEdgeImages[selectedTechnique]}`}
-                      alt={`${selectedTechnique} processing`} 
-                      style={{ maxWidth: '100%', maxHeight: '300px' }}
-                    />
-                  </div>
-                )}
-                
-                {!selectedTechnique && (
-                  <>
-                    {Object.entries(processedEdgeImages).map(([technique, imageData]) => 
-                      imageData && (
-                        <div className="image-container" key={technique}>
-                          <h4>{technique.charAt(0).toUpperCase() + technique.slice(1)}</h4>
-                          <img 
-                            src={`data:image/png;base64,${imageData}`}
-                            alt={`${technique} processing`} 
-                            style={{ 
-                              maxWidth: '100%', 
-                              maxHeight: '250px',
-                              cursor: 'pointer',
-                              border: selectedEdgeImageData === imageData ? '3px solid #4CAF50' : 'none'
-                            }}
-                            onClick={() => handleSelectEdgeImage(imageData)}
-                            title="Click to use this image in bar chart"
-                          />
-                        </div>
-                      )
-                    )}
-                  </>
+              <div className="processed-images" style={{ marginTop: '20px', display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '15px', justifyContent: 'center' }}>
+                {edgeTechniques.map(technique => 
+                  processedEdgeImages[technique] && (
+                    <div className="image-container" key={technique} style={{ flex: 1, maxWidth: '30%' }}>
+                      <h4>{technique.charAt(0).toUpperCase() + technique.slice(1)}</h4>
+                      <img 
+                        src={`data:image/png;base64,${processedEdgeImages[technique]}`}
+                        alt={`${technique} processing`} 
+                        style={{ 
+                          maxWidth: '100%', 
+                          maxHeight: '300px',
+                          cursor: 'pointer',
+                          border: selectedEdgeImageData === processedEdgeImages[technique] ? '3px solid #4CAF50' : 'none'
+                        }}
+                        onClick={() => handleSelectEdgeImage(processedEdgeImages[technique])}
+                        title="Click to use this image in bar chart"
+                      />
+                    </div>
+                  )
                 )}
               </div>
             </div>

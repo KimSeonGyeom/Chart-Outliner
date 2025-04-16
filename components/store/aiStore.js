@@ -23,6 +23,13 @@ export const useAiStore = create()((set, get) => ({
     blur: null,
     contour: null,
   }, 
+  
+  // Default processing parameters
+  processingParams: {
+    sparsification: { drop_rate: 0.7 },
+    blur: { kernel_size: 10, sigma: 2.0 },
+    contour: { epsilon_factor: 0.03 }
+  },
 
   // Actions
   setMetaphors: (metaphors) => set({ metaphors }),
@@ -54,6 +61,17 @@ export const useAiStore = create()((set, get) => ({
     }
   }),
   
+  // Update processing parameters
+  setProcessingParam: (technique, param, value) => set(state => ({
+    processingParams: {
+      ...state.processingParams,
+      [technique]: {
+        ...state.processingParams[technique],
+        [param]: value
+      }
+    }
+  })),
+  
   // Reset all AI state to initial values
   resetAiStates: () => set({
     metaphors: [],
@@ -69,5 +87,10 @@ export const useAiStore = create()((set, get) => ({
       blur: null,
       contour: null,
     },
+    processingParams: {
+      sparsification: { drop_rate: 0.7 },
+      blur: { kernel_size: 10, sigma: 2.0 },
+      contour: { epsilon_factor: 0.03 }
+    }
   }),
 })); 
