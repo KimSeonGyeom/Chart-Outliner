@@ -63,16 +63,20 @@ export default function ExportSection({ chartRef }) {
   };
 
   const handleExportAllVariations = async () => {
-    // Export one filled version and three canny edge versions for all data types, 3-6 number data points, assets with names of "apartment", "bottle", "man", "pine_tree" with gap = 0.05
+    // Export one filled version and three canny edge versions for all data types, 3-6 number data points, assets with names of "apartment", "bottle", "thin_man", "pine_tree" with gap = 0.05
     // To sum up, there are 4 (data type: rising, falling, wave, logarithmic) x 3 (canny edge versions: default, sparse, blur) x 4 (variations of data point numbers) x 4 (assets) = 192 files to export
     // Export the files at once, and name them as "${Date.now()}-{data type}-{canny edge version}-{data point number}-{asset name}"
     // Export the files in the same directory as the original chart
 
     const dataTypes = ['rising', 'falling', 'wave', 'logarithmic'];
+    // const dataTypes = ['logarithmic'];
     const edgeVersions = ['default', 'sparse', 'blur'];
+    // const dataPointCounts = [3, 6];
     const dataPointCounts = [3, 4, 5, 6];
-    const assets = ['apartment', 'bottle', 'man', 'pine_tree'];
-    const timestamp = Date.now();
+    // const assets = ['apartment'];
+    const assets = ['apartment', 'bottle', 'thin_man', 'pine_tree'];
+    const timestamp = Date.now().toString().slice(-8);
+    const topEdgeWidthScales = [0.4, 0.6, 0.8, 1.0];
     const gap = 0.05;
 
     // Check if chart reference exists
@@ -83,7 +87,7 @@ export default function ExportSection({ chartRef }) {
 
     // Set the starting batch counter
     let batchCounter = 0;
-    let totalExports = dataTypes.length * edgeVersions.length * dataPointCounts.length * assets.length;
+    let totalExports = dataTypes.length * edgeVersions.length * dataPointCounts.length * assets.length * topEdgeWidthScales.length;
     console.log(`Starting export of ${totalExports} variations...`);
 
     // Helper function to wait between exports to prevent browser freezing
@@ -91,6 +95,9 @@ export default function ExportSection({ chartRef }) {
     
     // Store the original selected edge image to restore it later
     const originalSelectedEdgeImage = useAiStore.getState().selectedEdgeImageData;
+    
+    // Store original topEdgeImageWidthScale to restore later
+    const originalTopEdgeWidthScale = useChartStore.getState().topEdgeImageWidthScale;
 
     // Loop through all combinations
     for (const dataType of dataTypes) {
@@ -120,8 +127,9 @@ export default function ExportSection({ chartRef }) {
         for (const asset of assets) {
           console.log(`Processing asset: ${asset}`);
           
+          // Process the asset image with the backend (only once per asset)
           try {
-            // Process the asset image with the backend
+            // We're only doing basic edge processing without the topEdgeWidthScale
             const response = await fetch('http://localhost:5000/api/process-template', {
               method: 'POST',
               headers: {
@@ -149,48 +157,65 @@ export default function ExportSection({ chartRef }) {
             // Save the processed edge images to the store so they can be used by the chart
             useAiStore.getState().setAllProcessedEdgeImages(data.processed_edges);
             
-            // For each edge version (default, sparsification/sparse, blur)
-            for (const edgeVersion of edgeVersions) {
-              // Generate a unique filename for this combination
-              const fileName = `${timestamp}-${dataType}-${dataPointCount}-${edgeVersion}-${asset}`;
+            // For each topEdgeWidthScale value
+            for (const topEdgeWidthScale of topEdgeWidthScales) {
+              // Set the topEdgeWidthScale in the chart store
+              useChartStore.getState().setTopEdgeImageWidthScale(topEdgeWidthScale);
               
-              // Get the edge image data for this version
-              const edgeImageKey = edgeVersion === 'sparse' ? 'sparsification' : edgeVersion;
-              const edgeImageData = data.processed_edges[edgeImageKey];
+              // Allow time for chart updates
+              await wait(150);
               
-              if (edgeImageData) {
-                // Apply this edge image to the bar chart
-                useAiStore.getState().setSelectedEdgeImageData(edgeImageData);
+              // For each edge version (default, sparsification/sparse, blur)
+              for (const edgeVersion of edgeVersions) {
+                // Generate a unique filename for this combination
+                const fileName = `${timestamp}-${dataType}-${dataPointCount}-${edgeVersion}-${asset}-scale${topEdgeWidthScale}`;
                 
-                // Wait for the UI to update with the new edge image
-                await wait(300);
+                // Get the edge image data for this version
+                const edgeImageKey = edgeVersion === 'sparse' ? 'sparsification' : edgeVersion;
                 
-                // Export the chart with this edge image
-                try {
-                  await downloadChart(
-                    chartRef.current,
-                    `${fileName}-${edgeVersion}`,
-                    exportFileType,
-                    true,   // asOutlines (default)
-                    false,  // forceFill
-                    'cannyEdge' // chartVersion - only canny edge version
-                  );
-                  console.log(`Successfully exported ${edgeVersion} edge version for ${fileName}`);
-                } catch (error) {
-                  console.error(`Error exporting ${edgeVersion} canny edge chart for ${fileName}:`, error);
+                // For the edge image, look for the full image
+                const edgeImageData = data.processed_edges[edgeImageKey];
+                
+                // For the top edge, specifically look for the 'top' version
+                const topEdgeImageKey = `${edgeImageKey}_top`;
+                const topEdgeImageData = data.processed_edges[topEdgeImageKey];
+                
+                if (edgeImageData && topEdgeImageData) {
+                  // Apply these specific edge images to the state
+                  useAiStore.getState().setSelectedEdgeImageData(edgeImageData);
+                  useAiStore.getState().setTopEdgeImage(topEdgeImageData);
+                  
+                  // Wait for the UI to update with the new edge image
+                  await wait(300);
+                  
+                  // Export the chart with this edge image
+                  try {
+                    await downloadChart(
+                      chartRef.current,
+                      fileName,
+                      exportFileType,
+                      true,   // asOutlines (default)
+                      false,  // forceFill
+                      'cannyEdge' // chartVersion - only canny edge version
+                    );
+                    console.log(`Successfully exported ${edgeVersion} edge version for ${fileName}`);
+                  } catch (error) {
+                    console.error(`Error exporting ${edgeVersion} canny edge chart for ${fileName}:`, error);
+                  }
+                } else {
+                  console.error(`Edge image data for ${edgeVersion} not found for asset ${asset}`);
+                  console.log('Available processed edges:', Object.keys(data.processed_edges));
                 }
-              } else {
-                console.error(`Edge image data for ${edgeVersion} not found for asset ${asset}`);
-              }
-              
-              // Increment the batch counter
-              batchCounter++;
-              
-              // Log progress
-              if (batchCounter % 10 === 0) {
-                console.log(`Exported ${batchCounter}/${totalExports} variations...`);
-                // Give the browser a chance to breathe
-                await wait(300);
+                
+                // Increment the batch counter
+                batchCounter++;
+                
+                // Log progress
+                if (batchCounter % 10 === 0) {
+                  console.log(`Exported ${batchCounter}/${totalExports} variations...`);
+                  // Give the browser a chance to breathe
+                  await wait(300);
+                }
               }
             }
           } catch (error) {
@@ -202,6 +227,9 @@ export default function ExportSection({ chartRef }) {
     
     // Restore the original selected edge image
     useAiStore.getState().setSelectedEdgeImageData(originalSelectedEdgeImage);
+    
+    // Restore the original topEdgeImageWidthScale value
+    useChartStore.getState().setTopEdgeImageWidthScale(originalTopEdgeWidthScale);
 
     console.log(`Export complete! Generated ${batchCounter} variations.`);
   }

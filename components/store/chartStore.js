@@ -8,6 +8,7 @@ export const useChartStore = create((set) => ({
   
   // Bar chart settings
   barPadding: 0.05,
+  topEdgeImageWidthScale: 0.4,
   
   // Dimensions
   width: 512,
@@ -22,6 +23,7 @@ export const useChartStore = create((set) => ({
 
   // Actions
   setBarPadding: (padding) => set({ barPadding: padding }),
+  setTopEdgeImageWidthScale: (scale) => set({ topEdgeImageWidthScale: scale }),
   
   // Chart-specific actions
   setExportOption: (key, value) => set((state) => ({

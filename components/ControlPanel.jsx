@@ -2,6 +2,7 @@ import AxisSection from './AxisSection.jsx';
 import DomainSection from './DomainSection.jsx';
 import DataSection from './DataSection.jsx';
 import BarPaddingSection from './BarPaddingSection.jsx';
+import TopEdgeWidthSection from './TopEdgeWidthSection.jsx';
 import './ControlPanel.scss';
 
 const ControlPanel = () => {
@@ -13,6 +14,7 @@ const ControlPanel = () => {
         <AxisSection />
         <DomainSection />
         <BarPaddingSection />
+        <TopEdgeWidthSection />
       </div>
     </div>
   );

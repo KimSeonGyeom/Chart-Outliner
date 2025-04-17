@@ -121,11 +121,13 @@ def process_template_image(template_filename, processing_params=None):
     # Default processing: detect edges using standard Canny
     edges = cv2.Canny(blurred, 50, 150)
     
-    # Get the top 30% of the edge image
+    # Get the top and bottom parts of the edge image
     height = edges.shape[0]
-    top_height = int(height * 0.3)
+    width = edges.shape[1]
+    top_height = int(height * 0.4)
     bottom_start = int(height * 0.7)
     
+    # Get the top and bottom edge sections (no scaling - handled in frontend)
     top_edges = edges[:top_height, :]
     bottom_edges = edges[bottom_start:, :]
     
@@ -155,7 +157,7 @@ def process_template_image(template_filename, processing_params=None):
             mask = np.random.rand(*edges.shape) > drop_rate
             sparse_edges = np.where(mask, edges, 0).astype(np.uint8)
             
-            # Get top and bottom sections
+            # Get top and bottom sections (no scaling - handled in frontend)
             sparse_top = sparse_edges[:top_height, :]
             sparse_bottom = sparse_edges[bottom_start:, :]
             
@@ -183,7 +185,7 @@ def process_template_image(template_filename, processing_params=None):
             custom_blurred = cv2.GaussianBlur(gray_img, (kernel_size, kernel_size), sigma)
             blur_edges = cv2.Canny(custom_blurred, 100, 200)
             
-            # Get top and bottom sections
+            # Get top and bottom sections (no scaling - handled in frontend)
             blur_top = blur_edges[:top_height, :]
             blur_bottom = blur_edges[bottom_start:, :]
             
@@ -207,13 +209,21 @@ def process_template_image(template_filename, processing_params=None):
     
     # Convert edge image to base64
     _, edge_buffer = cv2.imencode('.png', edges)
-    result["edge_image"] = base64.b64encode(edge_buffer).decode('utf-8')
+    edge_base64 = base64.b64encode(edge_buffer).decode('utf-8')
+    result["edge_image"] = edge_base64
     
     # Convert top and bottom edge sections to base64
     _, top_buffer = cv2.imencode('.png', top_edges)
-    result["top_edge_image"] = base64.b64encode(top_buffer).decode('utf-8')
+    top_edge_base64 = base64.b64encode(top_buffer).decode('utf-8')
+    result["top_edge_image"] = top_edge_base64
     
     _, bottom_buffer = cv2.imencode('.png', bottom_edges)
-    result["bottom_edge_image"] = base64.b64encode(bottom_buffer).decode('utf-8')
+    bottom_edge_base64 = base64.b64encode(bottom_buffer).decode('utf-8')
+    result["bottom_edge_image"] = bottom_edge_base64
+    
+    # Store default processed edges too
+    result["processed_edges"]["default"] = edge_base64
+    result["processed_edges"]["default_top"] = top_edge_base64
+    result["processed_edges"]["default_bottom"] = bottom_edge_base64
     
     return result

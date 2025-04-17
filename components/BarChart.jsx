@@ -20,6 +20,7 @@ const BarChart = forwardRef((props, ref) => {
   
   // Get chart-specific settings
   const barPadding = useChartStore((state) => state.barPadding);
+  const topEdgeImageWidthScale = useChartStore((state) => state.topEdgeImageWidthScale);
   
   // Get edge image data from aiStore - prioritize selected edge image if available
   const selectedEdgeImageData = useAiStore((state) => state.selectedEdgeImageData);
@@ -122,7 +123,7 @@ const BarChart = forwardRef((props, ref) => {
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
     
-    // Get edge image data from aiStore
+    // Get edge image data from aiStore - removing contours reference
     const { top_edge_image, bottom_edge_image, edgeImageData_Processed, edgeImageData } = useAiStore.getState();
     
     // Determine if we're using a processed edge image or the standard one
@@ -146,108 +147,103 @@ const BarChart = forwardRef((props, ref) => {
     topEdgeImageData = topEdgeImageData || selectedEdgeImageData;
     bottomEdgeImageData = bottomEdgeImageData || selectedEdgeImageData;
     
-    // Create images to get dimensions
-    const topImg = new Image();
-    topImg.src = `data:image/png;base64,${topEdgeImageData}`;
+    // Create images and wait for them to load before proceeding
+    const loadImages = () => {
+      return new Promise((resolve) => {
+        const topImg = new Image();
+        const bottomImg = new Image();
+        let loadedCount = 0;
+        
+        const checkAllLoaded = () => {
+          loadedCount++;
+          if (loadedCount === 2) resolve({ topImg, bottomImg });
+        };
+        
+        topImg.onload = checkAllLoaded;
+        bottomImg.onload = checkAllLoaded;
+        
+        // Handle errors - still resolve but with default dimensions
+        topImg.onerror = () => {
+          console.error('Failed to load top edge image');
+          checkAllLoaded();
+        };
+        
+        bottomImg.onerror = () => {
+          console.error('Failed to load bottom edge image');
+          checkAllLoaded();
+        };
+        
+        // Set source to trigger loading
+        topImg.src = `data:image/png;base64,${topEdgeImageData}`;
+        bottomImg.src = `data:image/png;base64,${bottomEdgeImageData}`;
+      });
+    };
     
-    const bottomImg = new Image();
-    bottomImg.src = `data:image/png;base64,${bottomEdgeImageData}`;
-    
-    // Set default dimensions
-    let topImageWidth = 100;
-    let topImageHeight = 100;
-    let bottomImageWidth = 100;
-    let bottomImageHeight = 100;
-    
-    // Try to get image dimensions from already cached images
-    if (topImg.complete) {
-      topImageWidth = topImg.width;
-      topImageHeight = topImg.height;
-    }
-    
-    if (bottomImg.complete) {
-      bottomImageWidth = bottomImg.width;
-      bottomImageHeight = bottomImg.height;
-    }
-    
-    // X scale
-    const x = d3.scaleBand()
-      .domain(chartData.map(d => String(d.x)))
-      .range([0, innerWidth])
-      .padding(barPadding);
-    
-    // Y scale with properly adjusted domain
-    const y = d3.scaleLinear()
-      .domain([
-        yDomainMin !== undefined ? yDomainMin : 0,
-        yDomainMax !== undefined ? yDomainMax : d3.max(chartData, d => d.y) * 1.1
-      ])
-      .nice()
-      .range([innerHeight, 0]);
-    
-    // Add axes if enabled
-    if (showXAxis) {
-      g.append('g')
-        .attr('transform', `translate(0,${innerHeight})`)
-        .call(d3.axisBottom(x))
-        .selectAll('text')
-        .style('text-anchor', 'middle');
-    }
-    
-    if (showYAxis) {
-      g.append('g')
-        .call(d3.axisLeft(y));
-    }
-    
-    // Create a chart group for bars
-    const barsGroup = g.append('g').attr('class', 'bars-group');
-    
-    // Add basic bars
-    barsGroup.selectAll('.bar')
-      .data(chartData)
-      .enter()
-      .append('rect')
-      .attr('class', 'bar')
-      .attr('x', d => x(String(d.x)) ?? 0)
-      .attr('y', d => {
-        // For positive values (relative to yDomainMin), start from the value's Y coordinate
-        return y(Math.max(d.y, yDomainMin !== undefined ? yDomainMin : 0));
-      })
-      .attr('width', x.bandwidth())
-      .attr('height', d => {
-        // Calculate proper bar height 
-        // The bar should start at the data point and end at the domain minimum
-        return Math.abs(y(yDomainMin !== undefined ? yDomainMin : 0) - y(d.y));
-      })
-    
-    // Add asset images to each bar
-    chartData.forEach((d, i) => {
-      const barWidth = x.bandwidth();
-      const barX = x(String(d.x)) ?? 0;
-      const barHeight = Math.abs(y(yDomainMin !== undefined ? yDomainMin : 0) - y(d.y));
-      const barY = y(Math.max(d.y, yDomainMin !== undefined ? yDomainMin : 0));
+    // Load images first, then continue with chart rendering
+    loadImages().then(({ topImg, bottomImg }) => {
+      const topImageWidth = topImg.width; // Fallback if width not available
+      const topImageHeight = topImg.height; // Fallback if height not available
       
-      // Create a group for the bar's edge images
-      const imageGroup = g.append('g')
-        .attr('class', 'edge-image-group');
+      const bottomImageWidth = bottomImg.width;
+      const bottomImageHeight = bottomImg.height;
       
-      // Add the top edge image
-      imageGroup.append('image')
-        .attr('xlink:href', `data:image/png;base64,${topEdgeImageData}`)
-        .attr('x', barX)
-        .attr('y', barY)
-        .attr('width', barWidth)
-        .attr('height', 50) // Fixed height like the bottom image
-        .attr('preserveAspectRatio', 'xMidYMin meet'); // Center horizontally, align to top, meet (fit within) instead of slice
+      // X scale
+      const x = d3.scaleBand()
+        .domain(chartData.map(d => String(d.x)))
+        .range([0, innerWidth])
+        .padding(barPadding);
       
-      // Add the bottom edge image
-      imageGroup.append('image')
-        .attr('xlink:href', `data:image/png;base64,${bottomEdgeImageData}`)
-        .attr('x', barX)
-        .attr('y', barY + barHeight - 50) // Position at bottom of bar with fixed height
-        .attr('width', barWidth)
-        .attr('height', 50) // Fixed height
-        .attr('preserveAspectRatio', 'xMidYMax meet'); // Center horizontally, align to bottom, allow shrinking but not stretching
+      // Y scale with properly adjusted domain
+      const y = d3.scaleLinear()
+        .domain([
+          yDomainMin !== undefined ? yDomainMin : 0,
+          yDomainMax !== undefined ? yDomainMax : d3.max(chartData, d => d.y) * 1.1
+        ])
+        .nice()
+        .range([innerHeight, 0]);
+      
+      // Add axes if enabled
+      if (showXAxis) {
+        g.append('g')
+          .attr('transform', `translate(0,${innerHeight})`)
+          .call(d3.axisBottom(x))
+          .selectAll('text')
+          .style('text-anchor', 'middle');
+      }
+      
+      if (showYAxis) {
+        g.append('g')
+          .call(d3.axisLeft(y));
+      }
+      
+      // Add asset images
+      chartData.forEach((d, i) => {
+        const barWidth = x.bandwidth();
+        const barX = x(String(d.x)) ?? 0;
+        const barY = y(d.y);
+        
+        // Create a group for the bar's edge images
+        const imageGroup = g.append('g')
+          .attr('class', 'edge-image-group');
+        
+        // Add the top edge image
+        imageGroup.append('image')
+          .attr('xlink:href', `data:image/png;base64,${topEdgeImageData}`)
+          .attr('x', barX)
+          .attr('y', barY) // Position exactly at the top of the bar
+          .attr('height', topImageHeight) // Use actual image height
+          .attr('preserveAspectRatio', 'xMidYMin meet') // Maintain aspect ratio, center the image
+          .attr('width', topImageWidth * topEdgeImageWidthScale); // Scale width based on the adjustable scale
+
+        // Add the bottom edge image
+        imageGroup.append('image')
+          .attr('xlink:href', `data:image/png;base64,${bottomEdgeImageData}`)
+          .attr('x', barX)
+          .attr('y', innerHeight - bottomImageHeight) // Position exactly at the bottom of the bar
+          .attr('height', bottomImageHeight) // Use actual image height
+          .attr('preserveAspectRatio', 'xMidYMax meet') // Maintain aspect ratio, center the image
+          .attr('width', bottomImageWidth * topEdgeImageWidthScale); // Scale width based on the adjustable scale
+      });
     });
   };
 
@@ -266,7 +262,7 @@ const BarChart = forwardRef((props, ref) => {
         d3.select(cannyEdgeSvgRef.current).selectAll('*').remove();
       }
     }
-  }, [selectedEdgeImageData, topEdgeImage, bottomEdgeImage, chartData, barPadding, showXAxis, showYAxis, yDomainMin, yDomainMax]);
+  }, [selectedEdgeImageData, topEdgeImage, bottomEdgeImage, chartData, barPadding, showXAxis, showYAxis, yDomainMin, yDomainMax, topEdgeImageWidthScale]);
   
   // Effect to clean up when component unmounts
   useEffect(() => {

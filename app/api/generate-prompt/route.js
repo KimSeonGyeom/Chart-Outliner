@@ -9,14 +9,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const examplePrompts = `
-  Example: "Hand drawn sketch style, four wine bottles with different heights. black-red colored wine bottles with different labels and punts",
-  Reason Why the Example is good: 
-    - This starts with "Hand drawn sketch style, " which is a constraint of our generation. 
-    - Also, it defines the number of wine bottles exactly. 
-    - Last, the color of the wine bottles is specified, which is an extra information about the main object(wine bottles), not the background or other objects.
-`
-
 // Define the schema for a single metaphor
 const SingleMetaphorSchema = z.object({
   "metaphorical object": z.string(),
@@ -63,6 +55,22 @@ export async function POST(request) {
     // const { imageData, subject, authorIntention, visualInterpretation } = await request.json();
     const { authorIntention, subject, visualInterpretation, numberOfDataPoints } = await request.json();
     
+    // const examplePrompts = `
+    //   Example: "Hand drawn sketch style, four wine bottles with different heights. black-red colored wine bottles with different labels and punts",
+    //   Reason Why the Example is good: 
+    //     - This starts with "Hand drawn sketch style, " which is a constraint of our generation. 
+    //     - Also, it defines the number of wine bottles exactly. 
+    //     - Last, the color of the wine bottles is specified, which is an extra information about the main object(wine bottles), not the background or other objects.
+    // `
+
+    const examplePrompts = `
+      Example: "Sketch Smudge, a sketch of four wine bottles with different heights. black-red colored wine bottles with different labels and punts",
+      Reason Why the Example is good: 
+        - This starts with "Sketch Smudge, a sketch of" which is a constraint of our generation. 
+        - Also, it defines the number of wine bottles exactly. 
+        - Last, the color of the wine bottles is specified, which is an extra information about the main object(wine bottles), not the background or other objects.
+    `
+
     // Get template names dynamically from public/templates directory
     const templateNames = getTemplateNames();
     console.log('templateNames', templateNames);
@@ -89,10 +97,15 @@ export async function POST(request) {
       When selecting metaphor, if the data is about "cost of living" and the trend is increasing, the metaphor could be "a house" or "stack of coins".
       In addition to this, if the author's intention is to warn about the cost of living, "a house" can be "an evil house".
     `;
+    // const system_prompt_constraints = `
+    //   First, select five different metaphors.
+    //   Then, follow the below constraints to generate prompts for each metaphor.
+    //   Each prompt should follow the format of "Hand drawn sketch style, ${numberOfDataPoints} [metaphor] [extra information about the metaphor]" and be no more than 60 words.
+    // `;
     const system_prompt_constraints = `
       First, select five different metaphors.
       Then, follow the below constraints to generate prompts for each metaphor.
-      Each prompt should follow the format of "Hand drawn sketch style, ${numberOfDataPoints} [metaphor] [extra information about the metaphor]" and be no more than 60 words.
+      Each prompt should follow the format of "Sketch Smudge, a sketch of ${numberOfDataPoints} [metaphor] [extra information about the metaphor]" and be no more than 60 words.
     `;
     const system_prompt_examples = `
       Within the prompt, please describe extra information about the metaphor with details to make it easier to get a sense of the metaphor's appearance. 

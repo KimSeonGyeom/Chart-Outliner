@@ -28,8 +28,7 @@ export const useAiStore = create()((set, get) => ({
   // Default processing parameters
   processingParams: {
     sparsification: { drop_rate: 0.7 },
-    blur: { kernel_size: 10, sigma: 2.0 },
-    contour: { epsilon_factor: 0.03 }
+    blur: { kernel_size: 10, sigma: 2.0 }
   },
 
   // Actions
@@ -95,7 +94,7 @@ export const useAiStore = create()((set, get) => ({
     },
     processingParams: {
       sparsification: { drop_rate: 0.7 },
-      blur: { kernel_size: 10, sigma: 2.0 },
+      blur: { kernel_size: 10, sigma: 2.0 }
     }
   }),
 })); 
