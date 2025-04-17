@@ -17,11 +17,12 @@ export const useAiStore = create()((set, get) => ({
   chartImageData: null,         // Base64 encoded chart image data
   edgeImageData: null,          // Base64 encoded Canny edge detection image
   selectedEdgeImageData: null,  // Selected edge image data to use for bar chart pattern
+  top_edge_image: null,         // Base64 encoded top 30% of edge image
+  bottom_edge_image: null,      // Base64 encoded bottom 30% of edge image
   edgeImageData_Processed: {    // Base64 encoded Canny edge detection image, processed with additional vision processing
-    // threshold: null,
+    default: null,
     sparsification: null,
     blur: null,
-    contour: null,
   }, 
   
   // Default processing parameters
@@ -45,6 +46,10 @@ export const useAiStore = create()((set, get) => ({
   
   // Store the selected edge image data for the bar chart pattern
   setSelectedEdgeImageData: (imageData) => set({ selectedEdgeImageData: imageData }),
+  
+  // Store top and bottom edge images
+  setTopEdgeImage: (imageData) => set({ top_edge_image: imageData }),
+  setBottomEdgeImage: (imageData) => set({ bottom_edge_image: imageData }),
   
   // Store processed edge images
   setProcessedEdgeImage: (type, imageData) => set(state => ({
@@ -81,16 +86,16 @@ export const useAiStore = create()((set, get) => ({
     chartImageData: null,
     edgeImageData: null,
     selectedEdgeImageData: null,
+    top_edge_image: null,
+    bottom_edge_image: null,
     edgeImageData_Processed: {
-      // threshold: null,
+      default: null,
       sparsification: null,
       blur: null,
-      contour: null,
     },
     processingParams: {
       sparsification: { drop_rate: 0.7 },
       blur: { kernel_size: 10, sigma: 2.0 },
-      contour: { epsilon_factor: 0.03 }
     }
   }),
 })); 

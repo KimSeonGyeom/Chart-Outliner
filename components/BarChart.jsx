@@ -9,7 +9,6 @@ import { useAiStore } from './store/aiStore';
 const BarChart = forwardRef((props, ref) => {
   // Get data and settings from stores
   const chartData = useDataStore((state) => state.chartData.data);
-  const subject = useDataStore((state) => state.chartData.subject);
   
   // Get shared settings
   const chartWidth = useChartStore((state) => state.width);
@@ -23,8 +22,9 @@ const BarChart = forwardRef((props, ref) => {
   const barPadding = useChartStore((state) => state.barPadding);
   
   // Get edge image data from aiStore - prioritize selected edge image if available
-  const edgeImageData = useAiStore((state) => state.edgeImageData);
   const selectedEdgeImageData = useAiStore((state) => state.selectedEdgeImageData);
+  const topEdgeImage = useAiStore((state) => state.top_edge_image);
+  const bottomEdgeImage = useAiStore((state) => state.bottom_edge_image);
   
   // Other state
   const originalSvgRef = useRef(null);
@@ -87,16 +87,23 @@ const BarChart = forwardRef((props, ref) => {
     // Create a chart group for bars
     const barsGroup = g.append('g').attr('class', 'bars-group');
     
-    // Add basic bars first
+    // Add basic bars
     barsGroup.selectAll('.bar')
       .data(chartData)
       .enter()
       .append('rect')
       .attr('class', 'bar')
       .attr('x', d => x(String(d.x)) ?? 0)
-      .attr('y', d => y(d.y))
+      .attr('y', d => {
+        // For positive values (relative to yDomainMin), start from the value's Y coordinate
+        return y(Math.max(d.y, yDomainMin !== undefined ? yDomainMin : 0));
+      })
       .attr('width', x.bandwidth())
-      .attr('height', d => innerHeight - y(d.y))
+      .attr('height', d => {
+        // Calculate proper bar height 
+        // The bar should start at the data point and end at the domain minimum
+        return Math.abs(y(yDomainMin !== undefined ? yDomainMin : 0) - y(d.y));
+      })
       .attr('fill', 'white')
       .attr('stroke', "black")
       .attr('stroke-width', 1);
@@ -115,13 +122,61 @@ const BarChart = forwardRef((props, ref) => {
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
     
+    // Get edge image data from aiStore
+    const { top_edge_image, bottom_edge_image, edgeImageData_Processed, edgeImageData } = useAiStore.getState();
+    
+    // Determine if we're using a processed edge image or the standard one
+    let topEdgeImageData = top_edge_image;
+    let bottomEdgeImageData = bottom_edge_image;
+    
+    // Check if we're using a processed edge image and select appropriate top/bottom images
+    if (selectedEdgeImageData !== edgeImageData) {
+      // Determine which processed technique was selected
+      for (const technique of ['sparsification', 'blur']) {
+        if (edgeImageData_Processed[technique] === selectedEdgeImageData) {
+          // Use the corresponding top/bottom images for this technique
+          topEdgeImageData = edgeImageData_Processed[`${technique}_top`] || top_edge_image;
+          bottomEdgeImageData = edgeImageData_Processed[`${technique}_bottom`] || bottom_edge_image;
+          break;
+        }
+      }
+    }
+    
+    // If top or bottom edge images aren't available, fall back to the selected edge image
+    topEdgeImageData = topEdgeImageData || selectedEdgeImageData;
+    bottomEdgeImageData = bottomEdgeImageData || selectedEdgeImageData;
+    
+    // Create images to get dimensions
+    const topImg = new Image();
+    topImg.src = `data:image/png;base64,${topEdgeImageData}`;
+    
+    const bottomImg = new Image();
+    bottomImg.src = `data:image/png;base64,${bottomEdgeImageData}`;
+    
+    // Set default dimensions
+    let topImageWidth = 100;
+    let topImageHeight = 100;
+    let bottomImageWidth = 100;
+    let bottomImageHeight = 100;
+    
+    // Try to get image dimensions from already cached images
+    if (topImg.complete) {
+      topImageWidth = topImg.width;
+      topImageHeight = topImg.height;
+    }
+    
+    if (bottomImg.complete) {
+      bottomImageWidth = bottomImg.width;
+      bottomImageHeight = bottomImg.height;
+    }
+    
     // X scale
     const x = d3.scaleBand()
       .domain(chartData.map(d => String(d.x)))
       .range([0, innerWidth])
       .padding(barPadding);
     
-    // Y scale
+    // Y scale with properly adjusted domain
     const y = d3.scaleLinear()
       .domain([
         yDomainMin !== undefined ? yDomainMin : 0,
@@ -154,56 +209,54 @@ const BarChart = forwardRef((props, ref) => {
       .append('rect')
       .attr('class', 'bar')
       .attr('x', d => x(String(d.x)) ?? 0)
-      .attr('y', d => y(d.y))
+      .attr('y', d => {
+        // For positive values (relative to yDomainMin), start from the value's Y coordinate
+        return y(Math.max(d.y, yDomainMin !== undefined ? yDomainMin : 0));
+      })
       .attr('width', x.bandwidth())
-      .attr('height', d => innerHeight - y(d.y))
-      .attr('fill', 'black')
-      .attr('stroke', "black")
-      .attr('stroke-width', 1);
+      .attr('height', d => {
+        // Calculate proper bar height 
+        // The bar should start at the data point and end at the domain minimum
+        return Math.abs(y(yDomainMin !== undefined ? yDomainMin : 0) - y(d.y));
+      })
     
-    // Define fixed height for the edge images at the top and bottom of each bar
-    const edgeImageHeight = 40; // You can adjust this value as needed
-    
-    // Add edge images at the top and bottom of each bar
+    // Add asset images to each bar
     chartData.forEach((d, i) => {
       const barWidth = x.bandwidth();
       const barX = x(String(d.x)) ?? 0;
-      const barTopY = y(d.y);
-      const barHeight = innerHeight - y(d.y);
-      const barBottomY = innerHeight - Math.min(edgeImageHeight, barHeight);
+      const barHeight = Math.abs(y(yDomainMin !== undefined ? yDomainMin : 0) - y(d.y));
+      const barY = y(Math.max(d.y, yDomainMin !== undefined ? yDomainMin : 0));
       
       // Create a group for the bar's edge images
       const imageGroup = g.append('g')
         .attr('class', 'edge-image-group');
       
-      // Add the edge image at the top with preserved aspect ratio
+      // Add the top edge image
       imageGroup.append('image')
-        .attr('class', 'top-edge-image')
+        .attr('xlink:href', `data:image/png;base64,${topEdgeImageData}`)
         .attr('x', barX)
-        .attr('y', barTopY)
+        .attr('y', barY)
         .attr('width', barWidth)
-        .attr('height', Math.min(edgeImageHeight, barHeight))
-        .attr('xlink:href', `data:image/png;base64,${selectedEdgeImageData}`)
-        .attr('preserveAspectRatio', 'xMidYMin slice');
+        .attr('height', 50) // Fixed height like the bottom image
+        .attr('preserveAspectRatio', 'xMidYMin meet'); // Center horizontally, align to top, meet (fit within) instead of slice
       
-      // Add the edge image at the bottom with preserved aspect ratio
+      // Add the bottom edge image
       imageGroup.append('image')
-        .attr('class', 'bottom-edge-image')
+        .attr('xlink:href', `data:image/png;base64,${bottomEdgeImageData}`)
         .attr('x', barX)
-        .attr('y', barBottomY)
+        .attr('y', barY + barHeight - 50) // Position at bottom of bar with fixed height
         .attr('width', barWidth)
-        .attr('height', Math.min(edgeImageHeight, barHeight))
-        .attr('xlink:href', `data:image/png;base64,${selectedEdgeImageData}`)
-        .attr('preserveAspectRatio', 'xMidYMax slice'); // Position from bottom
+        .attr('height', 50) // Fixed height
+        .attr('preserveAspectRatio', 'xMidYMax meet'); // Center horizontally, align to bottom, allow shrinking but not stretching
     });
   };
-  
+
   // Update original chart
   useEffect(() => {
     renderBasicBarChart(originalSvgRef);
-  }, [chartData, chartWidth, chartHeight, barPadding, showXAxis, showYAxis, yDomainMin, yDomainMax, innerWidth, innerHeight]);
+  }, [chartData, barPadding, showXAxis, showYAxis, yDomainMin, yDomainMax]);
 
-  // Update canny edge chart whenever selectedEdgeImageData changes
+  // Update canny edge chart whenever selectedEdgeImageData or top/bottom images change
   useEffect(() => {
     if (selectedEdgeImageData) {
       renderCannyEdgeBarChart(cannyEdgeSvgRef);
@@ -213,7 +266,7 @@ const BarChart = forwardRef((props, ref) => {
         d3.select(cannyEdgeSvgRef.current).selectAll('*').remove();
       }
     }
-  }, [selectedEdgeImageData, chartData, chartWidth, chartHeight, barPadding, showXAxis, showYAxis, yDomainMin, yDomainMax, innerWidth, innerHeight]);
+  }, [selectedEdgeImageData, topEdgeImage, bottomEdgeImage, chartData, barPadding, showXAxis, showYAxis, yDomainMin, yDomainMax]);
   
   // Effect to clean up when component unmounts
   useEffect(() => {
@@ -240,8 +293,5 @@ const BarChart = forwardRef((props, ref) => {
     </div>
   );
 });
-
-// Add display name for better debugging
-BarChart.displayName = 'BarChart';
 
 export default BarChart;

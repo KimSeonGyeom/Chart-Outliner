@@ -5,6 +5,22 @@ import io
 import base64
 import os
 
+def resize_to_height(img, target_height=512):
+    """
+    Resize an image to have the specified height while maintaining aspect ratio
+    
+    Args:
+        img: The input image (OpenCV format)
+        target_height: The desired height (default: 512)
+    
+    Returns:
+        The resized image
+    """
+    h, w = img.shape[:2]
+    aspect_ratio = w / h
+    new_width = int(target_height * aspect_ratio)
+    return cv2.resize(img, (new_width, target_height), interpolation=cv2.INTER_AREA)
+
 def process_image(file_stream):
     """
     Process an image using OpenCV
@@ -19,6 +35,9 @@ def process_image(file_stream):
     pil_img = Image.open(file_stream)
     # Convert PIL image to OpenCV format
     img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+    
+    # Resize to target height
+    img = resize_to_height(img, 512)
     
     # Example processing: convert to grayscale
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -54,7 +73,6 @@ def process_template_image(template_filename, processing_params=None):
             - threshold: Dict with lower and upper thresholds for Canny
             - sparsification: Dict with drop rate
             - blur: Dict with kernel size and sigma
-            - contour: Dict with epsilon parameter for approximation
     
     Returns:
         dict: Results of image processing with various techniques
@@ -89,6 +107,8 @@ def process_template_image(template_filename, processing_params=None):
         pil_img = Image.open(template_path)
         # Convert PIL image to OpenCV format
         img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+        # Resize to target height
+        img = resize_to_height(img, 512)
     except Exception as e:
         raise ValueError(f"Failed to read image: {template_path}. Error: {str(e)}")
     
@@ -101,10 +121,21 @@ def process_template_image(template_filename, processing_params=None):
     # Default processing: detect edges using standard Canny
     edges = cv2.Canny(blurred, 50, 150)
     
+    # Get the top 30% of the edge image
+    height = edges.shape[0]
+    top_height = int(height * 0.3)
+    bottom_start = int(height * 0.7)
+    
+    top_edges = edges[:top_height, :]
+    bottom_edges = edges[bottom_start:, :]
+    
     # Initialize result dictionary
     result = {
+        "original_image": None,
         "grayscale_image": None,
         "edge_image": None,
+        "top_edge_image": None,
+        "bottom_edge_image": None,
         "dimensions": {
             "width": img.shape[1],
             "height": img.shape[0],
@@ -115,16 +146,7 @@ def process_template_image(template_filename, processing_params=None):
     
     # If processing parameters are provided, apply different techniques
     if processing_params:
-        # 1. Threshold adjustment for Canny
-        if 'threshold' in processing_params:
-            params = processing_params['threshold']
-            lower = params.get('lower', 50)
-            upper = params.get('upper', 150)
-            threshold_edges = cv2.Canny(blurred, lower, upper)
-            _, buffer = cv2.imencode('.png', threshold_edges)
-            result["processed_edges"]["threshold"] = base64.b64encode(buffer).decode('utf-8')
-        
-        # 2. Edge sparsification
+        # 1. Edge sparsification
         if 'sparsification' in processing_params:
             params = processing_params['sparsification']
             drop_rate = params.get('drop_rate', 0.3)
@@ -133,10 +155,21 @@ def process_template_image(template_filename, processing_params=None):
             mask = np.random.rand(*edges.shape) > drop_rate
             sparse_edges = np.where(mask, edges, 0).astype(np.uint8)
             
+            # Get top and bottom sections
+            sparse_top = sparse_edges[:top_height, :]
+            sparse_bottom = sparse_edges[bottom_start:, :]
+            
+            # Encode all versions
             _, buffer = cv2.imencode('.png', sparse_edges)
             result["processed_edges"]["sparsification"] = base64.b64encode(buffer).decode('utf-8')
+            
+            _, top_buffer = cv2.imencode('.png', sparse_top)
+            result["processed_edges"]["sparsification_top"] = base64.b64encode(top_buffer).decode('utf-8')
+            
+            _, bottom_buffer = cv2.imencode('.png', sparse_bottom)
+            result["processed_edges"]["sparsification_bottom"] = base64.b64encode(bottom_buffer).decode('utf-8')
         
-        # 3. Pre-smoothing with Gaussian blur
+        # 2. Pre-smoothing with Gaussian blur
         if 'blur' in processing_params:
             params = processing_params['blur']
             kernel_size = params.get('kernel_size', 5)
@@ -150,35 +183,37 @@ def process_template_image(template_filename, processing_params=None):
             custom_blurred = cv2.GaussianBlur(gray_img, (kernel_size, kernel_size), sigma)
             blur_edges = cv2.Canny(custom_blurred, 100, 200)
             
+            # Get top and bottom sections
+            blur_top = blur_edges[:top_height, :]
+            blur_bottom = blur_edges[bottom_start:, :]
+            
+            # Encode all versions
             _, buffer = cv2.imencode('.png', blur_edges)
             result["processed_edges"]["blur"] = base64.b64encode(buffer).decode('utf-8')
-        
-        # 4. Contour simplification
-        if 'contour' in processing_params:
-            params = processing_params['contour']
-            epsilon_factor = params.get('epsilon_factor', 0.02)
             
-            # Find contours from edge image
-            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            _, top_buffer = cv2.imencode('.png', blur_top)
+            result["processed_edges"]["blur_top"] = base64.b64encode(top_buffer).decode('utf-8')
             
-            # Create a blank image for drawing simplified contours
-            contour_img = np.zeros_like(edges)
-            
-            # Simplify and draw each contour
-            for contour in contours:
-                # Calculate epsilon based on contour perimeter
-                epsilon = epsilon_factor * cv2.arcLength(contour, True)
-                approx = cv2.approxPolyDP(contour, epsilon, True)
-                cv2.drawContours(contour_img, [approx], 0, 255, 1)
-            
-            _, buffer = cv2.imencode('.png', contour_img)
-            result["processed_edges"]["contour"] = base64.b64encode(buffer).decode('utf-8')
+            _, bottom_buffer = cv2.imencode('.png', blur_bottom)
+            result["processed_edges"]["blur_bottom"] = base64.b64encode(bottom_buffer).decode('utf-8')
     
-    # Convert base images to base64
+    # Convert original image to base64
+    _, original_buffer = cv2.imencode('.png', img)
+    result["original_image"] = base64.b64encode(original_buffer).decode('utf-8')
+    
+    # Convert grayscale image to base64
     _, gray_buffer = cv2.imencode('.png', gray_img)
     result["grayscale_image"] = base64.b64encode(gray_buffer).decode('utf-8')
     
+    # Convert edge image to base64
     _, edge_buffer = cv2.imencode('.png', edges)
     result["edge_image"] = base64.b64encode(edge_buffer).decode('utf-8')
+    
+    # Convert top and bottom edge sections to base64
+    _, top_buffer = cv2.imencode('.png', top_edges)
+    result["top_edge_image"] = base64.b64encode(top_buffer).decode('utf-8')
+    
+    _, bottom_buffer = cv2.imencode('.png', bottom_edges)
+    result["bottom_edge_image"] = base64.b64encode(bottom_buffer).decode('utf-8')
     
     return result

@@ -64,12 +64,12 @@ export default function ExportSection({ chartRef }) {
 
   const handleExportAllVariations = async () => {
     // Export one filled version and three canny edge versions for all data types, 3-6 number data points, assets with names of "apartment", "bottle", "man", "pine_tree" with gap = 0.05
-    // To sum up, there are 4 (data type: rising, falling, wave, logarithmic) x 3 (canny edge versions: sparse, contour, blur) x 4 (variations of data point numbers) x 4 (assets) = 192 files to export
+    // To sum up, there are 4 (data type: rising, falling, wave, logarithmic) x 3 (canny edge versions: default, sparse, blur) x 4 (variations of data point numbers) x 4 (assets) = 192 files to export
     // Export the files at once, and name them as "${Date.now()}-{data type}-{canny edge version}-{data point number}-{asset name}"
     // Export the files in the same directory as the original chart
 
     const dataTypes = ['rising', 'falling', 'wave', 'logarithmic'];
-    const edgeVersions = ['sparse', 'contour', 'blur'];
+    const edgeVersions = ['default', 'sparse', 'blur'];
     const dataPointCounts = [3, 4, 5, 6];
     const assets = ['apartment', 'bottle', 'man', 'pine_tree'];
     const timestamp = Date.now();
@@ -149,7 +149,7 @@ export default function ExportSection({ chartRef }) {
             // Save the processed edge images to the store so they can be used by the chart
             useAiStore.getState().setAllProcessedEdgeImages(data.processed_edges);
             
-            // For each edge version (sparsification/sparse, contour, blur)
+            // For each edge version (default, sparsification/sparse, blur)
             for (const edgeVersion of edgeVersions) {
               // Generate a unique filename for this combination
               const fileName = `${timestamp}-${dataType}-${dataPointCount}-${edgeVersion}-${asset}`;

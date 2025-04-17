@@ -39,12 +39,20 @@ export default function MetaphorGallery() {
       if (data.edge_image) {
         setEdgeImageData(data.edge_image);
         
+        // Store top and bottom edge images
+        if (data.top_edge_image) {
+          useAiStore.getState().setTopEdgeImage(data.top_edge_image);
+        }
+        
+        if (data.bottom_edge_image) {
+          useAiStore.getState().setBottomEdgeImage(data.bottom_edge_image);
+        }
+        
         // Reset all processed edge images when selecting a new template
         setAllProcessedEdgeImages({
-          threshold: null,
+          default: null,
           sparsification: null,
           blur: null,
-          contour: null,
         });
         
         // After getting basic edge image, automatically process with all techniques
@@ -86,6 +94,15 @@ export default function MetaphorGallery() {
       // Update all processed edge images at once
       if (data.processed_edges) {
         setAllProcessedEdgeImages(data.processed_edges);
+      }
+      
+      // Update top and bottom edge images
+      if (data.top_edge_image) {
+        useAiStore.getState().setTopEdgeImage(data.top_edge_image);
+      }
+      
+      if (data.bottom_edge_image) {
+        useAiStore.getState().setBottomEdgeImage(data.bottom_edge_image);
       }
     } catch (error) {
       console.error('Error processing template with techniques:', error);

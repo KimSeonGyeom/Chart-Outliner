@@ -35,7 +35,7 @@ export default function AIGenerationSection({ chartRef }) {
   const setSelectedEdgeImageData = useAiStore(state => state.setSelectedEdgeImageData);
 
   // Create array of technique names for easy reference
-  const edgeTechniques = ['sparsification', 'blur', 'contour'];
+  const edgeTechniques = ['sparsification', 'blur'];
 
   // Add ref for template image
   const imgRef = React.useRef(null);
@@ -140,8 +140,18 @@ export default function AIGenerationSection({ chartRef }) {
         setEdgeImageData(data.edge_image);
       }
       
-      // Update all processed edge images at once
+      // Update top and bottom edge images
+      if (data.top_edge_image) {
+        useAiStore.getState().setTopEdgeImage(data.top_edge_image);
+      }
+      
+      if (data.bottom_edge_image) {
+        useAiStore.getState().setBottomEdgeImage(data.bottom_edge_image);
+      }
+      
+      // Update all processed edge images at once, along with their top and bottom variants
       if (data.processed_edges) {
+        // First process the main processed edge images
         setAllProcessedEdgeImages(data.processed_edges);
       }
     } catch (error) {
@@ -345,4 +355,4 @@ export default function AIGenerationSection({ chartRef }) {
       </div>
     </div>
   );
-} 
+}
