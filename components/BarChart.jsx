@@ -229,7 +229,7 @@ const BarChart = forwardRef((props, ref) => {
         // Add the top edge image
         imageGroup.append('image')
           .attr('xlink:href', `data:image/png;base64,${topEdgeImageData}`)
-          .attr('x', barX)
+          .attr('x', barX + (barWidth - topImageWidth * topEdgeImageWidthScale) / 2)
           .attr('y', barY) // Position exactly at the top of the bar
           .attr('height', topImageHeight) // Use actual image height
           .attr('preserveAspectRatio', 'xMidYMin meet') // Maintain aspect ratio, center the image
@@ -238,7 +238,7 @@ const BarChart = forwardRef((props, ref) => {
         // Add the bottom edge image
         imageGroup.append('image')
           .attr('xlink:href', `data:image/png;base64,${bottomEdgeImageData}`)
-          .attr('x', barX)
+          .attr('x', barX + (barWidth - bottomImageWidth * topEdgeImageWidthScale) / 2)
           .attr('y', innerHeight - bottomImageHeight) // Position exactly at the bottom of the bar
           .attr('height', bottomImageHeight) // Use actual image height
           .attr('preserveAspectRatio', 'xMidYMax meet') // Maintain aspect ratio, center the image
