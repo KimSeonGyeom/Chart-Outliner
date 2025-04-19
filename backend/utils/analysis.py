@@ -19,7 +19,7 @@ import numpy as np
 import scipy.stats as stats
 import os
 import json
-import altair as alt
+import sys
 
 def analyze_evaluation_metrics(df):
     # 1. Descriptive statistics for each metric by image specification
@@ -38,7 +38,7 @@ def analyze_evaluation_metrics(df):
             group_stats = df.groupby(spec)[metric].agg([
                 'count', 'mean', 'std', 'min', 'max', 'median'
             ]).reset_index()
-            results[spec][metric] = group_stats
+            results[spec][metric] = group_stats.to_dict('records')
             
     # 2. Statistical tests
     stat_tests = {}
@@ -51,8 +51,8 @@ def analyze_evaluation_metrics(df):
             t_stat, p_val = stats.ttest_ind(group1, group2, equal_var=False)
             stat_tests[f"data_trend_{metric}"] = {
                 "test": "t-test",
-                "t_statistic": t_stat,
-                "p_value": p_val
+                "t_statistic": float(t_stat),
+                "p_value": float(p_val)
             }
     
     # For multi-level categories (ANOVA)
@@ -63,86 +63,23 @@ def analyze_evaluation_metrics(df):
                 f_stat, p_val = stats.f_oneway(*groups)
                 stat_tests[f"{spec}_{metric}"] = {
                     "test": "ANOVA",
-                    "f_statistic": f_stat,
-                    "p_value": p_val
+                    "f_statistic": float(f_stat),
+                    "p_value": float(p_val)
                 }
     
     # For numeric variables (correlation)
     for metric in eval_metrics:
-        corr, p_val = stats.pearsonr(df["asset_size"], df[metric])
+        corr, p_val = stats.pearsonr(df["asset_size"].astype(float), df[metric].astype(float))
         stat_tests[f"asset_size_{metric}"] = {
             "test": "correlation",
-            "correlation": corr,
-            "p_value": p_val
+            "correlation": float(corr),
+            "p_value": float(p_val)
         }
     
     return {
         "descriptive_stats": results,
         "statistical_tests": stat_tests
     }
-
-def generate_visualizations(df, output_dir="./analysis_results"):
-    # Create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Set max rows limit for Altair
-    alt.data_transformers.disable_max_rows()
-    
-    # Evaluation metrics to visualize
-    eval_metrics = ["CLIP", "Lie_Factor", "Match_count", "Rank_Sim"]
-    # Image specs to analyze
-    image_specs = ["data_trend", "data_count", "asset", "canny", "asset_size"]
-    
-    # Generate visualizations
-    for metric in eval_metrics:
-        for spec in ["data_trend", "data_count", "asset", "canny"]:
-            chart = alt.Chart(df).mark_boxplot().encode(
-                x=alt.X(spec),
-                y=alt.Y(metric, title=metric),
-                color=alt.Color(spec)
-            ).properties(
-                title=f"{metric} by {spec}",
-                width=600,
-                height=400
-            )
-            
-            chart.save(f"{output_dir}/{metric}_by_{spec}_boxplot.html")
-    
-    # Correlation heatmap
-    df_numeric = df.copy()
-    for col in ["data_trend", "asset", "canny"]:
-        df_numeric[col] = pd.factorize(df_numeric[col])[0]
-    
-    corr_matrix = df_numeric.corr().reset_index().melt('index')
-    corr_matrix.columns = ['var1', 'var2', 'correlation']
-    
-    heatmap = alt.Chart(corr_matrix).mark_rect().encode(
-        x='var1:O',
-        y='var2:O',
-        color=alt.Color('correlation:Q', scale=alt.Scale(scheme='bluered', domain=[-1, 1])),
-        tooltip=['var1', 'var2', 'correlation']
-    ).properties(
-        title="Correlation Matrix",
-        width=700,
-        height=700
-    )
-    
-    text = alt.Chart(corr_matrix).mark_text().encode(
-        x='var1:O',
-        y='var2:O',
-        text=alt.Text('correlation:Q', format='.2f'),
-        color=alt.condition(
-            alt.datum.correlation > 0.5, 
-            alt.value('white'),
-            alt.value('black')
-        )
-    )
-    
-    corr_chart = (heatmap + text).properties(
-        title="Correlation Matrix of Features and Metrics"
-    )
-    
-    corr_chart.save(f"{output_dir}/correlation_heatmap.html")
 
 def main(input_data_path):
     # Load the data
@@ -151,8 +88,8 @@ def main(input_data_path):
     # Run statistical analysis
     analysis_results = analyze_evaluation_metrics(df)
     
-    # Generate visualizations
-    generate_visualizations(df)
+    # Create output directory if it doesn't exist
+    os.makedirs("./analysis_results", exist_ok=True)
     
     # Save results to JSON
     with open("./analysis_results/statistics.json", "w") as f:
@@ -168,7 +105,7 @@ def main(input_data_path):
                     print(f"* Significant effect of {spec} on {metric} (p={test_result['p_value']:.4f})")
     
     # Find best asset for CLIP scores
-    asset_clip_stats = analysis_results["descriptive_stats"]["asset"]["CLIP"]
+    asset_clip_stats = pd.DataFrame(analysis_results["descriptive_stats"]["asset"]["CLIP"])
     best_asset = asset_clip_stats.sort_values(by="mean", ascending=False).iloc[0]
     print(f"The asset '{best_asset[0]}' yields the highest CLIP scores with mean: {best_asset['mean']:.4f}")
     
@@ -182,4 +119,12 @@ def main(input_data_path):
     print(f"Average Lie_Factor: {best_combination['Lie_Factor']:.4f}")
     
     return analysis_results
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        input_file = sys.argv[1]
+        main(input_file)
+    else:
+        print("Please provide a path to the CSV file as a command-line argument.")
+        sys.exit(1)
 
