@@ -5,6 +5,7 @@ import * as d3 from 'd3';
 import { useDataStore } from './store/dataStore';
 import { useChartStore } from './store/chartStore';
 import { useAiStore } from './store/aiStore';
+import { z } from 'zod';
 
 const BarChart = forwardRef((props, ref) => {
   // Get data and settings from stores
@@ -226,7 +227,7 @@ const BarChart = forwardRef((props, ref) => {
         const imageGroup = g.append('g')
           .attr('class', 'edge-image-group');
         
-        // Add the top edge image
+        // Add the top edge image 
         imageGroup.append('image')
           .attr('xlink:href', `data:image/png;base64,${topEdgeImageData}`)
           .attr('x', barX + (barWidth - topImageWidth * topEdgeImageWidthScale) / 2)
@@ -243,6 +244,14 @@ const BarChart = forwardRef((props, ref) => {
           .attr('height', bottomImageHeight) // Use actual image height
           .attr('preserveAspectRatio', 'xMidYMax meet') // Maintain aspect ratio, center the image
           .attr('width', bottomImageWidth * topEdgeImageWidthScale); // Scale width based on the adjustable scale
+
+        // Add the black rectangle at the bottom of the image
+        imageGroup.append('rect')
+          .attr('x', -margin.left) // Start at the left edge of the image
+          .attr('y', innerHeight) // Start at the bottom of the image
+          .attr('width', innerWidth + margin.left + margin.right) // Full width of the image
+          .attr('height', margin.bottom) // Height of the black rectangle
+          .attr('fill', 'black');
       });
     });
   };

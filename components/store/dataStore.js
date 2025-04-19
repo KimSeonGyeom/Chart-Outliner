@@ -142,10 +142,47 @@ export const adjustDataSetSize = (dataset, numPoints) => {
   };
 };
 
+// Add this new function after adjustDataSetSize
+// This function adjusts the size of a randomized dataset while preserving values
+export const adjustRandomDataSetSize = (currentData, numPoints) => {
+  // No change needed
+  if (currentData.data.length === numPoints) {
+    return currentData;
+  }
+  
+  // Make a copy to avoid mutating the original
+  const newData = {
+    subject: currentData.subject, // Preserve the subject
+    data: [...currentData.data]   // Copy the data array
+  };
+  
+  // If we need to add more points
+  if (newData.data.length < numPoints) {
+    // How many points to add
+    const pointsToAdd = numPoints - newData.data.length;
+    
+    for (let i = 0; i < pointsToAdd; i++) {
+      // Add new points with random values but using the next labels
+      const nextIndex = (newData.data.length) % dataLabels.length;
+      newData.data.push({
+        x: dataLabels[nextIndex],
+        y: Math.floor(Math.random() * 60) + 40 // Same random range as generateRandomData
+      });
+    }
+  } 
+  // If we need to remove points
+  else if (newData.data.length > numPoints) {
+    // Just keep the first numPoints
+    newData.data = newData.data.slice(0, numPoints);
+  }
+  
+  return newData;
+};
+
 // Create the data store with only data-related properties
 export const useDataStore = create()((set, get) => ({
   // Data properties
-  chartData: sampleDataSets.basic,
+  chartData: adjustDataSetSize(sampleDataSets.basic, 5), // Apply the default 5 data points immediately
   visualInterpretation: 'null',
   authorIntention: 'null',
   selectedPreset: 'basic',
@@ -190,7 +227,40 @@ export const useDataStore = create()((set, get) => ({
     // Fallback
     set({ selectedPreset: preset });
   },
-  setNumDataPoints: (num) => set({ numDataPoints: num }),
+  setNumDataPoints: (num) => {
+    set({ numDataPoints: num });
+    
+    // Get current state after update
+    const state = get();
+    
+    // Ensure we're within our min/max bounds
+    const pointsToGenerate = Math.max(3, Math.min(8, num));
+    
+    // For custom/randomized datasets, adjust them intelligently
+    if (state.selectedPreset === 'custom') {
+      console.log(`Adjusting randomized data from ${state.chartData.data.length} to ${pointsToGenerate} points`);
+      
+      const adjustedData = adjustRandomDataSetSize(state.chartData, pointsToGenerate);
+      set({ chartData: adjustedData });
+    } 
+    // For presets, update directly using the same logic as in loadPresetData
+    else if (state.selectedPreset in sampleDataSets) {
+      const originalData = sampleDataSets[state.selectedPreset];
+      console.log(`Adjusting preset ${state.selectedPreset} from ${originalData.data.length} to ${pointsToGenerate} points`);
+      const adjustedData = adjustDataSetSize(originalData, pointsToGenerate);
+      
+      set({ chartData: adjustedData });
+    }
+    // For trend data presets
+    else if (['exponential', 'logarithmic'].includes(state.selectedPreset)) {
+      const trendData = generateTrendData(
+        state.selectedPreset,
+        pointsToGenerate
+      );
+      
+      set({ chartData: trendData });
+    }
+  },
   
   // Generate random data (works for any chart type)
   randomizeData: () => {

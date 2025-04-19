@@ -14,11 +14,27 @@ header {
     font-size: 1.8rem;
     font-weight: bold;
     color: #333;
-    margin-bottom: 1.5rem;
     position: relative;
     display: flex;
     align-items: center;
-    gap: 1rem;
+    margin: 1.5rem 1rem;
+  }
+
+  .main-title-link {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #333;
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: 1.5rem 1rem;
+    text-decoration: none;
+    cursor: pointer;
+    
+    &:hover {
+      color: #3498db;
+      text-decoration: underline;
+    }
   }
 }
 

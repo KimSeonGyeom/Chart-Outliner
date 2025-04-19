@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from 'react';
+import Link from 'next/link';
 import ControlPanel from '../components/ControlPanel.jsx';
 import AIGenerationSection from '../components/AIGenerationSection.jsx';
 import ChartControls from '../components/ChartControls.jsx';
@@ -14,9 +15,12 @@ export default function Home() {
   return (
     <main className="container">
       <header>
-        <div className="main-title">
+        <span className="main-title">
           Chart Outliner
-        </div>
+        </span>
+        <Link href="/outputs" className="main-title-link">  
+          Gen Outputs
+        </Link>
       </header>
 
       <div className="chart-layout">

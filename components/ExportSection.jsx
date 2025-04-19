@@ -76,7 +76,7 @@ export default function ExportSection({ chartRef }) {
     // const assets = ['apartment'];
     const assets = ['apartment', 'bottle', 'thin_man', 'pine_tree'];
     const timestamp = Date.now().toString().slice(-8);
-    const topEdgeWidthScales = [0.4, 0.6, 0.8, 1.0];
+    const topEdgeWidthScales = [0.4, 0.6, 0.8];
     const gap = 0.05;
 
     // Check if chart reference exists
@@ -98,6 +98,9 @@ export default function ExportSection({ chartRef }) {
     
     // Store original topEdgeImageWidthScale to restore later
     const originalTopEdgeWidthScale = useChartStore.getState().topEdgeImageWidthScale;
+    
+    // Store original bottom edge image
+    const originalBottomEdgeImage = useAiStore.getState().bottom_edge_image;
 
     // Loop through all combinations
     for (const dataType of dataTypes) {
@@ -180,10 +183,19 @@ export default function ExportSection({ chartRef }) {
                 const topEdgeImageKey = `${edgeImageKey}_top`;
                 const topEdgeImageData = data.processed_edges[topEdgeImageKey];
                 
+                // For the bottom edge, specifically look for the 'bottom' version
+                const bottomEdgeImageKey = `${edgeImageKey}_bottom`;
+                const bottomEdgeImageData = data.processed_edges[bottomEdgeImageKey];
+                
                 if (edgeImageData && topEdgeImageData) {
                   // Apply these specific edge images to the state
                   useAiStore.getState().setSelectedEdgeImageData(edgeImageData);
                   useAiStore.getState().setTopEdgeImage(topEdgeImageData);
+                  
+                  // Set bottom edge image if available
+                  if (bottomEdgeImageData) {
+                    useAiStore.getState().setBottomEdgeImage(bottomEdgeImageData);
+                  }
                   
                   // Wait for the UI to update with the new edge image
                   await wait(300);
@@ -230,6 +242,9 @@ export default function ExportSection({ chartRef }) {
     
     // Restore the original topEdgeImageWidthScale value
     useChartStore.getState().setTopEdgeImageWidthScale(originalTopEdgeWidthScale);
+    
+    // Restore the original bottom edge image
+    useAiStore.getState().setBottomEdgeImage(originalBottomEdgeImage);
 
     console.log(`Export complete! Generated ${batchCounter} variations.`);
   }

@@ -125,7 +125,7 @@ def process_template_image(template_filename, processing_params=None):
     height = edges.shape[0]
     width = edges.shape[1]
     top_height = int(height * 0.4)
-    bottom_start = int(height * 0.7)
+    bottom_start = int(height * 0.9)
     
     # Get the top and bottom edge sections (no scaling - handled in frontend)
     top_edges = edges[:top_height, :]
