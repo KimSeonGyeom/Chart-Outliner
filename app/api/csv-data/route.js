@@ -2,12 +2,25 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-export async function GET() {
+export async function GET(request) {
+  // Get the URL to check for query parameters
+  const { searchParams } = new URL(request.url);
+  const format = searchParams.get('format');
+  
   // Read the CSV file
   const filePath = path.join(process.cwd(), 'backend/data/dummy_data.csv');
   const fileContent = fs.readFileSync(filePath, 'utf8');
   
-  // Parse CSV data using basic string operations
+  // If raw format is requested, return the CSV as text
+  if (format === 'raw') {
+    return new NextResponse(fileContent, {
+      headers: {
+        'Content-Type': 'text/csv',
+      },
+    });
+  }
+  
+  // Otherwise parse CSV data using basic string operations
   const lines = fileContent.trim().split('\n');
   const headers = lines[0].split(',');
   
