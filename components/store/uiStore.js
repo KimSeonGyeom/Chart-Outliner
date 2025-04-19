@@ -2,6 +2,9 @@ import { create } from 'zustand';
 
 // Create the UI store with direct state and actions
 export const useUIStore = create()((set) => ({
+  // Page navigation state
+  currentPage: 'home', // Possible values: 'home', 'outputs', 'analysis'
+  
   // Save dialog state
   isSavingOpen: false,
   chartName: '',
@@ -25,6 +28,9 @@ export const useUIStore = create()((set) => ({
   updateSettings: (settings) => set((state) => ({
     ...settings
   })),
+  
+  // Page navigation actions
+  navigateTo: (page) => set({ currentPage: page }),
   
   // Save dialog actions
   openSaveDialog: () => set({ isSavingOpen: true }),

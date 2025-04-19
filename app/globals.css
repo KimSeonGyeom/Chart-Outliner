@@ -1,7 +1,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: stable both-edges;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -13,6 +13,7 @@
 
 html {
   overflow-y: scroll;
+  scrollbar-width: thin; /* For Firefox */
 }
 
 html,
@@ -27,6 +28,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  padding-right: 0 !important; /* Prevents shifting when modal opens */
 }
 
 * {

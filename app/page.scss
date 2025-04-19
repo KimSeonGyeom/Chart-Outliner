@@ -1,8 +1,15 @@
+html {
+  overflow-y: scroll;
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 16px;
   font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 header {
@@ -35,6 +42,11 @@ header {
       color: #3498db;
       text-decoration: underline;
     }
+
+    &.active {
+      font-weight: bold;
+      text-decoration: underline;
+    }
   }
 }
 
@@ -42,6 +54,9 @@ header {
   display: flex;
   flex-direction: row;
   gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
 
   .chart-section {
     width: 50%;
@@ -129,7 +144,9 @@ header {
     background-color: #f9f9fb;
     border-radius: 8px;
     border: 1px solid #e6e9ef;
-    overflow: auto;
+    overflow-y: auto;
     max-height: calc(100vh - 100px);
+    position: relative;
+    box-sizing: border-box;
   }
 } 

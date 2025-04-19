@@ -1,40 +1,52 @@
 "use client";
 
-import { useRef } from 'react';
-import Link from 'next/link';
-import ControlPanel from '../components/ControlPanel.jsx';
-import AIGenerationSection from '../components/AIGenerationSection.jsx';
-import ChartControls from '../components/ChartControls.jsx';
+import React from 'react';
+import { useUIStore } from '../components/store/uiStore';
+import HomePage from '../components/HomePage';
+import OutputsPage from '../components/OutputsPage';
+import AnalysisPage from '../components/AnalysisPage';
 import './page.scss';
 
 export default function Home() {
-  // Chart refs
-  const chartRef = useRef(null);
-  
+  const { currentPage, navigateTo } = useUIStore();
+
+  // Render the appropriate page based on currentPage state
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case 'outputs':
+        return <OutputsPage />;
+      case 'analysis':
+        return <AnalysisPage />;
+      case 'home':
+      default:
+        return <HomePage />;
+    }
+  };
 
   return (
     <main className="container">
       <header>
-        <span className="main-title">
+        <span 
+          className={`main-title-link ${currentPage === 'home' ? 'active' : ''}`}
+          onClick={() => navigateTo('home')}
+        >
           Chart Outliner
         </span>
-        <Link href="/outputs" className="main-title-link">  
+        <span 
+          className={`main-title-link ${currentPage === 'outputs' ? 'active' : ''}`}
+          onClick={() => navigateTo('outputs')}
+        >  
           Gen Outputs
-        </Link>
+        </span>
+        <span 
+          className={`main-title-link ${currentPage === 'analysis' ? 'active' : ''}`}
+          onClick={() => navigateTo('analysis')}
+        >  
+          Analysis
+        </span>
       </header>
 
-      <div className="chart-layout">
-        {/* Left side - Chart and chart-specific controls */}
-        <div className="chart-section">
-          <ControlPanel />
-          <ChartControls chartRef={chartRef} />
-        </div>
-        
-        {/* Right side - Control Panel */}
-        <div className="control-section">
-          <AIGenerationSection chartRef={chartRef} />
-        </div>
-      </div>
+      {renderCurrentPage()}
     </main>
   );
 }
