@@ -7,12 +7,18 @@ from dotenv import load_dotenv
 # Import image processing utilities
 from utils.image_processor import process_image, process_template_image
 
+# Import analysis routes
+from api.analysis_routes import analysis_bp
+
 # Load environment variables
 load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+# Register the analysis blueprint
+app.register_blueprint(analysis_bp)
 
 # Create a local templates directory if it doesn't exist
 def setup_templates_dir():

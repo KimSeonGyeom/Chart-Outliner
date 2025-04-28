@@ -7,7 +7,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: '/api/:path*', // Default rewrite maintains standard API route
+        destination: 'http://localhost:5000/api/:path*', // Proxy API requests to Flask
       }
     ];
   }
