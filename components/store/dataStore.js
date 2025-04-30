@@ -46,20 +46,14 @@ export const generateTrendData = (
   }
   
   return {
-    subject: 'cost of living',
     data: data,
   };
 };
 
-export const generateRandomSubject = () => {
-  const subjects = ['cost of living', 'population growth', 'number of children tourists', 'climate change', 'area of forest', 'lack of water', 'wine production', 'visits in historical sites'];
-  return subjects[Math.floor(Math.random() * subjects.length)];
-};
 
 // Sample datasets for charts
 export const sampleDataSets = {
   basic: {
-    subject: 'cost of living',
     data: [
     { x: '2020', y: 30 },
     { x: '2021', y: 50 },
@@ -70,7 +64,6 @@ export const sampleDataSets = {
     { x: '2026', y: 80 },
   ]},
   rising: {
-    subject: 'cost of living',
     data: [
     { x: '2020', y: 10 },
     { x: '2021', y: 20 },
@@ -82,7 +75,6 @@ export const sampleDataSets = {
     ]
   },
   falling: {
-    subject: 'cost of living',
     data: [
     { x: '2020', y: 90 },
     { x: '2021', y: 80 },
@@ -94,7 +86,6 @@ export const sampleDataSets = {
     ]
   },
   wave: {
-    subject: 'cost of living',
     data: [
     { x: '2020', y: 50 },
     { x: '2021', y: 80 },
@@ -122,7 +113,6 @@ export const generateRandomData = (numPoints) => {
   }
   
   return {
-    subject: generateRandomSubject(),
     data: newData,
   };
 };
@@ -135,7 +125,6 @@ export const adjustDataSetSize = (dataset, numPoints) => {
   
   // Create a copy of the dataset and take the last numPoints
   return {
-    subject: dataset.subject,
     data: dataset.data.length > numPoints 
       ? dataset.data.slice(dataset.data.length - numPoints) 
       : dataset.data.slice(0, numPoints)
@@ -152,7 +141,6 @@ export const adjustRandomDataSetSize = (currentData, numPoints) => {
   
   // Make a copy to avoid mutating the original
   const newData = {
-    subject: currentData.subject, // Preserve the subject
     data: [...currentData.data]   // Copy the data array
   };
   
@@ -183,15 +171,11 @@ export const adjustRandomDataSetSize = (currentData, numPoints) => {
 export const useDataStore = create()((set, get) => ({
   // Data properties
   chartData: adjustDataSetSize(sampleDataSets.basic, 5), // Apply the default 5 data points immediately
-  visualInterpretation: 'null',
-  authorIntention: 'null',
   selectedPreset: 'basic',
   numDataPoints: 5, // Default number of data points
   
   // Data actions
   setChartData: (data) => set({ chartData: data }),
-  setVisualInterpretation: (interpretation) => set({ visualInterpretation: interpretation }),
-  setAuthorIntention: (intention) => set({ authorIntention: intention }),
   setSelectedPreset: (preset) => {
     const { numDataPoints } = get();
     // Ensure we're within our min/max bounds

@@ -48,6 +48,19 @@ export const useAnalysisStore = create((set) => ({
     return metric ? metric.color : '#4f46e5';
   },
   
+  // Helper function for variable labels
+  getVariableLabel: (variable) => {
+    const labels = {
+      'data_trend': 'Data Trend',
+      'data_count': 'Data Count',
+      'asset': 'Asset Type',
+      'canny': 'Canny Technique',
+      'asset_size': 'Asset Size',
+      'cond_scale': 'Cond Scale'
+    };
+    return labels[variable] || variable;
+  },
+  
   // Actions
   setData: (data) => set({ data, loading: false }),
   setAnalysisData: (data) => set({ analysisData: data, analysisLoading: false }),

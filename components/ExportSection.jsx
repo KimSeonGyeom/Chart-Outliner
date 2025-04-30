@@ -68,16 +68,17 @@ export default function ExportSection({ chartRef }) {
     // Export the files at once, and name them as "${Date.now()}-{data type}-{canny edge version}-{data point number}-{asset name}"
     // Export the files in the same directory as the original chart
 
-    const dataTypes = ['rising', 'falling', 'wave', 'logarithmic'];
-    // const dataTypes = ['logarithmic'];
-    const edgeVersions = ['default', 'sparse', 'blur'];
-    // const dataPointCounts = [3, 6];
-    const dataPointCounts = [3, 4, 5, 6];
+    // const dataTypes = ['rising', 'falling', 'wave', 'logarithmic'];
+    const dataTypes = ['logarithmic'];
+    // const edgeVersions = ['default', 'sparse', 'blur'];
+    const edgeVersions = ['blur'];
+    // const dataPointCounts = [3, 4, 5, 6];
+    const dataPointCounts = [7];
     // const assets = ['apartment'];
-    const assets = ['apartment', 'bottle', 'thin_man', 'pine_tree'];
-    const timestamp = Date.now().toString().slice(-8);
-    const topEdgeWidthScales = [0.4, 0.6, 0.8];
-    const gap = 0.05;
+    const assets = ['softcone', 'bottle', 'thin_man', 'palm_tree', 'stack_of_coins', 'pill_container', 'castle_tower', 'balloon', 'cactus'];
+    // const timestamp = Date.now().toString().slice(-8);
+    // const topEdgeWidthScales = [0.4, 0.6, 0.8];
+    const topEdgeWidthScales = [0.8];
 
     // Check if chart reference exists
     if (!chartRef || !chartRef.current) {
@@ -115,7 +116,7 @@ export default function ExportSection({ chartRef }) {
         await wait(300);
 
         // Export the filled version first (no edge images)
-        const fileName_filled = `${timestamp}-${dataType}-${dataPointCount}`;
+        const fileName_filled = `${dataType}-${dataPointCount}`;
         await downloadChart(
           chartRef.current,
           fileName_filled,
@@ -171,7 +172,7 @@ export default function ExportSection({ chartRef }) {
               // For each edge version (default, sparsification/sparse, blur)
               for (const edgeVersion of edgeVersions) {
                 // Generate a unique filename for this combination
-                const fileName = `${timestamp}-${dataType}-${dataPointCount}-${edgeVersion}-${asset}-scale${topEdgeWidthScale}`;
+                const fileName = `${dataType}-${dataPointCount}-${edgeVersion}-${asset}-scale${topEdgeWidthScale}`;
                 
                 // Get the edge image data for this version
                 const edgeImageKey = edgeVersion === 'sparse' ? 'sparsification' : edgeVersion;

@@ -267,41 +267,6 @@
     }
   }
   
-  .metaphors-list {
-    h3 {
-      font-size: 1rem;
-      font-weight: 500;
-      margin-bottom: 0.8rem;
-      color: #333;
-    }
-    
-    .metaphor-item {
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-      padding: 0.2rem;
-      border: 1px solid #dde4ed;
-      border-radius: 4px;
-      background-color: #f8f9fa;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-      
-      .template-thumbnail {
-        width: 40px;
-        height: 40px;
-        object-fit: contain;
-        border-radius: 3px;
-        border: 1px solid #ddd;
-      }
-      
-      .template-score {
-        font-size: 0.7rem;
-        color: #555;
-      }
-    }
-  }
-  
   .loading-message {
     text-align: center;
     padding: 1rem;

@@ -7,20 +7,12 @@ import './AnalysisPage.scss';
 
 const AnalysisPage = () => {
   // Use the analysis store instead of local state
-  const data = useAnalysisStore(state => state.data);
-  const loading = useAnalysisStore(state => state.loading);
-  const setData = useAnalysisStore(state => state.setData);
-  const setLoading = useAnalysisStore(state => state.setLoading);
-  const getMetricColor = useAnalysisStore(state => state.getMetricColor);
-  const getMetricDisplay = useAnalysisStore(state => state.getMetricDisplay);
+  const { 
+    data, loading, analysisData, analysisLoading, 
+    setData, setAnalysisData, setLoading, setAnalysisLoading,
+    getMetricColor, getMetricDisplay, getVariableLabel
+  } = useAnalysisStore();
   const metrics = useAnalysisStore(state => state.metrics);
-  const analysisData = useAnalysisStore(state => state.analysisData);
-  const setAnalysisData = useAnalysisStore(state => state.setAnalysisData);
-  const analysisLoading = useAnalysisStore(state => state.analysisLoading);
-  const setAnalysisLoading = useAnalysisStore(state => state.setAnalysisLoading);
-
-  // Track API errors
-  const [apiError, setApiError] = useState(false);
   
   // Create refs for all charts
   const chartRefs = React.useRef({});
@@ -32,44 +24,21 @@ const AnalysisPage = () => {
   const chartWidth = 280;
   const chartHeight = 200;
   
-  // Load the raw CSV data as fallback
-  useEffect(() => {
-    // Only load if API failed and data is empty
-    if (apiError && data.length === 0) {
-      const loadCsvData = async () => {
-        try {
-          setLoading(true);
-          const csvData = await d3.csv('/backend/data/metrics_87809342.csv');
-          setData(csvData);
-        } catch (err) {
-          console.error('Error loading CSV data:', err);
-          setData([]);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      loadCsvData();
-    }
-  }, [apiError, data.length, setData, setLoading]);
-  
   // Load data from the API
   useEffect(() => {
     // Load the aggregated analysis data from the API
     async function loadAnalysisData() {
       try {
         setAnalysisLoading(true);
-        const response = await fetch('/api/analysis/aggregated');
+        const response = await fetch('/api/analysis/aggregated-filtered');
         if (!response.ok) {
           throw new Error(`Failed to fetch analysis data: ${response.statusText}`);
         }
         const data = await response.json();
         setAnalysisData(data);
-        setApiError(false);
       } catch (err) {
         console.error('Error loading analysis data:', err);
         setAnalysisData(null);
-        setApiError(true);
       } finally {
         setAnalysisLoading(false);
       }
@@ -83,6 +52,7 @@ const AnalysisPage = () => {
 
   // Process data for each variable and metric
   const processData = (variable, metricId) => {
+    console.log(analysisData);
     // If we have pre-aggregated analysis data from API, use it
     if (analysisData && analysisData[variable] && analysisData[variable][metricId]) {
       return analysisData[variable][metricId];
@@ -111,30 +81,13 @@ const AnalysisPage = () => {
     return averagedData;
   };
 
-  // Helper function for labels
-  const getVariableLabel = (variable) => {
-    const labels = {
-      'data_trend': 'Data Trend',
-      'data_count': 'Data Count',
-      'asset': 'Asset Type',
-      'canny': 'Canny Technique',
-      'asset_size': 'Asset Size',
-      'cond_scale': 'Cond Scale'
-    };
-    return labels[variable] || variable;
-  };
-  
-  // Helper function to generate chart titles
-  const getMetricLabel = (variable, metricId) => {
-    return `${getVariableLabel(variable)}`;
-  };
-
   // Effect to render all charts once data is loaded
   useEffect(() => {
     // Loop through all variables and metrics and render charts
     variables.forEach(variable => {
       metrics.forEach(metric => {
-        const metricId = metric.id;
+        const metricId = (metric.id=='Match_count') ? variable+'_'+metric.id : metric.id;
+        console.log(metricId);
         const chartData = processData(variable, metricId);
         const chartKey = `${variable}-${metricId}`;
         const svgRef = chartRefs.current[chartKey];
@@ -190,6 +143,17 @@ const AnalysisPage = () => {
             .attr('height', d => height - y(d.value))
             .attr('fill', getMetricColor(metricId));
           
+          // Add value labels on top of bars
+          g.selectAll('.value-label')
+            .data(chartData)
+            .enter().append('text')
+            .attr('class', 'value-label')
+            .attr('x', d => x(d.category) + x.bandwidth() / 2)
+            .attr('y', d => y(d.value) - 5)
+            .attr('text-anchor', 'middle')
+            .style('font-size', '8px')
+            .text(d => d.value.toFixed(2));
+          
           // Add chart title
           svg.append('text')
             .attr('x', chartWidth / 2)
@@ -197,7 +161,7 @@ const AnalysisPage = () => {
             .attr('text-anchor', 'middle')
             .style('font-size', '10px')
             .style('font-weight', 'bold')
-            .text(`${getMetricLabel(variable, metricId)}`);
+            .text(`${getVariableLabel(variable)}`);
         }
       });
     });
@@ -232,10 +196,6 @@ const AnalysisPage = () => {
   return (
     <div className="analysis-page">
       <h1>Data Analysis</h1>
-      
-      {apiError && <div className="api-error-notice">
-        Note: Using local CSV data processing. Flask API is not available.
-      </div>}
       
       <div className="chart-grid">
         {/* Column headers - 4 columns for metrics */}

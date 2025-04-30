@@ -148,4 +148,60 @@ def get_aggregated_data():
     except Exception as e:
         import traceback
         error_traceback = traceback.format_exc()
+        return jsonify({"error": str(e), "traceback": error_traceback}), 500
+
+@analysis_bp.route('/aggregated-filtered', methods=['GET'])
+def get_aggregated_filtered_data():
+    """
+    Return all metrics aggregated by all variables, but only after filtering rows
+    that have the same Match_count and data_count values.
+    """
+    try:
+        # Check if the CSV file exists
+        if not os.path.exists(METRICS_CSV_PATH):
+            return jsonify({"error": f"CSV file not found at {METRICS_CSV_PATH}"}), 404
+        
+        # Read the CSV file
+        df = pd.read_csv(METRICS_CSV_PATH)
+        
+        # Filter rows where Match_count equals data_count
+        filtered_df = df[df['Match_count'] == df['data_count']]
+        
+        # Define variables and metrics
+        variables = ['data_trend', 'data_count', 'asset', 'canny', 'asset_size', 'cond_scale']
+        metrics = ['CLIP', 'Lie_Factor', 'Match_count', 'Rank_Sim']
+        
+        # Replace infinity values with NaN
+        filtered_df = filtered_df.replace([np.inf, -np.inf], np.nan)
+        
+        # Initialize the result dictionary
+        result = {}
+        
+        # Process each variable
+        for variable in variables:
+            result[variable] = {}
+            
+            # Process each metric for this variable
+            for metric in metrics:
+                # if metric is Match_count, calculate the ratio of Match_count to data_count
+                if metric == 'Match_count':
+                    # create a new column called count_Match_count
+                    filtered_df[variable+'_'+metric] = filtered_df['Match_count'] / filtered_df['data_count']
+                    metric = variable+'_'+metric
+                    print(metric)
+
+                # Group by the variable and calculate mean for the metric
+                grouped = filtered_df.groupby(variable)[metric].mean().reset_index()
+                
+                # Convert to a list of dictionaries with 'category' and 'value' keys
+                metric_data = [
+                    {"category": str(row[variable]), "value": float(row[metric]) if not pd.isna(row[metric]) else 0} 
+                    for _, row in grouped.iterrows()
+                ]
+                
+                result[variable][metric] = metric_data
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
         return jsonify({"error": str(e), "traceback": error_traceback}), 500 

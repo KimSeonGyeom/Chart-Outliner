@@ -1,21 +1,11 @@
 "use client";
 
 import React from 'react';
-import MetaphorGallery from './MetaphorGallery.jsx';
-import { useDataStore } from './store/dataStore.js';
 import { useAiStore } from './store/aiStore.js';
 import './AIGenerationSection.scss';
 
 export default function AIGenerationSection({ chartRef }) {
-  const authorIntention = useDataStore(state => state.authorIntention);
-  const setAuthorIntention = useDataStore(state => state.setAuthorIntention);
-  const chartData = useDataStore(state => state.chartData);
-  const numberOfDataPoints = useDataStore(state => state.numDataPoints);
-
   // AI states from aiStore
-  const metaphors = useAiStore(state => state.metaphors);
-  const isGenerating = useAiStore(state => state.isGenerating);
-  const visualInterpretation = useDataStore(state => state.visualInterpretation);
   const selectedTemplate = useAiStore(state => state.selectedTemplate);
   const isLoading = useAiStore(state => state.isLoading);
   const edgeImageData = useAiStore(state => state.edgeImageData);
@@ -24,13 +14,9 @@ export default function AIGenerationSection({ chartRef }) {
   const processingParams = useAiStore(state => state.processingParams);
 
   // AI actions from aiStore
-  const setMetaphors = useAiStore(state => state.setMetaphors);
-  const setIsGenerating = useAiStore(state => state.setIsGenerating);
   const setChartImageData = useAiStore(state => state.setChartImageData);
-  const setVisualInterpretation = useDataStore(state => state.setVisualInterpretation);
   const setIsLoading = useAiStore(state => state.setIsLoading);
   const setEdgeImageData = useAiStore(state => state.setEdgeImageData);
-  const setProcessedEdgeImage = useAiStore(state => state.setProcessedEdgeImage);
   const setAllProcessedEdgeImages = useAiStore(state => state.setAllProcessedEdgeImages);
   const setSelectedEdgeImageData = useAiStore(state => state.setSelectedEdgeImageData);
 
@@ -161,72 +147,6 @@ export default function AIGenerationSection({ chartRef }) {
     }
   };
 
-  // Handle AI prompt generation
-  const generateMetaphors = async () => {
-    try {
-      setIsGenerating(true);
-
-      // Get and store chart image data
-      const imageData = await getChartImageData(chartRef);
-
-      try {
-        const response_interpretation = await fetch('/api/generate-interpretation', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ imageData }),
-        });
-        
-        if (!response_interpretation.ok) {
-          const errorData = await response_interpretation.text();
-          console.error('Error response from interpretation API:', errorData);
-          throw new Error(`Interpretation API error: ${response_interpretation.status}`);
-        }
-        
-        const data_interpretation = await response_interpretation.json();
-        
-        if (!data_interpretation.success) {
-          throw new Error('Failed to generate interpretation');
-        }
-        
-        setVisualInterpretation(data_interpretation.content.interpretation);
-        console.log('Visual Interpretation:', visualInterpretation);
-        
-        // Call our metaphors API route
-        const response = await fetch('/api/generate-prompt', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ authorIntention, subject: chartData["subject"], visualInterpretation, numberOfDataPoints }),
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.text();
-          console.error('Error response from metaphors API:', errorData);
-          throw new Error(`Metaphors API error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        if (!data.success) {
-          throw new Error('Failed to generate metaphors');
-        }
-
-        console.log('Data:', data);
-        setMetaphors(data.content);
-      } catch (error) {
-        console.error('Error generating metaphors:', error);
-      } finally {
-        setIsGenerating(false);
-      }
-    } catch (error) {
-      console.error('Error generating metaphors:', error);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   // Handle selecting an edge image for bar chart pattern
   const handleSelectEdgeImage = (imageData) => {
     // Toggle selection - if already selected, deselect it
@@ -239,43 +159,26 @@ export default function AIGenerationSection({ chartRef }) {
 
   return (
     <div className="ai-section">
-      <div className="ai-section-title">AI Image Generator</div>
-      
-      {/* Intention field */}
-      <div className="intention-field">
-        <label htmlFor="intention-input">Your intention for image generation:</label>
-        <input
-          id="intention-input"
-          type="text"
-          value={authorIntention}
-          onChange={(e) => setAuthorIntention(e.target.value)}
-          placeholder="E.g., 'Artistic hand-drawn sketch', 'Minimalist line art', etc."
-          className="intention-input"
-        />
+      {/* template image select */}
+      <div className="template-image-select">
+        <h3>Template Image</h3>
+        {/* if selectedTemplate is not null, display the template image */}
+        {selectedTemplate && (
+          <img 
+            src={`/templates/${selectedTemplate.filename}`} 
+            alt={selectedTemplate.name}
+            style={{ maxWidth: '100%', maxHeight: '300px' }}
+            ref={imgRef}
+          />
+        )}
+        {/* dropdown to select template image */}
+        {/* <select onChange={(e) => setSelectedTemplate(e.target.value)}>
+          {templates.map((template) => (
+            <option key={template.filename} value={template.filename}>{template.name}</option>
+          ))}
+        </select> */}
       </div>
-      
-      <button 
-        className="ai-generate-button" 
-        onClick={generateMetaphors}
-        disabled={isGenerating}
-      >
-        {isGenerating ? 'Processing...' : 'Generate Metaphors with Matching Templates'}
-      </button>
-      
       <div className="ai-prompt-container">
-        <div className="data-subject">
-          <span className="data-label">Data Subject:</span> 
-          <span className="data-value">{chartData["subject"] || "No data subject yet"}</span>
-        </div>
-        <div className="author-intention">
-          <span className="data-label">Author's Intention:</span> 
-          <span className="data-value">{authorIntention || 'No intention set'}</span>
-        </div>
-        <div className="visual-interpretation">
-          <span className="data-label">Visual Interpretation:</span> 
-          <span className="data-value">{visualInterpretation || "No interpretation yet"}</span>
-        </div>
-        
         {/* Display selected template */}
         {selectedTemplate && (
           <div className="selected-template">
@@ -344,8 +247,6 @@ export default function AIGenerationSection({ chartRef }) {
             </div>
           </div>
         )}
-        
-        <MetaphorGallery />
         
         {isLoading && (
           <div className="loading-message">
